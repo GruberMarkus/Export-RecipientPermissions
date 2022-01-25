@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
-Centrally manage and deploy Outlook text signatures and Out of Office auto reply messages.
+Document mailbox access rights and folder permissions, "send as", "send on behalf" and "managed by"
 
 .DESCRIPTION
 Signatures and OOF messages can be:
