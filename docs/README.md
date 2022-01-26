@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf" and "managed by"<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf" and "managed by"<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
 
 # Features <!-- omit in toc -->
 Finds all recipients with a primary SMTP address in an on premises Exchange environment and/or an Exchange Online/Office 365 environment and documents their
@@ -21,7 +21,8 @@ Compare exports from different times to detect permission changes (sample code i
 	- [1.4. Group membership](#14-group-membership)
 	- [1.5. Requirements](#15-requirements)
 - [2. Get-DependentMailboxes.ps1](#2-get-dependentmailboxesps1)
-- [3. Recommendations](#3-recommendations)
+- [3. Compare-RecipientPermissions.ps1](#3-compare-recipientpermissionsps1)
+- [4. Recommendations](#4-recommendations)
 
 # 1. Export-RecipientPermissions.ps1
 Finds all recipients with a primary SMTP address in an on premises Exchange environment and/or an Exchange Online/Office 365 environment and documents their
@@ -57,6 +58,8 @@ As the cloud credentials are stored in the encrypted secure string file format a
 Per default, the script uses 10 background threads, each one consuming one Office 365 PowerShell session, in parallel to speed up data gathering. Per default, each of these threads works on 50 recipients one after the other. The number of parallel threads and the number of recipients per thread are configurable.
 
 # 2. Get-DependentMailboxes.ps1
+The script can be found in '`.\sample code`'.
+
 Currently only the "full access" mailbox permission works cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both, the grantor and the trustee, are hosted on the same environment.
 There are environments where permissions work cross-premises, but there is no offical support from Microsoft.
 
@@ -85,7 +88,18 @@ The following outputs are created:
 -	Get-DependentRecipients_Output_Summary.txt  
 	Number of initial recipients, number of additional recipients, number of total recipients, number of root cause mailbox permissions.
 
-# 3. Recommendations
+# 3. Compare-RecipientPermissions.ps1
+The script can be found in '`.\sample code`'.
+
+Compare two result files from Export-RecipientPermissions.ps1 to see which permissions have changed over time
+
+Only shows changes, equal lines are ignored.
+
+Changes are marked in the column 'Change' with
+- 'Deleted' if a line exists in the old file but not in the new one
+- 'New' if a line exists in the new file but not in the old one
+
+# 4. Recommendations
 Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, Exchange Management tools, .Net framework).
 
 If possible, allow Export-RecipientPermissions.ps1 to use your on premises infrastructure. This will dramatically increase the initial enumeration of recipients.
