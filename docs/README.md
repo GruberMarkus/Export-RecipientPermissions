@@ -43,7 +43,7 @@ The report is saved to the file 'Export-RecipientPermissions_Output.csv', which 
 - Trustee Recipient Type: The recipient type of the object receiving a permission.
 - Trustee Environment: Shows if the object receiviing a permission is held on-prem or in the cloud.
 - Permission(s): The permission(s) granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
-- Folder Name: The name of the mailbox folder when exporting mailbox folder permissions.
+- Folder: The name of the mailbox folder when exporting mailbox folder permissions.
 ## 1.2. Parameters
 Parameters like the name of the output file, the environment (on-prem/cloud) to check and the permissions to check can be configured directly in the top section of the file.
 ## 1.3. Runtime

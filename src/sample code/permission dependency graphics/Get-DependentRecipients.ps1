@@ -56,46 +56,37 @@ for ($x = 0; $x -lt $RecipientPermissions.count; $x++) {
     }
 
     # Remove lines where grantor or trustee is already in the cloud
-    if (($RecipientPermissions[$x].'Grantor Environment' -eq 'Cloud') -or ($RecipientPermissions[$x].'Trustee Environment' -eq 'Cloud')) {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
+    #if (($RecipientPermissions[$x].'Grantor Environment' -eq 'Cloud') -or ($RecipientPermissions[$x].'Trustee Environment' -eq 'Cloud')) {
+    #    $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
+    #    continue
+    #}
 
     # Remove lines containing "FullAccess" permission (they work cross premises)
-    if ($RecipientPermissions[$x].'Permission(s)' -Match 'FullAccess') {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
+    #if ($RecipientPermissions[$x].'Permission' -Match 'FullAccess') {
+    #    $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
+    #    continue
+    #}
 
     # Remove lines containing "SendOnBehalf" permission (they work cross premises)
     # Does not work yet, but is on the O365 Roadmap
-    #<#
-    if ($RecipientPermissions[$x].'Permission(s)' -eq 'SendOnBehalf') {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
-    #>
+    #if ($RecipientPermissions[$x].'Permission' -eq 'SendOnBehalf') {
+    #    $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
+    #    continue
+    #}
 
     # Remove lines containing "SendAs" permission (they work cross premises)
     # Does not work yet, but may come with a future O365 update
-    <#
-    if ($RecipientPermissions[$x].'Permission(s)' -eq 'SendAs') {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
-    #>
+    #if ($RecipientPermissions[$x].'Permission' -eq 'SendAs') {
+    #    $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
+    #    continue
+    #}
 
-    # Remove lines with ""ManagedBy"" permission (solved with Quest Active Roles)
-    if ($RecipientPermissions[$x].'Permission(s)' -eq 'ManagedBy') {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
+    # Remove lines with ""ManagedBy"" permission
+    #if ($RecipientPermissions[$x].'Permission' -eq 'ManagedBy') {
+    #    $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
+    #    continue
+    #}
 
-    # Remove archive mailboxes (first.last@contoso.com is trustee to MA.first.last@contoso.com)
-    if ($RecipientPermissions[$x].'Grantor Primary SMTP' -eq ('MA.' + $RecipientPermissions[$x].'Trustee Primary SMTP')) {
-        $RecipientPermissions[$x].'Grantor Primary SMTP' = ''
-        continue
-    }
 
     # Remove lines with primary SMTP addresses to ignore
     if (($RecipientPermissions[$x].'Grantor Primary SMTP' -In $PrimarySMTPAddressesToIgnore) -or ($RecipientPermissions[$x].'Trustee Primary SMTP' -In $PrimarySMTPAddressesToIgnore)) {
@@ -139,7 +130,7 @@ for ($i = 0; $i -lt $AdditionalRecipients.count; $i++) {
                     $AdditionalRecipientsString += (($RecipientPermissions[$j].'Trustee Primary SMTP') + ';' + ($RecipientPermissions[$j].'Trustee Recipient Type') + ';' + ($RecipientPermissions[$j].'Trustee Environment') + ';' + ($RecipientPermissions[$j].'Trustee OU') + [Environment]::NewLine)
                 }
                 if ($RecipientPermissions[$j].'Trustee InitialOrAdditional' -eq $null) {
-                    $AllRecipientsGMLFileEdgeString += [Environment]::NewLine + '    edge' + [Environment]::NewLine + '    [' + [Environment]::NewLine + '        source ' + $i + [Environment]::NewLine + '        target ' + $AdditionalRecipients.primarysmtpaddress.IndexOf($RecipientPermissions[$j].'Trustee Primary SMTP') + [Environment]::NewLine + '        label "grants ' + $RecipientPermissions[$j].'Permission(s)' + '"' + [Environment]::NewLine +  '    ]'
+                    $AllRecipientsGMLFileEdgeString += [Environment]::NewLine + '    edge' + [Environment]::NewLine + '    [' + [Environment]::NewLine + '        source ' + $i + [Environment]::NewLine + '        target ' + $AdditionalRecipients.primarysmtpaddress.IndexOf($RecipientPermissions[$j].'Trustee Primary SMTP') + [Environment]::NewLine + '        label "grants ' + $RecipientPermissions[$j].'Permission' + '"' + [Environment]::NewLine +  '    ]'
                 }
                 if ($i -lt $InitialRecipientsCount) {
                     $RecipientPermissions[$j].'Grantor InitialOrAdditional' = 'Initial'
@@ -165,7 +156,7 @@ for ($i = 0; $i -lt $AdditionalRecipients.count; $i++) {
                     $AdditionalRecipientsString += (($RecipientPermissions[$j].'Grantor Primary SMTP') + ';' + ($RecipientPermissions[$j].'Grantor Recipient Type') + ';' + ($RecipientPermissions[$j].'Grantor Environment') + ';' + ($RecipientPermissions[$j].'Grantor OU') + [Environment]::NewLine)
                 }
                 if ($RecipientPermissions[$j].'Grantor InitialOrAdditional' -eq $null) {
-                    $AllRecipientsGMLFileEdgeString += [Environment]::NewLine + '    edge' + [Environment]::NewLine + '    [' + [Environment]::NewLine + '        source ' + $AdditionalRecipients.primarysmtpaddress.IndexOf($RecipientPermissions[$j].'Grantor Primary SMTP') + [Environment]::NewLine + '        target ' + $i + [Environment]::NewLine + '        label "grants ' + $RecipientPermissions[$j].'Permission(s)' + '"' + [Environment]::NewLine + '    ]'
+                    $AllRecipientsGMLFileEdgeString += [Environment]::NewLine + '    edge' + [Environment]::NewLine + '    [' + [Environment]::NewLine + '        source ' + $AdditionalRecipients.primarysmtpaddress.IndexOf($RecipientPermissions[$j].'Grantor Primary SMTP') + [Environment]::NewLine + '        target ' + $i + [Environment]::NewLine + '        label "grants ' + $RecipientPermissions[$j].'Permission' + '"' + [Environment]::NewLine + '    ]'
                 }
                 if ($i -lt $InitialRecipientsCount) {
                     $RecipientPermissions[$j].'Trustee InitialOrAdditional' = 'Initial'
@@ -216,7 +207,7 @@ $AdditionalRecipientsString | sort-object | out-file $ExportAdditionalRecipients
 write-host "."
 
 write-host ('Exporting modified recipient permissions file to ''' + $RecipientPermissionsFileNew + '''') -NoNewline
-$RecipientPermissions = ($RecipientPermissions | select-object 'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Grantor OU', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment', 'Trustee OU', 'Permission(s)', 'Folder Name', 'Grantor InitialOrAdditional', 'Trustee InitialOrAdditional', 'Root cause for additional mailboxes')
+$RecipientPermissions = ($RecipientPermissions | select-object 'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Grantor OU', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment', 'Trustee OU', 'Permission', 'Folder', 'Grantor InitialOrAdditional', 'Trustee InitialOrAdditional', 'Root cause for additional mailboxes')
 foreach ($x in $RecipientPermissions) {
     If (($x.'Grantor InitialOrAdditional' -eq 'Initial') -and ($x.'Trustee InitialOrAdditional' -eq 'Additional')) {
         $x.'Root cause for additional mailboxes' = 'yes'
