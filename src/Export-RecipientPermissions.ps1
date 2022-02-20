@@ -37,7 +37,7 @@ Param(
     #   .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
     #   On-prem only: .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
     # Set to $null or '' to define all recipients as grantors to consider
-    [scriptblock]$GrantorFilter = $null, #{ $Recipient.primarysmtpaddress.domain -ieq 'itsv.at' },
+    [scriptblock]$GrantorFilter = $null, #{ $Recipient.primarysmtpaddress.domain -ieq 'example.com' },
 
 
     # Permissions to report
@@ -79,7 +79,7 @@ Param(
     # Interval to update the job progress
     # Updates are based von recipients done, not on duration
     # Number must be 1 or higher, low numbers mean bigger debug files
-    [int][ValidateRange(1, [int]::MaxValue)]$UpdateInterval = 1
+    [int][ValidateRange(1, [int]::MaxValue)]$UpdateInterval = 100
 )
 
 
