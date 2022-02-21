@@ -15,13 +15,13 @@ Param(
 
 
     # Credentials for Exchange connection
-    # username and password are stored as encrypted secure strings
+    # Username and password are stored as encrypted secure strings
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
 
 
     # Maximum Exchange, AD and local sessions/jobs running in parallel
-    # Watch CPU and RAM usage, and you Exchange throttling policy
+    # Watch CPU and RAM usage, and your Exchange throttling policy
     [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count * 3,
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 100,
@@ -37,7 +37,7 @@ Param(
     #   .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
     #   On-prem only: .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
     # Set to $null or '' to define all recipients as grantors to consider
-    [scriptblock]$GrantorFilter = $null, #{ $Recipient.primarysmtpaddress.domain -ieq 'example.com' },
+    [string]$GrantorFilter = $null, #" `$Recipient.primarysmtpaddress.domain -ieq 'example.com'" },
 
 
     # Permissions to report
@@ -75,6 +75,7 @@ Param(
     # Name (and path) of the debug log file
     # Set to $null or '' to disable debugging
     [string]$DebugFile = '.\export\Export-RecipientPermissions_Debug.txt',
+
 
     # Interval to update the job progress
     # Updates are based von recipients done, not on duration
@@ -138,6 +139,9 @@ try {
         }
     }
 
+    if (Test-Path $ExportFile) {
+        Remove-Item $ExportFile -Force
+    }
     foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))) {
         Remove-Item $Recipientfile -Force
     }
@@ -187,11 +191,10 @@ try {
     # Import recipients
     Write-Host
     Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $connectionUri = $tempConnectionUriQueue.dequeue()
     Write-Host "  Single-thread operation, use connection '$($connectionUri)'"
 
     $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
-    $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -WarningAction silentlycontinue | Select-Object -Property identity, distinguishedname, recipienttype, recipienttypedetails, displayname, primarysmtpaddress, managedby, 'UserFriendlyName' }) | Sort-Object { $_.primarysmtpaddress.address }))
+    $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -WarningAction silentlycontinue | Select-Object -Property identity, distinguishedname, recipienttype, recipienttypedetails, displayname, primarysmtpaddress, emailaddresses, managedby, 'UserFriendlyName' }) | Sort-Object { $_.primarysmtpaddress.address }))
     $AllRecipients.TrimToSize()
     Write-Host ('  {0:0000000} recipients found' -f $($AllRecipients.count))
 
@@ -238,7 +241,7 @@ try {
     Remove-PSSession $ExchangeSession
 
 
-    # Create lookup hashtables for GUID and DistinguishedName
+    # Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress
     Write-Host
     Write-Host "Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
@@ -257,7 +260,9 @@ try {
     Write-Host "  PrimarySmtpAddress to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $x
+        if (($AllRecipients[$x]).primarysmtpaddress.address) {
+            $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $x
+        }
     }
 
     # UserFriendlyNames
@@ -285,7 +290,6 @@ try {
             1..$ParallelJobsNeeded | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
-
 
                 [void]$Powershell.AddScript(
                     {
@@ -388,7 +392,7 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all recipients have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
@@ -408,7 +412,6 @@ try {
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
             }
-
 
             [GC]::Collect(); Start-Sleep 1
         }
@@ -434,7 +437,7 @@ try {
     # Grantors
     Write-Host
     Write-Host "Define grantors by filtering recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host "  Filter: {$($GrantorFilter)}"
+    Write-Host "  Filter: { $($GrantorFilter) }"
     $GrantorsToConsider = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
@@ -443,7 +446,7 @@ try {
         if (-not $GrantorFilter) {
             $null = $GrantorsToConsider.add($x)
         } else {
-            if ((. $GrantorFilter)) {
+            if ((. ([scriptblock]::Create($GrantorFilter)))) {
                 $null = $GrantorsToConsider.add($x)
             }
         }
@@ -538,7 +541,6 @@ try {
                                 if (($GrantorRecipienttype -ieq 'PublicFolder') -or ($GrantorRecipienttype -ieq 'MailContact')) {
                                     continue
                                 }
-
 
                                 foreach ($MailboxPermission in
                                     @($(
@@ -644,10 +646,9 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all grantor mailboxes have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
-
 
             foreach ($runspace in $runspaces) {
                 $runspace.PowerShell.Dispose()
@@ -667,8 +668,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -702,7 +701,6 @@ try {
             1..$ParallelJobsNeeded | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
-
 
                 [void]$Powershell.AddScript(
                     {
@@ -793,22 +791,22 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    $ExportFileResult.Add((('"' + (
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    $($Folder.Folderpath),
-                                                                    $($Accessright),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $($FolderPermission.user.displayname),
-                                                                    $($FolderPermission.user.adrecipient.primarysmtpaddress),
-                                                                    $($FolderPermission.user.adrecipient.displayname),
-                                                                    ("$($FolderPermission.user.adrecipient.recipienttype)/$($FolderPermission.user.adrecipient.recipienttypedetails)" -replace '^/$', ''),
-                                                                    $(if ($FolderPermission.user.adrecipient.recipienttypedetails -ilike 'Remote*') { 'Cloud' } else { 'On-Prem' })
-                                                                ) + '"') -replace '(?<!;|^)"(?!;|$)', '""') -join '";"')
+                                                    $ExportFileResult.Add((('"' + ((
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        $($Folder.Folderpath),
+                                                                        $($Accessright),
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $($FolderPermission.user.displayname),
+                                                                        $($FolderPermission.user.adrecipient.primarysmtpaddress),
+                                                                        $($FolderPermission.user.adrecipient.displayname),
+                                                                        ("$($FolderPermission.user.adrecipient.recipienttype)/$($FolderPermission.user.adrecipient.recipienttypedetails)" -replace '^/$', ''),
+                                                                        $(if ($FolderPermission.user.adrecipient.recipienttypedetails -ilike 'Remote*') { 'Cloud' } else { 'On-Prem' })
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                                 } else {
                                                     if ($ExportMailboxFolderPermissionsOwnerAtLocal -eq $false) {
                                                         if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'owner@local') { continue }
@@ -897,7 +895,7 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all grantor mailboxes have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
@@ -1013,7 +1011,6 @@ try {
                                             $index = $AllRecipientsUfnToIndex[$($entry.identityreference.tostring())]
                                             if ($index -ge 0) {
                                                 $trustee = $AllRecipients[$index]
-                                                s
                                             } else {
                                                 $trustee = $entry.identityreference
                                             }
@@ -1143,7 +1140,7 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all grantors have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
@@ -1202,7 +1199,6 @@ try {
             1..$ParallelJobsNeeded | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
-
 
                 [void]$Powershell.AddScript(
                     {
@@ -1378,7 +1374,7 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all grantors have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
@@ -1433,7 +1429,6 @@ try {
             1..$ParallelJobsNeeded | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
-
 
                 [void]$Powershell.AddScript(
                     {
@@ -1556,7 +1551,7 @@ try {
             }
             Write-Host
 
-            if ($tempQueueCount -ne $lastCount) {
+            if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all grantors have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
@@ -1613,6 +1608,11 @@ try {
     }
     if ($RunspacePool) {
         $RunspacePool.dispose()
+    }
+
+    foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))) {
+        Get-Content $RecipientFile | Sort-Object -Unique | Out-File $ExportFile -Encoding utf8 -Append -Force
+        Remove-Item $Recipientfile -Force
     }
 
     Write-Host
