@@ -3,12 +3,13 @@
 
 # Changelog
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.1.0" target="_blank">v1.1.0</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.1.0" target="_blank">v1.1.0</a> - 2022-02-23
 ### Added
 - Massive performance improvements, less RAM and network usage
 - Documentation
 - Command-line parameters
-- Sample code for additional features
+- Sample code: Permission changes over time
+- Sample code: Get dependent recipients to support migrations to Exchange Online as not all permissions work cross-premises, or to graphically document existing permissions
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.0.0" target="_blank">v1.0.0</a> - 2019-04-04
 _Initial release._
