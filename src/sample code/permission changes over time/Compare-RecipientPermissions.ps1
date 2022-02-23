@@ -8,10 +8,10 @@
 
 
 # Path to the CSV file from the older run of Export-RecipientPermissions
-$oldCsv = 'u:\itsv alt.csv'
+$oldCsv = '.\Export-RecipientPermissions_Output_old.csv'
 
 # Path to the CSV file from the newer run of Export-RecipientPermissions
-$newCsv = 'u:\itsv neu.csv'
+$newCsv = '.\Export-RecipientPermissions_Output_new.csv'
 
 
 #
@@ -20,6 +20,7 @@ $newCsv = 'u:\itsv neu.csv'
 
 Clear-Host
 
+Set-Location $PSScriptRoot
 
 Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 

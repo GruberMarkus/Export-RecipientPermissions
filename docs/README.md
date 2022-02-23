@@ -6,10 +6,10 @@ Finds all recipients with a primary SMTP address in an on on-prem or online Exch
 - mailbox access rights,
 - mailbox folder permissions,
 - "send as" permissions,
-- "send on behalf" permissions, and
-- "managed by" permissions
+- "send on behalf" permissions,
+- and "managed by" permissions
 
-Easens the move to the cloud as permission dependencies beyond the supported cross-premises "full control" can easily be found and even be represented graphically (sample code included).
+Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
 Compare exports from different times to detect permission changes (sample code included). 
 
@@ -175,17 +175,14 @@ The script only considers dependencies between on-prem recipients, as it is only
 The following outputs are created:
 - Export-RecipientPermissions_Output_Modified.csv  
 	The original permission input file, reduced to the rows that have a connection with the recipient input file.  
-	Enhanced with information if a grantor or trustee are part of the initial recipient file or have to be migrated additionally.
+	Enhanced with information if a grantor or trustee is part of the initial recipient file or has to be migrated additionally to keep permission chains working.
 	Enhanced with information which single permissions start permissions chains outside the initial recipients.
--	Get-DependentRecipients_OriginalInput.csv  
-	The original recipient input file for documentation purposes.
 -	Get-DependentRecipients_Output_AdditionalRecipients.csv  
 	List of additional recipients. Format: "Primary SMTP address;Recipient type;Environment".
 -	Get-DependentRecipients_Output_AllRecipients.csv  
 	Lists of all initial and additional recipients, including their recipient type and environment. Format: "Primary SMTP address;Recipient type;Environment".
 -	Get-DependentRecipients_Output_AllRecipients.gml  
-	All recipients and their permissions in a graphical representation. The gml (Graph Modeling Language) file format used is human readable. Free tools like yEd Graph Editor, Gephi and others can be used to easily create visual representations from this file.  
-	You can use the file "OUs.csv" to have mailboxes grouped by OUs and their friendly names.
+	All recipients and their permissions in a graphical representation. The gml (Graph Modeling Language) file format used is human readable. Free tools like yWorks yEd Graph Editor, Gephi and others can be used to easily create visual representations from this file.  
 -	Get-DependentRecipients_Output_Summary.txt  
 	Number of initial recipients, number of additional recipients, number of total recipients, number of root cause mailbox permissions.
 
@@ -193,8 +190,6 @@ The following outputs are created:
 The script can be found in '`.\sample code`'.
 
 Compare two result files from Export-RecipientPermissions.ps1 to see which permissions have changed over time
-
-Only shows changes, equal lines are ignored.
 
 Changes are marked in the column 'Change' with
 - 'Deleted' if a line exists in the old file but not in the new one

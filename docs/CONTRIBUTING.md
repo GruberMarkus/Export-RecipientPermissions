@@ -13,9 +13,8 @@ I'm not a professional developer - if you are one and you notice something negat
 - [2. Contribution opportunities](#2-contribution-opportunities)
   - [2.1. Sponsoring](#21-sponsoring)
   - [2.2. Code refactoring](#22-code-refactoring)
-  - [2.3. Support Microsoft signature roaming API](#23-support-microsoft-signature-roaming-api)
-    - [2.3.1. Approach](#231-approach)
-  - [2.4. Enhance central signature deployment without client-side execution of script](#24-enhance-central-signature-deployment-without-client-side-execution-of-script)
+  - [2.3. Combine on-prem and cloud results](#23-combine-on-prem-and-cloud-results)
+  - [Adopt Exchange Online connection method](#adopt-exchange-online-connection-method)
 - [3. Branches](#3-branches)
 - [4. Development process](#4-development-process)
 - [5. Commit messages](#5-commit-messages)
@@ -38,39 +37,16 @@ Dear businesses, please don't forget:
 I'm not a professional developer, but a hobbyist scripter, and the code looks like that.
 
 There are optimization opportunities in error handling, de-duplicating code with functions, applying PowerShell best practices, and more.
-## 2.3. Support Microsoft signature roaming API
-- API for deploying signatures directly to mailbox via EWS or Graph is not yet known
-- Don't forget to update SignatureFilesDone so that the removal process keeps working
-- How to handle shared mailboxes?
-  - When roaming is enabled, this creates a big mess because script runs overwrite each others results (think about \$CURRENTUSER[...]$ replacement variables)
-- How to detect roaming feature and enable the parameter only for these mailboxes?
-### 2.3.1. Approach
-```
-if (
-  # Outlook is installed
-  # and $OutlookFileVersion is high enough (exact value is unknown yet) or it is a suiting beta version (-or (($OutlookFileVersion -ge '16.0.13430.20000') -and ($OutlookFileVersion.revision -in 20000..20199)))
-  # and $OutlookDisableRoamingSignaturesTemporaryToggle equals 0
-  # and the mailbox is in the cloud ((connected to AD AND $ADPropsCurrentMailbox.msexchrecipienttypedetails is like \*remote\*) OR (connected to Graph and $ADPropsCurrentMailbox is not like \*remote\*))
-  # and the current mailbox is the personal mailbox of the currently logged in user
-  ($null -ne $OutlookFileVersion) `
-      -and (($OutlookFileVersion -ge [system.version]::parse('99.0.99999.99999'))) `
-      -and ($OutlookDisableRoamingSignaturesTemporaryToggle -eq 0) `
-      -and ((($null -ne $ADPropsCurrentMailbox.msexchrecipienttypedetails) -and ($ADPropsCurrentMailbox.msexchrecipienttypedetails -ilike 'remote*')) -or ($null -ne $ADPropsCurrentMailbox.mailboxsettings)) `
-      -and ($MailAddresses[$AccountNumberRunning] -ieq $PrimaryMailboxAddress)
-) {
-    # Microsoft signature roaming available
-    $CurrentMailboxUseSignatureRoaming = $true
-} else {
-    $CurrentMailboxUseSignatureRoaming = $false
-}
-```
-- in this case, the script first needs to download existing signatures from Graph to a temp directory
-## 2.4. Enhance central signature deployment without client-side execution of script
-Sort of a server version of Export-RecipientPermissions, only possible for cloud mailboxes when roaming API is available
-- Done: Automate simulation mode by wrapping parallelization code around it (`.\sample code\SimulateAndDeploy.ps1`)
-- Done: Is RTF export necessary in this scenario? Yes, because the script can be used to write to signature folders redirected to a network share.
-- Done: Use simulation mode results to write to Graph with a service account (`.\sample code\SimulateAndDeploy.ps1`)
-- Open: Adopt script to Microsoft signature roaming API, when it eventually is publicly available
+## 2.3. Combine on-prem and cloud results
+Currently, Export-RecipientPermissions connects either to an on-prem instance or a cloud instance of Exchange.
+
+A future release will be able to connect to both environments and combine these two data sources.
+## Adopt Exchange Online connection method
+The script still connects to Exchange Online by using the classic New-PSSession construct.
+
+Connect-ExchangeOnline clearly is the future. Unfortunately, it's connections to Exchange Online have shown to be error prone when used in parallel jobs, even for small environments.
+
+As soon as these problems are solved, Export-RecipientPermissions will switch to Connect-ExchangeOnline.
 # 3. Branches
 The default branch is named '`main`'. It contains the source of the latest stable release.
 

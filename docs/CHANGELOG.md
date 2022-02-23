@@ -5,7 +5,7 @@
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.1.0" target="_blank">v1.1.0</a> - YYYY-MM-DD
 ### Added
-- Massive performance improvements
+- Massive performance improvements, less RAM and network usage
 - Documentation
 - Command-line parameters
 - Sample code for additional features
