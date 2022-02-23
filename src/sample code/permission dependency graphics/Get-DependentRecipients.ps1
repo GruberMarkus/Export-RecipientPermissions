@@ -206,22 +206,22 @@ $AllRecipientsGMLFileString += [Environment]::NewLine + '    node' + [Environmen
 $AllRecipientsGMLFileString += [Environment]::NewLine + '    node' + [Environment]::NewLine + '    [' + [Environment]::NewLine + '        id -32767' + [Environment]::NewLine + '        label "Additional recipients"' + [Environment]::NewLine + '        isGroup 1' + [Environment]::NewLine + '    ]'
 
 
-$AllRecipientsGMLFileString += [Environment]::NewLine + $AllRecipientsGMLFileEdgeString + [Environment]::NewLine + "]"
+$AllRecipientsGMLFileString += [Environment]::NewLine + $AllRecipientsGMLFileEdgeString + [Environment]::NewLine + ']'
 $AllRecipientsGMLFileString = ($AllRecipientsGMLFileString -replace '&', '&amp;')
-$AllRecipientsGMLFileString | Out-File $AllRecipientsGMLFile -force -Encoding utf8
+$AllRecipientsGMLFileString | Out-File $AllRecipientsGMLFile -Force -Encoding utf8bom
 
 
 Write-Host
 Write-Host ("Export full list of recipients to '$ExportAllRecipientsFile'")
-($InitialRecipientsString + $AdditionalRecipientsString) -replace ([Environment]::NewLine + [Environment]::NewLine), ([Environment]::NewLine) | Out-File $ExportAllRecipientsFile -Append -Encoding utf8
+($InitialRecipientsString + $AdditionalRecipientsString) -replace ([Environment]::NewLine + [Environment]::NewLine), ([Environment]::NewLine) | Out-File $ExportAllRecipientsFile -Append -Encoding utf8bom
 
 
 Write-Host
 Write-Host ("Export only additional recipients to '$ExportAdditionalRecipientsFile'")
-'Primary SMTP Address;Recipient Type;Environment' | Out-File $ExportAdditionalRecipientsFile -Encoding utf8
-$AdditionalRecipientsString | Sort-Object | Out-File $ExportAdditionalRecipientsFile -Append -Encoding utf8
+'Primary SMTP Address;Recipient Type;Environment' | Out-File $ExportAdditionalRecipientsFile -Encoding utf8bom
+$AdditionalRecipientsString | Sort-Object | Out-File $ExportAdditionalRecipientsFile -Append -Encoding utf8bom
 
-write-host
+Write-Host
 Write-Host ("Export modified recipient permissions file to '$RecipientPermissionsFileNew'")
 $RecipientPermissions = ($RecipientPermissions | Select-Object 'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment', 'Permission', 'Folder', 'Grantor InitialOrAdditional', 'Trustee InitialOrAdditional', 'Root cause for additional mailboxes')
 foreach ($x in $RecipientPermissions) {
@@ -238,7 +238,7 @@ foreach ($x in $RecipientPermissions) {
 $RecipientPermissions | Where-Object { (($_.'Grantor InitialOrAdditional' -ne $null) -or ($_.'Trustee InitialOrAdditional' -ne $null)) } | Export-Csv $RecipientPermissionsFileNew -Delimiter ';' -NoTypeInformation -Force
 
 
-write-host
+Write-Host
 Write-Host ("Create summary file '$SummaryFile'")
 ('{0:000000}' -f $InitialRecipientsCount) + ' initial recipients to migrate.' >> $SummaryFile
 ('{0:000000}' -f ($AdditionalRecipients.count - $InitialRecipientsCount)) + ' additional recipients to migrate.' >> $SummaryFile
@@ -246,5 +246,5 @@ Write-Host ("Create summary file '$SummaryFile'")
 ('{0:000000}' -f ($RecipientPermissions | Where-Object { $_.'Root cause for additional mailboxes' -eq 'yes' } | Measure-Object).count) + ' root cause recipient permissions.' >> $SummaryFile
 
 
-write-host
+Write-Host
 Write-Host ('End of script.')

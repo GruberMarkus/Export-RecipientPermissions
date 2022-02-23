@@ -30,13 +30,15 @@ Compare exports from different times to detect permission changes (sample code i
 		- [1.2.11. ExportMailboxFolderPermissionsDefault](#1211-exportmailboxfolderpermissionsdefault)
 		- [1.2.12. ExportMailboxFolderPermissionsOwnerAtLocal](#1212-exportmailboxfolderpermissionsowneratlocal)
 		- [1.2.13. ExportMailboxFolderPermissionsMemberAtLocal](#1213-exportmailboxfolderpermissionsmemberatlocal)
-		- [1.2.14. ExportSendAs](#1214-exportsendas)
-		- [1.2.15. ExportSendAsSelf](#1215-exportsendasself)
-		- [1.2.16. ExportSendOnBehalf](#1216-exportsendonbehalf)
-		- [1.2.17. ExportManagedBy](#1217-exportmanagedby)
-		- [1.2.18. ExportFile](#1218-exportfile)
-		- [1.2.19. DebugFile](#1219-debugfile)
-		- [1.2.20. UpdateInverval](#1220-updateinverval)
+		- [1.2.14. ExportMailboxFolderPermissionsExcludeFoldertypes](#1214-exportmailboxfolderpermissionsexcludefoldertypes)
+		- [1.2.15. ExportSendAs](#1215-exportsendas)
+		- [1.2.16. ExportSendAsSelf](#1216-exportsendasself)
+		- [1.2.17. ExportSendOnBehalf](#1217-exportsendonbehalf)
+		- [1.2.18. ExportManagedBy](#1218-exportmanagedby)
+		- [1.2.19. ExportFile](#1219-exportfile)
+		- [1.2.20. ErrorFile](#1220-errorfile)
+		- [1.2.21. DebugFile](#1221-debugfile)
+		- [1.2.22. UpdateInverval](#1222-updateinverval)
 	- [1.3. Runtime](#13-runtime)
 	- [1.4. Requirements](#14-requirements)
 - [2. Get-DependentMailboxes.ps1](#2-get-dependentmailboxesps1)
@@ -117,26 +119,36 @@ Default: $false
 ### 1.2.13. ExportMailboxFolderPermissionsMemberAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
 Default: $false
-### 1.2.14. ExportSendAs
+### 1.2.14. ExportMailboxFolderPermissionsExcludeFoldertypes
+List of Foldertypes to ignore.
+
+Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
+
+Default: 'audits'
+### 1.2.15. ExportSendAs
 Export Send As permissions
 Default: $true
-### 1.2.15. ExportSendAsSelf
+### 1.2.16. ExportSendAsSelf
 Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
 Default: $false
-### 1.2.16. ExportSendOnBehalf
+### 1.2.17. ExportSendOnBehalf
 Export Send On Behalf permissions
 Default: $true
-### 1.2.17. ExportManagedBy
+### 1.2.18. ExportManagedBy
 Only for distribution groups, and not to be confused with the "Manager" attribute
 Default: $true
-### 1.2.18. ExportFile
+### 1.2.19. ExportFile
 Name (and path) of the permission report file
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.19. DebugFile
+### 1.2.20. ErrorFile
+Name (and path) of the error log file
+Set to $null or '' to disable debugging
+Default: '.\export\Export-RecipientPermissions_Error.csv',
+### 1.2.21. DebugFile
 Name (and path) of the debug log file
 Set to $null or '' to disable debugging
-Default: '.\export\Export-RecipientPermissions_Debug.txt'
-### 1.2.20. UpdateInverval
+Default: ''
+### 1.2.22. UpdateInverval
 Interval to update the job progress
 Updates are based von recipients done, not on duration
 Number must be 1 or higher, low numbers mean bigger debug files
