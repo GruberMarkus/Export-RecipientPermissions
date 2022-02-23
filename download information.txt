@@ -1,0 +1,8 @@
+Thanks for your interest in Export-RecipientPermissions!
+
+
+Visit 'https://github.com/GruberMarkus/Export-RecipientPermissions/releases' to download an official release.
+
+
+Access the full source code online via 'https://github.com/GruberMarkus/Export-RecipientPermissions',
+or with your preferred Git-aware development suite via 'https://github.com/GruberMarkus/Export-RecipientPermissions.git'.
