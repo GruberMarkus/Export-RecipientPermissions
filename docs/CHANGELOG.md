@@ -7,6 +7,7 @@
 ### Added
 - New parameter ExportMailboxFolderPermissionsExcludeFoldertypes
 - Separate error file, configuration via ErrorFile parameter
+- Comment based help
 ### Changed
 - Detecting root mailbox folder now uses the foltertype property
 - In favor of the new error file, the debug file is no longer enabled per default. This can be changed with the DebugFile parameter.

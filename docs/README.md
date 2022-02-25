@@ -71,8 +71,8 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 ## 1.2. Parameters
 ### 1.2.1. ExportFromOnPrem
 Export from On-Prem or from Exchange Online
-$true for export from on-prem
-$false for export from Exchange Online
+$true for export from on-prem, $false for export from Exchange Online
+Default: $false
 ### 1.2.2. ExchangeConnectionUriList
 Server URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
