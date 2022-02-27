@@ -505,16 +505,21 @@ try {
                                 $filterstring = ''
 
                                 while (($dequeued -lt 100) -and ($tempQueue.count -gt 0)) {
-                                    $x = $tempQueue.dequeue()
-                                    $filterstring += "(guid -eq '$($AllRecipients[$x].identity.objectguid.guid)') -or "
-                                    $dequeued++
+                                    try {
+                                        $x = $tempQueue.dequeue()
+                                    } catch {
+                                    }
+                                    if ($x) {
+                                        $filterstring += "(guid -eq '$($AllRecipients[$x].identity.objectguid.guid)') -or "
+                                        $dequeued++
+                                    }
                                 }
                                 $filterstring = $filterstring.trimend(' -or ')
 
                                 Write-Host "  $filterstring"
 
                                 if ($filterstring -ne '') {
-                                    foreach ($securityprincipal in @(Invoke-Command -Session $ExchangeSession -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)) {
+                                    foreach ($securityprincipal in @(Invoke-Command -Session $ExchangeSession -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)) {
                                         try {
                                             Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
                                             ($AllRecipients[$($AllRecipientsGuidToIndex[$($securityprincipal.guid.guid)])]).UserFriendlyName = $securityprincipal.UserFriendlyName
@@ -714,8 +719,11 @@ try {
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileResult.clear()
-                                $RecipientID = $tempQueue.dequeue()
-
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
                                 $Grantor = $AllRecipients[$RecipientID]
                                 $Trustee = $null
 
@@ -951,7 +959,11 @@ try {
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileResult.Clear()
-                                $RecipientID = $tempQueue.dequeue()
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
 
                                 $Grantor = $AllRecipients[$RecipientID]
 
@@ -1205,7 +1217,11 @@ try {
                             while ($tempQueue.count -gt 0) {
                                 $result.clear()
                                 $ExportFileresult.clear()
-                                $RecipientID = $tempQueue.dequeue()
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
 
                                 $Grantor = $AllRecipients[$RecipientID]
 
@@ -1464,7 +1480,11 @@ try {
                             $ExportFileResult = [system.collections.arraylist]::new(1000)
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileresult.clear()
-                                $RecipientID = $tempQueue.dequeue()
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
 
                                 $Grantor = $AllRecipients[$RecipientID]
 
@@ -1707,7 +1727,11 @@ try {
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileresult.clear()
-                                $RecipientID = $tempQueue.dequeue()
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
 
                                 $Grantor = $AllRecipients[$RecipientID]
 
