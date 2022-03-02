@@ -30,7 +30,7 @@ Compare exports from different times to detect permission changes (sample code i
 		- [1.2.11. ExportMailboxFolderPermissionsDefault](#1211-exportmailboxfolderpermissionsdefault)
 		- [1.2.12. ExportMailboxFolderPermissionsOwnerAtLocal](#1212-exportmailboxfolderpermissionsowneratlocal)
 		- [1.2.13. ExportMailboxFolderPermissionsMemberAtLocal](#1213-exportmailboxfolderpermissionsmemberatlocal)
-		- [1.2.14. ExportMailboxFolderPermissionsExcludeFoldertypes](#1214-exportmailboxfolderpermissionsexcludefoldertypes)
+		- [1.2.14. ExportMailboxFolderPermissionsExcludeFoldertype](#1214-exportmailboxfolderpermissionsexcludefoldertype)
 		- [1.2.15. ExportSendAs](#1215-exportsendas)
 		- [1.2.16. ExportSendAsSelf](#1216-exportsendasself)
 		- [1.2.17. ExportSendOnBehalf](#1217-exportsendonbehalf)
@@ -41,7 +41,7 @@ Compare exports from different times to detect permission changes (sample code i
 		- [1.2.22. UpdateInverval](#1222-updateinverval)
 	- [1.3. Runtime](#13-runtime)
 	- [1.4. Requirements](#14-requirements)
-- [2. Get-DependentMailboxes.ps1](#2-get-dependentmailboxesps1)
+- [2. Get-DependentRecipients.ps1](#2-get-dependentrecipientsps1)
 - [3. Compare-RecipientPermissions.ps1](#3-compare-recipientpermissionsps1)
 - [4. Recommendations](#4-recommendations)
 
@@ -119,7 +119,7 @@ Default: $false
 ### 1.2.13. ExportMailboxFolderPermissionsMemberAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
 Default: $false
-### 1.2.14. ExportMailboxFolderPermissionsExcludeFoldertypes
+### 1.2.14. ExportMailboxFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 
 Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
@@ -170,36 +170,36 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 }
 ```
 
-# 2. Get-DependentMailboxes.ps1
-The script can be found in '`.\sample code`'.
+# 2. Get-DependentRecipients.ps1
+The script can be found in '`.\sample code\Get-DependentRecipients`'.
 
-Currently only the "full access" mailbox permission works cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both, the grantor and the trustee, are hosted on the same environment.
+Currently only some recipient permissions work cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both the grantor and the trustee are hosted on the same environment.
 There are environments where permissions work cross-premises, but there is no offical support from Microsoft.
 
-This script takes a list of recipients and the output of Export-RecipientPermissions.ps1 to create a list of all mailboxes and distribution groups that have a grantor-trustee dependency beyond "full access" to each other.
+This script takes a list of recipients and the output of Export-RecipientPermissions.ps1 to create a list of all recipients groups that have a grantor-trustee dependency beyond "full access" to each other.
 
 The script not only considers situations where recipient A grants rights to recipient B, but the whole permission chain ("X-Z-A-B-C-D" etc.).
 
-The script optionally considers group membership. This can take too much time to evaluate.
-
-The script only considers dependencies between on-prem recipients, as it is only intended to be used to accelerate the move to the cloud.
+The script does not consider group membership.
 
 The following outputs are created:
-- Export-RecipientPermissions_Output_Modified.csv  
+- Export-RecipientPermissions_Output_Permissions.csv  
 	The original permission input file, reduced to the rows that have a connection with the recipient input file.  
 	Enhanced with information if a grantor or trustee is part of the initial recipient file or has to be migrated additionally to keep permission chains working.
 	Enhanced with information which single permissions start permissions chains outside the initial recipients.
+-	Get-DependentRecipients_Output_InitialRecipients.csv  
+	List of initial recipients.
 -	Get-DependentRecipients_Output_AdditionalRecipients.csv  
-	List of additional recipients. Format: "Primary SMTP address;Recipient type;Environment".
+	List of additional recipients.
 -	Get-DependentRecipients_Output_AllRecipients.csv  
-	Lists of all initial and additional recipients, including their recipient type and environment. Format: "Primary SMTP address;Recipient type;Environment".
--	Get-DependentRecipients_Output_AllRecipients.gml  
-	All recipients and their permissions in a graphical representation. The gml (Graph Modeling Language) file format used is human readable. Free tools like yWorks yEd Graph Editor, Gephi and others can be used to easily create visual representations from this file.  
+	List of all initial and additional recipients.
+-	Get-DependentRecipients_Output_GML.gml  
+	All recipients and their permissions in a graphical representation. The GML (Graph Modeling Language) file format used is human readable. Free tools like yWorks yEd Graph Editor, Gephi and others can be used to easily create visual representations from this file.  
 -	Get-DependentRecipients_Output_Summary.txt  
 	Number of initial recipients, number of additional recipients, number of total recipients, number of root cause mailbox permissions.
 
 # 3. Compare-RecipientPermissions.ps1
-The script can be found in '`.\sample code`'.
+The script can be found in '`.\sample code\Compare-RecipientPermissions`'.
 
 Compare two result files from Export-RecipientPermissions.ps1 to see which permissions have changed over time
 

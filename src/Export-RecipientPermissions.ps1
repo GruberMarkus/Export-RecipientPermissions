@@ -65,7 +65,7 @@ Default: $false
 .PARAMETER ExportMailboxFolderPermissionsMemberAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
 Default: $false
-.PARAMETER ExportMailboxFolderPermissionsExcludeFoldertypes
+.PARAMETER ExportMailboxFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 
 Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
@@ -170,7 +170,7 @@ Param(
     [boolean]$ExportMailboxFolderPermissionsDefault = $false, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
     [boolean]$ExportMailboxFolderPermissionsOwnerAtLocal = $false, # Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
     [boolean]$ExportMailboxFolderPermissionsMemberAtLocal = $false, # Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
-    [string[]]$ExportMailboxFolderPermissionsExcludeFoldertypes = ('audits'), # List of Foldertypes to ignore. Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
+    [string[]]$ExportMailboxFolderPermissionsExcludeFoldertype = ('audits'), # List of Foldertypes to ignore. Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
     #
     # Send As
     [boolean]$ExportSendAs = $true,
@@ -927,7 +927,7 @@ try {
                             $ExportMailboxFolderPermissionsDefault,
                             $ExportMailboxFolderPermissionsOwnerAtLocal,
                             $ExportMailboxFolderPermissionsMemberAtLocal,
-                            $ExportMailboxFolderPermissionsExcludeFoldertypes,
+                            $ExportMailboxFolderPermissionsExcludeFoldertype,
                             $ExportFile,
                             $ErrorFile,
                             $UTF8Encoding,
@@ -982,7 +982,7 @@ try {
                                 $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
                                 foreach ($Folder in $Folders) {
                                     try {
-                                        if ($folder.foldertype -iin $ExportMailboxFolderPermissionsExcludeFoldertypes) { continue }
+                                        if ($folder.foldertype -iin $ExportMailboxFolderPermissionsExcludeFoldertype) { continue }
 
                                         if ($Folder.foldertype -ieq 'root') { $Folder.folderpath = '/' }
 
@@ -1074,24 +1074,24 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                                    = $AllRecipients
-                        tempConnectionUriQueue                           = $tempConnectionUriQueue
-                        tempQueue                                        = $tempQueue
-                        ExportMailboxFolderPermissions                   = $ExportMailboxFolderPermissions
-                        ExportMailboxFolderPermissionsAnonymous          = $ExportMailboxFolderPermissionsAnonymous
-                        ExportMailboxFolderPermissionsDefault            = $ExportMailboxFolderPermissionsDefault
-                        ExportMailboxFolderPermissionsOwnerAtLocal       = $ExportMailboxFolderPermissionsOwnerAtLocal
-                        ExportMailboxFolderPermissionsMemberAtLocal      = $ExportMailboxFolderPermissionsMemberAtLocal
-                        ExportMailboxFolderPermissionsExcludeFoldertypes = $ExportMailboxFolderPermissionsExcludeFoldertypes
-                        ExportFile                                       = $ExportFile
-                        AllRecipientsGuidToIndex                         = $AllRecipientsGuidToIndex
-                        ErrorFile                                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFromOnPrem                                 = $ExportFromOnPrem
-                        ExchangeCredential                               = $ExchangeCredential
-                        ScriptPath                                       = $PSScriptRoot
-                        ConnectExchangeOnline                            = $ConnectExchangeOnline
-                        UTF8Encoding                                     = $UTF8Encoding
+                        AllRecipients                                   = $AllRecipients
+                        tempConnectionUriQueue                          = $tempConnectionUriQueue
+                        tempQueue                                       = $tempQueue
+                        ExportMailboxFolderPermissions                  = $ExportMailboxFolderPermissions
+                        ExportMailboxFolderPermissionsAnonymous         = $ExportMailboxFolderPermissionsAnonymous
+                        ExportMailboxFolderPermissionsDefault           = $ExportMailboxFolderPermissionsDefault
+                        ExportMailboxFolderPermissionsOwnerAtLocal      = $ExportMailboxFolderPermissionsOwnerAtLocal
+                        ExportMailboxFolderPermissionsMemberAtLocal     = $ExportMailboxFolderPermissionsMemberAtLocal
+                        ExportMailboxFolderPermissionsExcludeFoldertype = $ExportMailboxFolderPermissionsExcludeFoldertype
+                        ExportFile                                      = $ExportFile
+                        AllRecipientsGuidToIndex                        = $AllRecipientsGuidToIndex
+                        ErrorFile                                       = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFromOnPrem                                = $ExportFromOnPrem
+                        ExchangeCredential                              = $ExchangeCredential
+                        ScriptPath                                      = $PSScriptRoot
+                        ConnectExchangeOnline                           = $ConnectExchangeOnline
+                        UTF8Encoding                                    = $UTF8Encoding
                     }
                 )
 

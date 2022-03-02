@@ -5,10 +5,12 @@
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.2.0" target="_blank">v1.2.0</a> - YYYY-MM-DD
 ### Added
-- New parameter ExportMailboxFolderPermissionsExcludeFoldertypes
+- New parameter ExportMailboxFolderPermissionsExcludeFoldertype
 - Separate error file, configuration via ErrorFile parameter
 - Comment based help
 ### Changed
+- Renamed sample code directories to match the names of the contained scripts (Get-DependentRecipients, Compare-RecipientPermissions)
+- Massive performance gains in sample code Get-DependentRecipients
 - Detecting root mailbox folder now uses the foltertype property
 - In favor of the new error file, the debug file is no longer enabled per default. This can be changed with the DebugFile parameter.
 - Encode CSV file in UTF8 with BOM instead of UTF8 without BOM, so that Excel detects the file format correctly
