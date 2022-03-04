@@ -19,7 +19,7 @@ Compare exports from different times to detect permission changes (sample code i
 	- [1.2. Parameters](#12-parameters)
 		- [1.2.1. ExportFromOnPrem](#121-exportfromonprem)
 		- [1.2.2. ExchangeConnectionUriList](#122-exchangeconnectionurilist)
-		- [1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile](#123-exchangecredentialusernamefile-exchangecredentialpasswordfile)
+		- [1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential](#123-exchangecredentialusernamefile-exchangecredentialpasswordfile-usedefaultcredential)
 		- [1.2.4. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal](#124-paralleljobsexchange-paralleljobsad-paralleljobslocal)
 		- [1.2.5. GrantorFilter](#125-grantorfilter)
 		- [1.2.6. ExportMailboxAccessRights](#126-exportmailboxaccessrights)
@@ -77,9 +77,9 @@ Default: $false
 Server URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
 For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-### 1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile
+### 1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
-Username and password are stored as encrypted secure strings
+Username and password are stored as encrypted secure strings, if UseDefaultCredential is not enabled
 ### 1.2.4. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
