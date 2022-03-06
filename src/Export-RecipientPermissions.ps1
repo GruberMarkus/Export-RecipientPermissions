@@ -23,9 +23,9 @@ Default: $false
 Server URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
 For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-.PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile
+.PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
-Username and password are stored as encrypted secure strings
+Username and password are stored as encrypted secure strings, if UseDefaultCredential is not enabled
 .PARAMETER ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
@@ -45,7 +45,7 @@ Example: " `$Recipient.primarysmtpaddress.domain -ieq 'example.com'" },
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 Default: $true
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
 Default: $false
 .PARAMETER ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
@@ -75,7 +75,7 @@ Default: 'audits'
 Export Send As permissions
 Default: $true
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
 Default: $false
 .PARAMETER ExportSendOnBehalf
 Export Send On Behalf permissions
@@ -130,6 +130,11 @@ Param(
 
 
     # Credentials for Exchange connection
+    #
+    # Use default credential
+    #   Does not store encrypted credentials in file system, but may not work with 'ExportFromOnPrem = $false'
+    [boolean]$UseDefaultCredential = $false,
+    #
     # Username and password are stored as encrypted secure strings
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
@@ -160,7 +165,7 @@ Param(
     # Mailbox Access Rights
     # Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
     [boolean]$ExportMailboxAccessRights = $true,
-    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
+    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST in German, etc.)
     [boolean]$ExportMailboxAccessRightsInherited = $false, # Report inherited mailbox access rights (only works on-prem)
     #
     # Mailbox Folder Permissions
@@ -174,7 +179,7 @@ Param(
     #
     # Send As
     [boolean]$ExportSendAs = $true,
-    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
+    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST in German, etc.)
     #
     # Send On Behalf
     [boolean]$ExportSendOnBehalf = $true,
@@ -215,7 +220,11 @@ $ConnectExchangeOnline = {
     while ($Stoploop -ne $true) {
         try {
             if (-not (Get-PSSession | Where-Object { ($_.name -like 'ExchangeSession') -and ($_.state -like 'opened') })) {
-                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Basic -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                if ($ExchangeCredential) {
+                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Basic -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                } else {
+                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Basic -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                }
                 $null = Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize 1 -wa silentlycontinue -ErrorAction Stop } -ErrorAction Stop
             }
             $Stoploop = $true
@@ -333,18 +342,23 @@ try {
     # Credentials
     Write-Host
     Write-Host "Exchange credentials @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if (-not ((Test-Path $ExchangeCredentialUsernameFile) -and (Test-Path $ExchangeCredentialPasswordFile))) {
-        Write-Host '  No stored credential found'
-        Write-Host '    Username and password are stored as encrypted secure strings'
-        Read-Host -Prompt '    Please enter username for later use (characters are masked)' -AsSecureString | ConvertFrom-SecureString | Out-File $ExchangeCredentialUsernameFile -Force -Encoding $UTF8Encoding
-        Read-Host -Prompt '    Please enter password for later use (characters are masked)' -AsSecureString | ConvertFrom-SecureString | Out-File $ExchangeCredentialPasswordFile -Force -Encoding $UTF8Encoding
-    }
+    if (-not $UseDefaultCredential) {
+        if (-not ((Test-Path $ExchangeCredentialUsernameFile) -and (Test-Path $ExchangeCredentialPasswordFile))) {
+            Write-Host '  No stored credential found'
+            Write-Host '    Username and password are stored as encrypted secure strings'
+            Read-Host -Prompt '    Please enter username for later use (characters are masked)' -AsSecureString | ConvertFrom-SecureString | Out-File $ExchangeCredentialUsernameFile -Force -Encoding $UTF8Encoding
+            Read-Host -Prompt '    Please enter password for later use (characters are masked)' -AsSecureString | ConvertFrom-SecureString | Out-File $ExchangeCredentialPasswordFile -Force -Encoding $UTF8Encoding
+        }
 
-    Write-Host '  Loading credentials encrypted as secure strings'
-    Write-Host "    Username file: '$ExchangeCredentialUsernameFile'"
-    Write-Host "    Password file: '$ExchangeCredentialPasswordFile'"
-    Write-Host '  To change username and/or password, delete one or all of the files mentioned above and run the script again'
-    $ExchangeCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList ([PSCredential]::new('X', (Get-Content $ExchangeCredentialUsernameFile -Encoding $UTF8Encoding | ConvertTo-SecureString)).GetNetworkCredential().Password), (Get-Content $ExchangeCredentialPasswordFile -Encoding $UTF8Encoding | ConvertTo-SecureString)
+        Write-Host '  Loading credentials encrypted as secure strings'
+        Write-Host "    Username file: '$ExchangeCredentialUsernameFile'"
+        Write-Host "    Password file: '$ExchangeCredentialPasswordFile'"
+        Write-Host '  To change username and/or password, delete one or all of the files mentioned above and run the script again'
+        $ExchangeCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList ([PSCredential]::new('X', (Get-Content $ExchangeCredentialUsernameFile -Encoding $UTF8Encoding | ConvertTo-SecureString)).GetNetworkCredential().Password), (Get-Content $ExchangeCredentialPasswordFile -Encoding $UTF8Encoding | ConvertTo-SecureString)
+    } else {
+        Write-Host '  Use current credential'
+        $ExchangeCredential = $null
+    }
 
 
     # Connect to Exchange
@@ -355,7 +369,11 @@ try {
     Write-Host "  Single-thread operation, use connection '$($connectionUri)'"
 
     if ($ExportFromOnPrem -eq $true) {
-        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+        if ($UseDefaultCredential) {
+            $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos
+        } else {
+            $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+        }
         Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
     } else {
         . ([scriptblock]::Create($ConnectExchangeOnline))
@@ -492,7 +510,11 @@ try {
 
                             $connectionUri = $tempConnectionUriQueue.dequeue()
                             if ($ExportFromOnPrem) {
-                                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                if ($ExchangeCredential) {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                } else {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos
+                                }
                                 Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
                             } else {
                                 . ([scriptblock]::Create($ConnectExchangeOnline))
@@ -709,7 +731,11 @@ try {
 
                             $connectionUri = $tempConnectionUriQueue.dequeue()
                             if ($ExportFromOnPrem) {
-                                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                if ($ExchangeCredential) {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                } else {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos
+                                }
                                 Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
                             } else {
                                 . ([scriptblock]::Create($ConnectExchangeOnline))
@@ -949,7 +975,11 @@ try {
 
                             $connectionUri = $tempConnectionUriQueue.dequeue()
                             if ($ExportFromOnPrem) {
-                                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                if ($ExchangeCredential) {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos
+                                } else {
+                                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos
+                                }
                                 Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
                             } else {
                                 . ([scriptblock]::Create($ConnectExchangeOnline))

@@ -3,6 +3,10 @@
 
 # Changelog
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.3.0" target="_blank">v1.3.0</a> - 2022-03-06
+### Added
+- New parameter 'UseDefaultCredential'
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.2.0" target="_blank">v1.2.0</a> - 2022-03-03
 ### Added
 - New parameter 'ExportMailboxFolderPermissionsExcludeFoldertype'
