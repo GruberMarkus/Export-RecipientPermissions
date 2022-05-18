@@ -45,7 +45,7 @@ Example: " `$Recipient.primarysmtpaddress.domain -ieq 'example.com'" },
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 Default: $true
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
@@ -75,7 +75,7 @@ Default: 'audits'
 Export Send As permissions
 Default: $true
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportSendOnBehalf
 Export Send On Behalf permissions
@@ -165,7 +165,7 @@ Param(
     # Mailbox Access Rights
     # Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
     [boolean]$ExportMailboxAccessRights = $true,
-    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST in German, etc.)
+    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
     [boolean]$ExportMailboxAccessRightsInherited = $false, # Report inherited mailbox access rights (only works on-prem)
     #
     # Mailbox Folder Permissions
@@ -179,7 +179,7 @@ Param(
     #
     # Send As
     [boolean]$ExportSendAs = $true,
-    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST in German, etc.)
+    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
     #
     # Send On Behalf
     [boolean]$ExportSendOnBehalf = $true,
@@ -282,7 +282,7 @@ try {
     Write-Host
     Write-Host "Script notes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     Write-Host '  Script : Export-RecipientPermissions'
-    Write-Host '  Version: XXXVersionStringXXX'
+    Write-Host '  Version: v1.3.0'
     Write-Host '  Web    : https://github.com/GruberMarkus/Export-RecipientPermissions'
     Write-Host "  License: MIT license (see '.\docs\LICENSE.txt' for details and copyright)"
 
@@ -618,7 +618,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -773,10 +773,20 @@ try {
                                     foreach ($MailboxPermission in
                                         @($(
                                                 if ($ExportFromOnPrem) {
-                                                    Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                    try {
+                                                        Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                    } catch {
+                                                        Start-Sleep -Seconds 2
+                                                        Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                    }
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'groupmailbox') {
-                                                        Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                        try {
+                                                            Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                        } catch {
+                                                            Start-Sleep -Seconds 2
+                                                            Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxpermission -identity $args[0] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP  -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                        }
                                                     }
                                                 }
                                             ))
@@ -894,7 +904,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -1009,7 +1019,13 @@ try {
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-                                $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                try {
+                                    $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                } catch {
+                                    Start-Sleep -Seconds 2
+                                    $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                }
+
                                 foreach ($Folder in $Folders) {
                                     try {
                                         if ($folder.foldertype -iin $ExportMailboxFolderPermissionsExcludeFoldertype) { continue }
@@ -1020,12 +1036,27 @@ try {
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
-                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                        try {
+                                                            (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                        } catch {
+                                                            Start-Sleep -Seconds 2
+                                                            (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                        }
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
-                                                            (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -groupmailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            try {
+                                                                (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -groupmailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            } catch {
+                                                                Start-Sleep -Seconds 2
+                                                                (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -groupmailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            }
                                                         } else {
-                                                            (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            try {
+                                                                (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            } catch {
+                                                                Start-Sleep -Seconds 2
+                                                                (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderpermission -identity $args[0] -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights } -ArgumentList "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction Stop)
+                                                            }
                                                         }
                                                     }
                                                 ))
@@ -1166,7 +1197,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -1430,7 +1461,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -1683,7 +1714,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -1742,7 +1773,8 @@ try {
                             $UTF8Encoding,
                             $AllRecipientsGuidToIndex,
                             $DebugFile,
-                            $ScriptPath
+                            $ScriptPath,
+                            $ExportFromOnPrem
                         )
                         try {
                             Set-Location $ScriptPath
@@ -1837,6 +1869,7 @@ try {
                         DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ScriptPath               = $PSScriptRoot
                         UTF8Encoding             = $UTF8Encoding
+                        ExportFromOnPrem         = $ExportFromOnPrem
                     }
                 )
 
@@ -1881,7 +1914,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobDebugFile | Out-File $DebugFile -Append
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
                 $null = Start-Transcript -Path $DebugFile -Append -Force
@@ -1949,14 +1982,12 @@ try {
 
     Write-Host
     Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host
 
     if ($DebugFile) {
-        Write-Host "  Temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         $null = Stop-Transcript
         Start-Sleep -Seconds 1
         foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-            Get-Content $JobDebugFile | Out-File $DebugFile -Append
+            Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
             Remove-Item $JobDebugFile -Force
         }
     }
