@@ -508,16 +508,18 @@ try {
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if (($AllRecipients[$x]).primarysmtpaddress.address) {
-            # Same PrimarySmtpAddress defined multiple time - set index to $null
-            if ($AllRecipientsGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)]) {
-                Write-Debug "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$($AllRecipients[$($AllRecipientsGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)])].primarysmtpaddress.address)'"
+            if ($AllRecipientsSmtpToIndex.ContainsKey($(($AllRecipients[$x]).primarysmtpaddress.address))) {
+                # Same PrimarySmtpAddress defined multiple time - set index to $null
+                if ($AllRecipientsGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)]) {
+                    Write-Debug "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$($AllRecipients[$($AllRecipientsGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)])].primarysmtpaddress.address)'"
+                }
+
+                Write-Debug "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
+
+                $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $null
+            } else {
+                $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $x
             }
-
-            Write-Debug "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
-
-            $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $null
-        } else {
-            $AllRecipientsSmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $x
         }
     }
 
