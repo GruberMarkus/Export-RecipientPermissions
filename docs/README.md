@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf" and "managed by"<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf", "managed by" and linked master accounts<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
 
 # Features <!-- omit in toc -->
 Finds all recipients with a primary SMTP address in an on on-prem or online Exchange environment and documents their
@@ -7,7 +7,8 @@ Finds all recipients with a primary SMTP address in an on on-prem or online Exch
 - mailbox folder permissions,
 - "send as" permissions,
 - "send on behalf" permissions,
-- and "managed by" permissions
+- "managed by" permissions,
+- and linked master accounts
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
@@ -35,15 +36,24 @@ Compare exports from different times to detect permission changes (sample code i
 		- [1.2.16. ExportSendAsSelf](#1216-exportsendasself)
 		- [1.2.17. ExportSendOnBehalf](#1217-exportsendonbehalf)
 		- [1.2.18. ExportManagedBy](#1218-exportmanagedby)
-		- [1.2.19. ExportFile](#1219-exportfile)
-		- [1.2.20. ErrorFile](#1220-errorfile)
-		- [1.2.21. DebugFile](#1221-debugfile)
-		- [1.2.22. UpdateInverval](#1222-updateinverval)
+		- [1.2.19. ExportLinkedMasterAccount](#1219-exportlinkedmasteraccount)
+		- [1.2.20. ExportTrustees](#1220-exporttrustees)
+		- [1.2.21. ExportFile](#1221-exportfile)
+		- [1.2.22. ErrorFile](#1222-errorfile)
+		- [1.2.23. DebugFile](#1223-debugfile)
+		- [1.2.24. UpdateInverval](#1224-updateinverval)
 	- [1.3. Runtime](#13-runtime)
 	- [1.4. Requirements](#14-requirements)
-- [2. Get-DependentRecipients.ps1](#2-get-dependentrecipientsps1)
-- [3. Compare-RecipientPermissions.ps1](#3-compare-recipientpermissionsps1)
-- [4. Recommendations](#4-recommendations)
+- [2. FAQ](#2-faq)
+	- [2.1. Where can I find the changelog?](#21-where-can-i-find-the-changelog)
+	- [2.2. How can I contribute, propose a new feature or file a bug?](#22-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
+	- [2.3. How can I get more script output for troubleshooting?](#23-how-can-i-get-more-script-output-for-troubleshooting)
+	- [2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#24-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
+	- [2.5. Isn't a plural noun in the script name against PowerShell best practices?](#25-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
+	- [2.6. Is there a roadmap for future versions?](#26-is-there-a-roadmap-for-future-versions)
+- [3. Get-DependentRecipients.ps1](#3-get-dependentrecipientsps1)
+- [4. Compare-RecipientPermissions.ps1](#4-compare-recipientpermissionsps1)
+- [5. Recommendations](#5-recommendations)
 
 # 1. Export-RecipientPermissions.ps1
 Finds all recipients with a primary SMTP address in an on on-prem or online Exchange environment and documents their
@@ -137,21 +147,30 @@ Default: $true
 ### 1.2.18. ExportManagedBy
 Only for distribution groups, and not to be confused with the "Manager" attribute
 Default: $true
-### 1.2.19. ExportFile
+### 1.2.19. ExportLinkedMasterAccount
+Export Linked Master Account
+Only works on-prem
+Default: $true
+### 1.2.20. ExportTrustees
+Include all trustees in permission report file, only valid or only invalid ones
+Valid trustees are trustees which can be resolved to an Exchange recipient
+Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
+Default: 'All'
+### 1.2.21. ExportFile
 Name (and path) of the permission report file
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.20. ErrorFile
+### 1.2.22. ErrorFile
 Name (and path) of the error log file
 Set to $null or '' to disable debugging
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.21. DebugFile
+### 1.2.23. DebugFile
 Name (and path) of the debug log file
 Set to $null or '' to disable debugging
 Default: ''
-### 1.2.22. UpdateInverval
+### 1.2.24. UpdateInverval
 Interval to update the job progress
 Updates are based von recipients done, not on duration
-Number must be 1 or higher, low numbers mean bigger debug files
+Number must be 1 or higher, lower numbers mean bigger debug files
 Default: 100
 ## 1.3. Runtime
 The script can run many hours, depending on the number of recipients and the speed of the environments to check.
@@ -169,8 +188,35 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 	$_.throttlingpolicyid | Get-ThrottlingPolicy
 }
 ```
+# 2. FAQ
+## 2.1. Where can I find the changelog?
+The changelog is located in the `'.\docs'` folder, along with other documents related to Set-OutlookSignatures.
+## 2.2. How can I contribute, propose a new feature or file a bug?
+If you have an idea for a new feature or have found a problem, please <a href="https://github.com/GruberMarkus/Set-OutlookSignatures/issues" target="_blank">create an issue on GitHub</a>.
 
-# 2. Get-DependentRecipients.ps1
+If you want to contribute code, please have a look at `'.\docs\CONTRIBUTING'` for a rough overview of the proposed process.
+## 2.3. How can I get more script output for troubleshooting?
+Start the script with the '-verbose' parameter to get the maximum output for troubleshooting.
+## 2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty
+When excluding a bug in the script, there are three possible reasons why a trustee does not have details like a primary SMTP address in the result file:
+- The trustee is a valid Active Directory object, but not a valid Exchange recipient.  
+Examples: 'NT AUTHORITY\SELF', 'Domain Admins', 'Enterprise Admins'
+- The initial trustee no longer exists.  
+Exchange does not check if trustees still exist and remove the according permissions in case of deletion - this would be a problem when restoring deleted Active Directory objects.  
+As Exchange stores trustees in different formats, the trustee original identity can be a SID, an NT4-style logon name or just about any string.
+- Multiple recipients share the same linked master account, user friendly name, distinguished name, GUID or primary SMTP address. As the search for this value returns multiple recipients, no details are shown.  
+This should not happen when using the built-in Exchange tools, due to their built-in quality checks. It happens more often, when Exchange attributes are modified directly in Active Directory.  
+Whe passing the '-verbose' PowerShell parameter, the script outputs recipients with non-unique attributes in the verbose stream.  
+## 2.5. Isn't a plural noun in the script name against PowerShell best practices?
+Absolutely. PowerShell best practices recommend using singular nouns, but Export-RecipientPermissions contains a plural noun.
+
+I intentionally decided not to follow the singular noun convention, as another language as PowerShell was initially used for coding and the name of the tool was already defined. If this was a commercial enterprise project, marketing would have overruled development.
+## 2.6. Is there a roadmap for future versions?
+There is no binding roadmap for future versions, although I maintain a list of ideas in the 'Contribution opportunities' chapter of '.\docs\CONTRIBUTING.html'.
+
+Fixing issues has priority over new features, of course.
+
+# 3. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
 
 Currently only some recipient permissions work cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both the grantor and the trustee are hosted on the same environment.
@@ -198,7 +244,7 @@ The following outputs are created:
 -	Get-DependentRecipients_Output_Summary.txt  
 	Number of initial recipients, number of additional recipients, number of total recipients, number of root cause mailbox permissions.
 
-# 3. Compare-RecipientPermissions.ps1
+# 4. Compare-RecipientPermissions.ps1
 The script can be found in '`.\sample code\Compare-RecipientPermissions`'.
 
 Compare two result files from Export-RecipientPermissions.ps1 to see which permissions have changed over time
@@ -208,7 +254,7 @@ Changes are marked in the column 'Change' with
 - 'New' if a line exists in the new file but not in the old one
 - 'Unchanged' if a line exists as well in the new file as in the old one
 
-# 4. Recommendations
+# 5. Recommendations
 Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, .Net framework).
 
 If possible, allow Export-RecipientPermissions.ps1 to use your on premises infrastructure. This will dramatically increase the initial enumeration of recipients.
