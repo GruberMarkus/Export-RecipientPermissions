@@ -3,7 +3,7 @@
 
 # Changelog
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.4.0" target="_blank">v1.4.0</a> - 2022-05-24
 ### Added
 - New parameter 'ExportLinkedMasterAccount': Export the configured linked master account of mailboxes as permission. See 'README' for details.
 - Permissions granted to a trustee which has a linked master account are now resolved against the list of recipients
@@ -12,7 +12,7 @@
 - Added automatic retry of last command not only in case of an error related to the command itself, but also when the error is related to the underlying Exchange connection
 - Added FAQs in 'README' file
 ### Fixed
-- On error connecting to mailbox, mailbox GUID in error message was always blank
+- The mailbox GUID is no longer always blank in the error message indicating a connection error to a mailbox
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.3.0" target="_blank">v1.3.0</a> - 2022-03-06
 ### Added
