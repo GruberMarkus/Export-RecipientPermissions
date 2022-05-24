@@ -8,7 +8,7 @@
 - New parameter 'ExportLinkedMasterAccount': Export the configured linked master account of mailboxes as permission. See 'README' for details.
 - Permissions granted to a trustee which has a linked master account are now resolved against the list of recipients
 - New parameter 'ExportTrustees': Export all trustees, or only those can can or can not be resolved to a recipient. See 'README' for details.
-- Non-unique LinkedMasterAccounts, UserFriendlyNames, DistinguishedNames, GUIDs and PrimarySmtpAddresses are shown in debug stream. When one of these attributes is not unique, a trustee can not be matched against just one recipient, so the corresponding details in the report are empty.
+- Non-unique LinkedMasterAccounts, UserFriendlyNames, DistinguishedNames, GUIDs and PrimarySmtpAddresses are shown in verbose stream. When one of these attributes is not unique, a trustee can not be matched against just one recipient, so the corresponding details in the report are empty.
 - Added automatic retry of last command not only in case of an error related to the command itself, but also when the error is related to the underlying Exchange connection
 - Added FAQs in 'README' file
 ### Fixed

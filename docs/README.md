@@ -170,7 +170,7 @@ Default: ''
 ### 1.2.24. UpdateInverval
 Interval to update the job progress
 Updates are based von recipients done, not on duration
-Number must be 1 or higher, low numbers mean bigger debug files
+Number must be 1 or higher, lower numbers mean bigger debug files
 Default: 100
 ## 1.3. Runtime
 The script can run many hours, depending on the number of recipients and the speed of the environments to check.
@@ -196,7 +196,7 @@ If you have an idea for a new feature or have found a problem, please <a href="h
 
 If you want to contribute code, please have a look at `'.\docs\CONTRIBUTING'` for a rough overview of the proposed process.
 ## 2.3. How can I get more script output for troubleshooting?
-Start the script with the '-debug' and '-verbose' parameters to get the maximum output for troubleshooting.
+Start the script with the '-verbose' parameter to get the maximum output for troubleshooting.
 ## 2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty
 When excluding a bug in the script, there are three possible reasons why a trustee does not have details like a primary SMTP address in the result file:
 - The trustee is a valid Active Directory object, but not a valid Exchange recipient.  
@@ -206,7 +206,7 @@ Exchange does not check if trustees still exist and remove the according permiss
 As Exchange stores trustees in different formats, the trustee original identity can be a SID, an NT4-style logon name or just about any string.
 - Multiple recipients share the same linked master account, user friendly name, distinguished name, GUID or primary SMTP address. As the search for this value returns multiple recipients, no details are shown.  
 This should not happen when using the built-in Exchange tools, due to their built-in quality checks. It happens more often, when Exchange attributes are modified directly in Active Directory.  
-Whe passing the '-Debug' PowerShell parameter, the script outputs recipients with non-unique attributes in the debug stream.  
+Whe passing the '-verbose' PowerShell parameter, the script outputs recipients with non-unique attributes in the verbose stream.  
 ## 2.5. Isn't a plural noun in the script name against PowerShell best practices?
 Absolutely. PowerShell best practices recommend using singular nouns, but Export-RecipientPermissions contains a plural noun.
 
