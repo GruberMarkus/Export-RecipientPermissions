@@ -31,22 +31,44 @@ Username and password are stored as encrypted secure strings, if UseDefaultCrede
 Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
 .PARAMETER GrantorFilter
-Grantors to consider
-Only checks recipients that match the filter criteria. Only reduces the number of grantors, not the number of trustees.
-Attributes that can filtered:
-- .DistinguishedName
-- .RecipientType, .RecipientTypeDetails
-- .DisplayName
-- .PrimarySmtpAddress: .Local, .Domain, .Address
-- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
-- On-prem only: .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
+Only check grantors where the filter criteria matches $true.
+Attributes of the variable $Grantor that can be filtered:
+  .DistinguishedName
+  .RecipientType, .RecipientTypeDetails
+  .DisplayName
+  .PrimarySmtpAddress: .Local, .Domain, .Address
+  .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
+    This attribute is an array. Code example:
+      $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
+                      'addressA@example.com’,
+                      'addressB@example.com’
+      )) { `$true; break } }"
+  .UserFriendlyName: User account holding the mailbox in the "<NetBIOS domain name>\<sAMAccountName>" format
+  .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
+    This attribute is an array. Code example:
+      $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
+                          'example.com/OU1/OU2/ObjectA’,
+                          'example.com/OU3/OU4/ObjectB’,
+      )) { `$true; break } }"
+  On-prem only:
+    .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
+    .LinkedMasterAccount: Linked Master Account in the "<NetBIOS domain name>\<sAMAccountName>" format
 Set to $null or '' to define all recipients as grantors to consider
-Example: " `$Recipient.primarysmtpaddress.domain -ieq 'example.com'" },
+Example: "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
+Default: $null
+.PARAMETER TrusteeFilter
+Only report trustees where the filter criteria matches $true.
+If the trustee matches a recipient, the available attributes are the same as für GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
+If the trustee does not match a recipient (because it no longer exists, for exampe), $Trustee is just a string. In this case, the export shows the following:
+  Column "Trustee Original Identity" contains the trustee description string as reported by Exchange
+  Columns "Trustee Primary SMTP" and "Trustee Display Name" are empty
+Example: "`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
+Default: $null
 .PARAMETER ExportMailboxAccessRights
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 Default: $true
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
@@ -74,7 +96,7 @@ Default: 'audits'
 Export Send As permissions
 Default: $true
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportSendOnBehalf
 Export Send On Behalf permissions
@@ -156,16 +178,11 @@ Param(
 
 
     # Grantors to consider
-    # Only checks recipients that match the filter criteria. Only reduces the number of grantors, not the number of trustees.
-    # Attributes that can filtered:
-    #   .DistinguishedName
-    #   .RecipientType, .RecipientTypeDetails
-    #   .DisplayName
-    #   .PrimarySmtpAddress: .Local, .Domain, .Address
-    #   .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
-    #   On-prem only: .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
-    # Set to $null or '' to define all recipients as grantors to consider
-    [string]$GrantorFilter = $null, #" `$Recipient.primarysmtpaddress.domain -ieq 'example.com'" },
+    [string]$GrantorFilter = $null, # "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
+
+
+    # Trustees to consider
+    [string]$TrusteeFilter = $null, # "`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
 
 
     # Permissions to report
@@ -173,7 +190,7 @@ Param(
     # Mailbox Access Rights
     # Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
     [boolean]$ExportMailboxAccessRights = $true,
-    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
+    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
     [boolean]$ExportMailboxAccessRightsInherited = $false, # Report inherited mailbox access rights (only works on-prem)
     #
     # Mailbox Folder Permissions
@@ -187,7 +204,7 @@ Param(
     #
     # Send As
     [boolean]$ExportSendAs = $true,
-    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
+    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
     #
     # Send On Behalf
     [boolean]$ExportSendOnBehalf = $true,
@@ -1023,12 +1040,12 @@ try {
     $GrantorsToConsider = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        $Recipient = $AllRecipients[$x]
+        $Grantor = $Recipient = $AllRecipients[$x]
 
         if (-not $GrantorFilter) {
             $null = $GrantorsToConsider.add($x)
         } else {
-            if ((. ([scriptblock]::Create($GrantorFilter)))) {
+            if ((. ([scriptblock]::Create($GrantorFilter))) -eq $true) {
                 $null = $GrantorsToConsider.add($x)
             }
         }
@@ -1086,7 +1103,8 @@ try {
                             $UseDefaultCredential,
                             $ScriptPath,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
 
                         try {
@@ -1168,6 +1186,12 @@ try {
                                                 $trustees.add($TrusteeRight.trustee)
                                             }
                                             foreach ($Trustee in $Trustees) {
+                                                if ($TrusteeFilter) {
+                                                    if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                        continue
+                                                    }
+                                                }
+
                                                 if ($ExportFromOnPrem) {
                                                     if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
@@ -1235,6 +1259,7 @@ try {
                         UTF8Encoding                            = $UTF8Encoding
                         VerbosePreference                       = $VerbosePreference
                         DebugPreference                         = $DebugPreference
+                        TrusteeFilter                           = $TrusteeFilter
                     }
                 )
 
@@ -1343,7 +1368,7 @@ try {
                             $ErrorFile,
                             $ExportTrustees,
                             $UTF8Encoding,
-                            $AllRecipientsGuidToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
@@ -1351,7 +1376,8 @@ try {
                             $UseDefaultCredential,
                             $ScriptPath,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -1444,6 +1470,25 @@ try {
 
                                                     if ($ExportFromOnPrem) {
                                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.adrecipient.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.adrecipient.PrimarySmtpAddress))) {
+                                                            $trustee = $null
+
+                                                            try {
+                                                                $index = $null
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.adrecipient.primarysmtpaddress)]
+                                                            } catch {
+                                                            }
+
+                                                            if ($index -ge 0) {
+                                                                $trustee = $AllRecipients[$index]
+                                                            } else {
+                                                                $trustee = $($FolderPermission.user.displayname)
+                                                            }
+
+                                                            if ($TrusteeFilter) {
+                                                                if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                                    continue
+                                                                }
+                                                            }
 
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
@@ -1456,10 +1501,10 @@ try {
                                                                                 'False',
                                                                                 'None',
                                                                                 $($FolderPermission.user.displayname),
-                                                                                $($FolderPermission.user.adrecipient.primarysmtpaddress),
-                                                                                $($FolderPermission.user.adrecipient.displayname),
-                                                                                ("$($FolderPermission.user.adrecipient.recipienttype)/$($FolderPermission.user.adrecipient.recipienttypedetails)" -replace '^/$', ''),
-                                                                                $(if ($FolderPermission.user.adrecipient.recipienttypedetails -ilike 'Remote*') { 'Cloud' } else { 'On-Prem' })
+                                                                                $($Trustee.primarysmtpaddress.address),
+                                                                                $($Trustee.displayname),
+                                                                                ("$($Trustee.recipienttype)/$($Trustee.recipienttypedetails)" -replace '^/$', ''),
+                                                                                $(if ($Trustee.recipienttypedetails -ilike 'Remote*') { 'Cloud' } else { 'On-Prem' })
                                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                                         }
                                                     } else {
@@ -1472,6 +1517,25 @@ try {
                                                         }
 
                                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal.PrimarySmtpAddress))) {
+                                                            $trustee = $null
+
+                                                            try {
+                                                                $index = $null
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
+                                                            } catch {
+                                                            }
+
+                                                            if ($index -ge 0) {
+                                                                $trustee = $AllRecipients[$index]
+                                                            } else {
+                                                                $trustee = $($FolderPermission.user.displayname)
+                                                            }
+
+                                                            if ($TrusteeFilter) {
+                                                                if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                                    continue
+                                                                }
+                                                            }
 
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
@@ -1484,10 +1548,10 @@ try {
                                                                                 'False',
                                                                                 'None',
                                                                                 $($FolderPermission.user.displayname),
-                                                                                $($FolderPermission.user.recipientprincipal.primarysmtpaddress),
-                                                                                $($FolderPermission.user.recipientprincipal.displayname),
-                                                                                ("$($FolderPermission.user.recipientprincipal.recipienttype)/$($FolderPermission.user.recipientprincipal.recipienttypedetails)" -replace '^/$', ''),
-                                                                                $(if ($FolderPermission.user.recipientprincipal.recipienttypedetails -ilike 'Remote*') { 'On-prem' } else { 'Cloud' })
+                                                                                $($Trustee.primarysmtpaddress.addres),
+                                                                                $($Trustee.displayname),
+                                                                                ("$($Trustee.recipienttype)/$($Trustee.recipienttypedetails)" -replace '^/$', ''),
+                                                                                $(if ($Trustee.recipienttypedetails -ilike 'Remote*') { 'On-prem' } else { 'Cloud' })
                                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                                         }
                                                     }
@@ -1525,7 +1589,7 @@ try {
                         ExportMailboxFolderPermissionsExcludeFoldertype = $ExportMailboxFolderPermissionsExcludeFoldertype
                         ExportFile                                      = $ExportFile
                         ExportTrustees                                  = $ExportTrustees
-                        AllRecipientsGuidToIndex                        = $AllRecipientsGuidToIndex
+                        AllRecipientsSmtpToIndex                        = $AllRecipientsSmtpToIndex
                         ErrorFile                                       = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugFile                                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ExportFromOnPrem                                = $ExportFromOnPrem
@@ -1536,6 +1600,7 @@ try {
                         UTF8Encoding                                    = $UTF8Encoding
                         VerbosePreference                               = $VerbosePreference
                         DebugPreference                                 = $DebugPreference
+                        TrusteeFilter                                   = $TrusteeFilter
                     }
                 )
 
@@ -1648,8 +1713,10 @@ try {
                             $ScriptPath,
                             $AllRecipientsSendas,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
+
                         try {
                             $DebugPreference = 'Continue'
 
@@ -1691,6 +1758,7 @@ try {
                                     if ($ExportFromOnPrem) {
                                         foreach ($entry in (([adsi]"LDAP://<GUID=$($Grantor.identity.objectguid.guid)>").ObjectSecurity.Access)) {
                                             $trustee = $null
+
                                             if ($entry.ObjectType -eq 'ab721a54-1e2f-11d0-9819-00aa0040529b') {
                                                 if (($entry.identityreference -ilike '*\*') -and ($ExportSendAsSelf -eq $false)) {
                                                     if ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10') {
@@ -1703,10 +1771,17 @@ try {
                                                     $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.tostring())], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
                                                 } catch {
                                                 }
+
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
                                                     $trustee = $entry.identityreference
+                                                }
+
+                                                if ($TrusteeFilter) {
+                                                    if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                        continue
+                                                    }
                                                 }
 
                                                 if ($ExportFromOnPrem) {
@@ -1744,6 +1819,7 @@ try {
                                                     continue
                                                 }
                                                 $trustee = $null
+
                                                 if ($entry.trustee -ilike '*\*') {
                                                     try {
                                                         $index = $null
@@ -1754,10 +1830,17 @@ try {
                                                     $index = $null
                                                     $index = $AllRecipientsSmtpToIndex[$($entry.trustee)]
                                                 }
+
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
                                                     $trustee = $entry.trustee
+                                                }
+
+                                                if ($TrusteeFilter) {
+                                                    if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                        continue
+                                                    }
                                                 }
 
                                                 if ($ExportFromOnPrem) {
@@ -1823,6 +1906,7 @@ try {
                         UTF8Encoding                            = $UTF8Encoding
                         VerbosePreference                       = $VerbosePreference
                         DebugPreference                         = $DebugPreference
+                        TrusteeFilter                           = $TrusteeFilter
                     }
                 )
 
@@ -1935,7 +2019,8 @@ try {
                             $ScriptPath,
                             $AllRecipientsSendonbehalf,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
 
                         try {
@@ -1983,10 +2068,17 @@ try {
                                             foreach ($delegateBindDN in $directorySearcherResult.properties.publicdelegates) {
                                                 $index = $null
                                                 $index = $AllRecipientsDnToIndex[$delegateBindDN]
+
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
                                                     $trustee = $delegateBindDN
+                                                }
+
+                                                if ($TrusteeFilter) {
+                                                    if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                        continue
+                                                    }
                                                 }
 
                                                 if ($ExportFromOnPrem) {
@@ -2024,10 +2116,17 @@ try {
                                                 foreach ($AccessRight in $entry.GrantSendOnBehalfTo) {
                                                     $index = $null
                                                     $index = $AllRecipientsGuidToIndex[$($AccessRight.objectguid.guid)]
+
                                                     if ($index -ge 0) {
                                                         $trustee = $AllRecipients[$index]
                                                     } else {
                                                         $trustee = $AccessRight.tostring()
+                                                    }
+
+                                                    if ($TrusteeFilter) {
+                                                        if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                            continue
+                                                        }
                                                     }
 
                                                     if ($ExportFromOnPrem) {
@@ -2090,6 +2189,7 @@ try {
                         UTF8Encoding              = $UTF8Encoding
                         VerbosePreference         = $VerbosePreference
                         DebugPreference           = $DebugPreference
+                        TrusteeFilter             = $TrusteeFilter
                     }
                 )
 
@@ -2197,7 +2297,8 @@ try {
                             $ScriptPath,
                             $ExportFromOnPrem,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -2239,6 +2340,7 @@ try {
                                         $trustees = [system.collections.arraylist]::new(1000)
                                         $index = $null
                                         $index = $AllRecipientsGuidToIndex[$($TrusteeRight.objectguid.guid)]
+
                                         if ($index -ge 0) {
                                             $trustees.add($AllRecipients[$index])
                                         } else {
@@ -2246,6 +2348,12 @@ try {
                                         }
 
                                         foreach ($Trustee in $Trustees) {
+                                            if ($TrusteeFilter) {
+                                                if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                    continue
+                                                }
+                                            }
+
                                             if ($ExportFromOnPrem) {
                                                 if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                             } else {
@@ -2302,6 +2410,7 @@ try {
                         ExportFromOnPrem         = $ExportFromOnPrem
                         VerbosePreference        = $VerbosePreference
                         DebugPreference          = $DebugPreference
+                        TrusteeFilter            = $TrusteeFilter
                     }
                 )
 
@@ -2411,7 +2520,8 @@ try {
                             $ScriptPath,
                             $ExportFromOnPrem,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $TrusteeFilter
                         )
 
                         try {
@@ -2459,31 +2569,44 @@ try {
 
                                     if ($index -ge 0) {
                                         $Trustee = $AllRecipients[$index]
-                                        if ($ExportFromOnPrem) {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
-                                        } else {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                    } else {
+                                        $Trustee = $Grantor.LinkedMasterAccount
+                                    }
+
+                                    if ($Grantor.LinkedMasterAccount) {
+                                        if ($TrusteeFilter) {
+                                            if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                continue
+                                            }
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                            $ExportFileresult.add((('"' + (
-                                                            (
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                'LinkedMasterAccount',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $Grantor.LinkedMasterAccount,
-                                                                $Trustee.PrimarySmtpAddress.address,
-                                                                $Trustee.DisplayName,
-                                                                ("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) -join '";"'
-                                                        ) + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                            if ($ExportFromOnPrem) {
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            } else {
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            }
+
+                                            if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                                $ExportFileresult.add((('"' + (
+                                                                (
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'LinkedMasterAccount',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $Grantor.LinkedMasterAccount,
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    ("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"'
+                                                            ) + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                            }
                                         }
                                     }
                                 } catch {
@@ -2515,7 +2638,7 @@ try {
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         VerbosePreference                       = $VerbosePreference
                         DebugPreference                         = $DebugPreference
-
+                        TrusteeFilter                           = $TrusteeFilter
                     }
                 )
 

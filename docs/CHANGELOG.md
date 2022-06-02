@@ -3,6 +3,14 @@
 
 # Changelog
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Changed
+- The GrantorFilter parameter can now use the new reference variable $Grantor in addition to $Recipient. Both reference variables have identical values. $Recipient is now marked as obsolete and may removed in a future release.
+### Added
+- New parameter 'GrantorFilter': Filter the trustees included in the export. See 'README' for details.
+### Fixed
+- XXX
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.4.0" target="_blank">v1.4.0</a> - 2022-05-24
 ### Added
 - New parameter 'ExportLinkedMasterAccount': Export the configured linked master account of mailboxes as permission. See 'README' for details.
