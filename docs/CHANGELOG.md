@@ -8,6 +8,7 @@
 - The GrantorFilter parameter can now use the new reference variable $Grantor in addition to $Recipient. Both reference variables have identical values. $Recipient is now marked as obsolete and may removed in a future release.
 ### Added
 - New parameter 'GrantorFilter': Filter the trustees included in the export. See 'README' for details.
+- New sample code 'FiltersAndSidhistory.ps1' shows how to use TrusteeFilter and GrantorFilter to find permissions which may be affected by SIDHistory removal.
 ### Fixed
 - XXX
 

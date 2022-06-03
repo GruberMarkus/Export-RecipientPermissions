@@ -1495,7 +1495,7 @@ try {
                                                             } else {
                                                                 if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                             }
-                                                            
+
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,

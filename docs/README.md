@@ -52,9 +52,11 @@ Compare exports from different times to detect permission changes (sample code i
 	- [2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#24-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
 	- [2.5. Isn't a plural noun in the script name against PowerShell best practices?](#25-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
 	- [2.6. Is there a roadmap for future versions?](#26-is-there-a-roadmap-for-future-versions)
-- [3. Get-DependentRecipients.ps1](#3-get-dependentrecipientsps1)
-- [4. Compare-RecipientPermissions.ps1](#4-compare-recipientpermissionsps1)
-- [5. Recommendations](#5-recommendations)
+- [3. Sample code](#3-sample-code)
+	- [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
+	- [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
+	- [3.3. FiltersAndSidhistory.ps1](#33-filtersandsidhistoryps1)
+- [4. Recommendations](#4-recommendations)
 
 # 1. Export-RecipientPermissions.ps1
 Finds all recipients with a primary SMTP address in an on on-prem or online Exchange environment and documents their
@@ -288,7 +290,8 @@ I intentionally decided not to follow the singular noun convention, as another l
 There is no binding roadmap for future versions, although I maintain a list of ideas in the 'Contribution opportunities' chapter of '.\docs\CONTRIBUTING.html'.
 
 Fixing issues has priority over new features, of course.
-# 3. Get-DependentRecipients.ps1
+# 3. Sample code
+## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
 
 Currently only some recipient permissions work cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both the grantor and the trustee are hosted on the same environment.
@@ -315,7 +318,7 @@ The following outputs are created:
   All recipients and their permissions in a graphical representation. The GML (Graph Modeling Language) file format used is human readable. Free tools like yWorks yEd Graph Editor, Gephi and others can be used to easily create visual representations from this file.  
 - Get-DependentRecipients_Output_Summary.txt  
   Number of initial recipients, number of additional recipients, number of total recipients, number of root cause mailbox permissions.
-# 4. Compare-RecipientPermissions.ps1
+## 3.2. Compare-RecipientPermissions.ps1
 The script can be found in '`.\sample code\Compare-RecipientPermissions`'.
 
 Compare two result files from Export-RecipientPermissions.ps1 to see which permissions have changed over time
@@ -324,7 +327,13 @@ Changes are marked in the column 'Change' with
 - 'Deleted' if a line exists in the old file but not in the new one
 - 'New' if a line exists in the new file but not in the old one
 - 'Unchanged' if a line exists as well in the new file as in the old one
-# 5. Recommendations
+## 3.3. FiltersAndSidhistory.ps1
+The script can be found in '`.\sample code\other samples`'.
+
+This sample code shows how to use TrusteeFilter to find permissions which may be affected by SIDHistory removal.
+
+GrantorFilter behaves exactly like TrusteeFilter, only the reference variable is $Grantor instead of $Trustee.
+# 4. Recommendations
 Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, .Net framework).
 
 If possible, allow Export-RecipientPermissions.ps1 to use your on premises infrastructure. This will dramatically increase the initial enumeration of recipients.
