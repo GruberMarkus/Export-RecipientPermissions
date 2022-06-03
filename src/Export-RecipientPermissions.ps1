@@ -1490,6 +1490,12 @@ try {
                                                                 }
                                                             }
 
+                                                            if ($ExportFromOnPrem) {
+                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                            } else {
+                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                            }
+                                                            
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,
@@ -1503,8 +1509,8 @@ try {
                                                                                 $($FolderPermission.user.displayname),
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
-                                                                                ("$($Trustee.recipienttype)/$($Trustee.recipienttypedetails)" -replace '^/$', ''),
-                                                                                $(if ($Trustee.recipienttypedetails -ilike 'Remote*') { 'Cloud' } else { 'On-Prem' })
+                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $TrusteeEnvironment
                                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                                         }
                                                     } else {
@@ -1550,8 +1556,8 @@ try {
                                                                                 $($FolderPermission.user.displayname),
                                                                                 $($Trustee.primarysmtpaddress.addres),
                                                                                 $($Trustee.displayname),
-                                                                                ("$($Trustee.recipienttype)/$($Trustee.recipienttypedetails)" -replace '^/$', ''),
-                                                                                $(if ($Trustee.recipienttypedetails -ilike 'Remote*') { 'On-prem' } else { 'Cloud' })
+                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $TrusteeEnvironment
                                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                                         }
                                                     }
