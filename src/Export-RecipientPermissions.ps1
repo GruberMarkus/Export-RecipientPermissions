@@ -40,15 +40,15 @@ Attributes of the variable $Grantor that can be filtered:
   .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
     This attribute is an array. Code example:
       $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
-                      'addressA@example.com’,
-                      'addressB@example.com’
+                      'addressA@example.com',
+                      'addressB@example.com'
       )) { `$true; break } }"
   .UserFriendlyName: User account holding the mailbox in the "<NetBIOS domain name>\<sAMAccountName>" format
   .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
     This attribute is an array. Code example:
       $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
-                          'example.com/OU1/OU2/ObjectA’,
-                          'example.com/OU3/OU4/ObjectB’,
+                          'example.com/OU1/OU2/ObjectA',
+                          'example.com/OU3/OU4/ObjectB',
       )) { `$true; break } }"
   On-prem only:
     .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
@@ -58,7 +58,7 @@ Example: "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
 Default: $null
 .PARAMETER TrusteeFilter
 Only report trustees where the filter criteria matches $true.
-If the trustee matches a recipient, the available attributes are the same as für GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
+If the trustee matches a recipient, the available attributes are the same as fÃ¼r GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
 If the trustee does not match a recipient (because it no longer exists, for exampe), $Trustee is just a string. In this case, the export shows the following:
   Column "Trustee Original Identity" contains the trustee description string as reported by Exchange
   Columns "Trustee Primary SMTP" and "Trustee Display Name" are empty
@@ -68,7 +68,7 @@ Default: $null
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 Default: $true
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
@@ -96,7 +96,7 @@ Default: 'audits'
 Export Send As permissions
 Default: $true
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportSendOnBehalf
 Export Send On Behalf permissions
@@ -190,7 +190,7 @@ Param(
     # Mailbox Access Rights
     # Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
     [boolean]$ExportMailboxAccessRights = $true,
-    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
+    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
     [boolean]$ExportMailboxAccessRightsInherited = $false, # Report inherited mailbox access rights (only works on-prem)
     #
     # Mailbox Folder Permissions
@@ -204,7 +204,7 @@ Param(
     #
     # Send As
     [boolean]$ExportSendAs = $true,
-    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃ„T\SELBST" in German, etc.)
+    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
     #
     # Send On Behalf
     [boolean]$ExportSendOnBehalf = $true,
@@ -266,7 +266,7 @@ $ConnectExchange = {
                 if ($ExchangeSession.state -ine 'opened') {
                     $ExchangeSessionWorking = $false
                 } else {
-                    $ExchangeSessionWorking = (@(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction SilentlyContinue).count -eq 1)
+                    $ExchangeSessionWorking = (@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction SilentlyContinue).count -eq 1)
                 }
             } else {
                 $ExchangeSessionWorking = $false
@@ -295,7 +295,7 @@ $ConnectExchange = {
                     }
                 }
 
-                $null = Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction Stop
+                $null = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction Stop
             }
 
             Write-Verbose "Session 'ExchangeSession' established and working."
@@ -792,7 +792,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -882,10 +882,10 @@ try {
 
                                 if ($filterstring -ne '') {
                                     try {
-                                        $securityprincipals = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)
+                                        $securityprincipals = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $securityprincipals = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)
+                                        $securityprincipals = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-securityprincipal -filter "$($args[0])" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid } -ArgumentList $filterstring -ErrorAction Stop)
                                     }
 
                                     foreach ($securityprincipal in $securityprincipals) {
@@ -977,7 +977,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -1223,7 +1223,7 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Find each recipient's UserFriendlyNames"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
                                 $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
                             }
@@ -1312,7 +1312,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -1421,6 +1421,7 @@ try {
                                 } catch {
                                     . ([scriptblock]::Create($ConnectExchange))
                                     $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder Permissions"";""Get-MailboxFolderStatistics $($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
 
                                 foreach ($Folder in $Folders) {
@@ -1659,7 +1660,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -1965,7 +1966,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -2248,7 +2249,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -2469,7 +2470,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -2697,7 +2698,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -2708,18 +2709,6 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
-
-
-    # Sort and combine temporary files
-    Write-Host
-    Write-Host "Create sorted export file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host "  '$ExportFile'"
-
-    foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))) {
-        Get-Content $RecipientFile | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
-        Remove-Item $Recipientfile -Force
-    }
-
 } catch {
     Write-Host 'Unexpected error. Exiting.'
     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";"""";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -2742,16 +2731,18 @@ try {
 
     Write-Host "  Temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))) {
-        Get-Content $RecipientFile | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
+        Get-Content $RecipientFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
         Remove-Item $Recipientfile -Force
     }
 
     if ($ErrorFile) {
         Write-Host "  Temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-            Get-Content $JobErrorFile | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+            Get-Content $JobErrorFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
             Remove-Item $JobErrorFile -Force
         }
+
+        Get-Content $ErrorFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ErrorFile -Force -Encoding $UTF8Encoding
     }
 
     Write-Host
