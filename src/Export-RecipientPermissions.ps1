@@ -1228,7 +1228,7 @@ try {
                                 $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
                             Remove-PSSession $ExchangeSession
 
@@ -1430,7 +1430,7 @@ try {
 
                                         if ($Folder.foldertype -ieq 'root') { $Folder.folderpath = '/' }
 
-                                        Write-Host "  Folder '$($folder.folderpath)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                        Write-Host "  Folder '$($folder.folderid)' ('$($folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
@@ -1566,13 +1566,13 @@ try {
                                             }
                                         }
                                     } catch {
-                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderpath)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                     }
                                 }
                                 $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
 
                         } finally {
                             Remove-PSSession $ExchangeSession
@@ -1887,7 +1887,7 @@ try {
                             }
                             $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send As"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send As"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2172,7 +2172,7 @@ try {
                                 $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
