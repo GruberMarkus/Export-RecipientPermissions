@@ -23,7 +23,7 @@ Default: $false
 .PARAMETER ExchangeConnectionUriList
 Server URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
-For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
+For Exchange Online, this parameter is ignored use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
 .PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
 Username and password are stored as encrypted secure strings, if UseDefaultCredential is not enabled
@@ -288,11 +288,15 @@ $ConnectExchange = {
 
                     $null = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
                 } else {
+                    Import-Module '.\bin\ExchangeOnlineManagement' -ErrorAction Stop
+
                     if ($ExchangeCredential) {
-                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Basic -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                        Connect-ExchangeOnline -ShowBanner:$false -ShowProgress:$false -credential $ExchangeCredential -userpssession -ConnectionUri $connectionUri
                     } else {
-                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Basic -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                        throw 'Credentials are required when connecting to the cloud. Use the AppId as username, and the CertificateThumbPrint as password.'
                     }
+
+                    $ExchangeSession = Get-PSSession | Sort-Object -Property Id | Select-Object -Last 1
                 }
 
                 $null = Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction Stop
