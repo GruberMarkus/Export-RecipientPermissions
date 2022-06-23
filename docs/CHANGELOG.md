@@ -9,6 +9,7 @@
 ### Added
 - New parameter 'GrantorFilter': Filter the trustees included in the export. See 'README' for details.
 - New sample code 'FiltersAndSidhistory.ps1' shows how to use TrusteeFilter and GrantorFilter to find permissions which may be affected by SIDHistory removal.
+- The connection to the cloud now uses the Exchange Online PowerShell V2 module. Currently, the only supported authentication method is username and password. A preview version is used which allows traditional remote PowerShell access to all cmdlets.
 ### Fixed
 - XXX
 
