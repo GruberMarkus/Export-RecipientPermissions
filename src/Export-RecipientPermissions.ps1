@@ -27,6 +27,10 @@ For Exchange Online, this parameter is ignored use 'https://outlook.office365.co
 .PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
 Username and password are stored as encrypted secure strings, if UseDefaultCredential is not enabled
+.PARAMETER ExchangeOnlineConnectionParameters
+This hashtable will be passed as parameter to Connect-ExchangeOnline
+Allowed values: AppId, AzureADAuthorizationEndpointUri, BypassMailboxAnchoring, Certificate, CertificateFilePath, CertificatePassword, CertificateThumbprint, Credential, DelegatedOrganization, EnableErrorReporting, ExchangeEnvironmentName, LogDirectoryPath, LogLevel, Organization, PageSize, TrackPerformance, UseMultithreading, UserPrincipalName
+Values not in the allow list are removed or replaced with values determined by the script
 .PARAMETER ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
@@ -156,23 +160,31 @@ Param(
     # Server URIs to connect to
     # For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
     # For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-    [uri[]]$ExchangeConnectionUriList = ('https://outlook.office365.com/powershell-liveid/'),
+    [uri[]]$ExchangeConnectionUriList = ('https://outlook.office365.com/powershell-liveid'),
 
 
     # Credentials for Exchange connection
     #
     # Use default credential
-    #   Does not store encrypted credentials in file system, but may not work with 'ExportFromOnPrem = $false'
+    #   Does not store encrypted credentials in file system, but will not work with 'ExportFromOnPrem = $false'
     [boolean]$UseDefaultCredential = $false,
     #
     # Username and password are stored as encrypted secure strings
+    # These credentials will replace the value of the 'Credential' entry of the XXX parameter hashtable
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
 
 
+    # Exchange Online connection parameters
+    # This hashtable will be passed as parameter to Connect-ExchangeOnline
+    # Allowed values: AppId, AzureADAuthorizationEndpointUri, BypassMailboxAnchoring, Certificate, CertificateFilePath, CertificatePassword, CertificateThumbprint, Credential, DelegatedOrganization, EnableErrorReporting, ExchangeEnvironmentName, LogDirectoryPath, LogLevel, Organization, PageSize, TrackPerformance, UseMultithreading, UserPrincipalName
+    # Values not in the allow list are removed or replaced with values determined by the script
+    [hashtable]$ExchangeOnlineConnectionParameters = @{ Credential = $true },
+
+
     # Maximum Exchange, AD and local sessions/jobs running in parallel
     # Watch CPU and RAM usage, and your Exchange throttling policy
-    [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count * 3,
+    [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count,
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 100,
 
@@ -235,7 +247,7 @@ Param(
 
     # Name (and path) of the debug log file
     # Set to $null or '' to disable debugging
-    [string]$DebugFile = '',
+    [string]$DebugFile = '.\export\Export-RecipientPermissions_Debug.txt',
 
 
     # Interval to update the job progress
@@ -275,7 +287,15 @@ $ConnectExchange = {
             if (-not $ExchangeSessionWorking) {
                 Write-Verbose "Session 'ExchangeSession' not established or working."
                 if ($ExchangeSession) {
-                    Remove-PSSession -Session $ExchangeSession
+                    if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                        Disconnect-ExchangeOnline -Confirm:$false
+                        Remove-Module ExchangeOnlineManagement
+                    }
+
+                    if ($ExchangeSession) {
+                        Remove-PSSession -Session $ExchangeSession
+                    }
+
                     Start-Sleep -Seconds 70
                 }
 
@@ -288,14 +308,16 @@ $ConnectExchange = {
 
                     $null = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Set-AdServerSettings -ViewEntireForest $True } -ErrorAction Stop
                 } else {
-                    Import-Module '.\bin\ExchangeOnlineManagement' -ErrorAction Stop
-
-                    if ($ExchangeCredential) {
-                        Connect-ExchangeOnline -ShowBanner:$false -ShowProgress:$false -credential $ExchangeCredential -userpssession -ConnectionUri $connectionUri
-                    } else {
-                        throw 'Credentials are required when connecting to the cloud. Use the AppId as username, and the CertificateThumbPrint as password.'
+                    if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
+                        $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
                     }
 
+                    if (Get-Module -Name 'ExchangeOnlineManagement') {
+                        Remove-Module ExchangeOnlineManagement
+                    }
+
+                    Import-Module '.\bin\ExchangeOnlineManagement' -ErrorAction Stop
+                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -ConnectionUri $connectionUri -CommandName ('Get-DistributionGroup', 'Get-DynamicDistributionGroup', 'Get-Mailbox', 'Get-MailboxFolderPermission', 'Get-MailboxFolderStatistics', 'Get-MailboxPermission', 'Get-Recipient', 'Get-RecipientPermission', 'Get-SecurityPrincipal', 'Get-UnifiedGroup')
                     $ExchangeSession = Get-PSSession | Sort-Object -Property Id | Select-Object -Last 1
                 }
 
@@ -315,7 +337,13 @@ $ConnectExchange = {
                 Write-Host "Trying again in 70 seconds via '$connectionUri'."
 
                 if ($ExchangeSession) {
-                    Remove-PSSession -Session $ExchangeSession
+                    if ($ExportFromOnPrem -eq $false) {
+                        Disconnect-ExchangeOnline -Confirm:$false
+                    }
+
+                    if ($ExchangeSession) {
+                        Remove-PSSession -Session $ExchangeSession
+                    }
                 }
 
                 Start-Sleep -Seconds 70
@@ -335,7 +363,7 @@ try {
     if ($PSVersionTable.PSEdition -ieq 'desktop') {
         $UTF8Encoding = 'UTF8'
     } else {
-        $UTF8Encoding = 'UTF8BOM'
+        $UTF8Encoding = 'UTF8NoBOM'
     }
 
     if ($ExportFile) {
@@ -382,9 +410,14 @@ try {
     Write-Host "  PowerShell invocation: '$(($MyInvocation.Line).trimend([environment]::NewLine))'"
     Write-Host '  Parameters'
     foreach ($parameter in (Get-Command -Name $PSCommandPath).Parameters.keys) {
-        Write-Host "    $($parameter): '$((Get-Variable -Name $parameter -EA SilentlyContinue).Value -join ', ')'"
+        Write-Host "    $($parameter): " -NoNewline
+        
+        if ((Get-Variable -Name $parameter -EA SilentlyContinue -ValueOnly) -is [hashtable]) {
+            Write-Host "'$(@((Get-Variable -Name $parameter -ValueOnly).GetEnumerator() | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ', ')'"
+        } else {
+            Write-Host "'$((Get-Variable -Name $parameter -EA SilentlyContinue -ValueOnly) -join ', ')'"
+        }
     }
-
 
     if ($ErrorFile) {
         if (Test-Path $ErrorFile) {
@@ -425,11 +458,45 @@ try {
         }
     }
 
+    if ($ExchangeOnlineConnectionParameters) {
+        $ExchangeOnlineConnectionParametersFiltered = @{}
+
+        $ExchangeOnlineConnectionParameters.GetEnumerator() | Where-Object { $_.name -iin (
+                'AppId',
+                'AzureADAuthorizationEndpointUri',
+                'BypassMailboxAnchoring',
+                'Certificate',
+                'CertificateFilePath',
+                'CertificatePassword',
+                'CertificateThumbprint',
+                'Credential',
+                'DelegatedOrganization',
+                'EnableErrorReporting',
+                'ExchangeEnvironmentName',
+                'LogDirectoryPath',
+                'LogLevel',
+                'Organization',
+                'PageSize',
+                'TrackPerformance',
+                'UseMultithreading',
+                'UserPrincipalName'
+            ) } | ForEach-Object {
+            $ExchangeOnlineConnectionParametersFiltered.add($_.name, $_.value)
+        }
+
+        $ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParametersFiltered
+        $ExchangeOnlineConnectionParametersFiltered = $null
+
+        $ExchangeOnlineConnectionParameters.add('UseRPSSession', $true)
+        $ExchangeOnlineConnectionParameters.add('ShowBanner', $false)
+        $ExchangeOnlineConnectionParameters.add('ShowProgress', $false)
+    }
+
 
     # Credentials
     Write-Host
     Write-Host "Exchange credentials @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if (-not $UseDefaultCredential) {
+    if ((-not $UseDefaultCredential) -or (($ExportFromOnPrem -eq $false) -and ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')))) {
         if (-not ((Test-Path $ExchangeCredentialUsernameFile) -and (Test-Path $ExchangeCredentialPasswordFile))) {
             Write-Host '  No stored credential found'
             Write-Host '    Username and password are stored as encrypted secure strings'
@@ -483,10 +550,10 @@ try {
         $AllRecipientsSendas = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count * 2))
 
         try {
-            $AllRecipientsSendas.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-recipientpermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, trusteesidstring, accessrights, accesscontroltype, isinherited, inheritancetype } -ErrorAction Stop))
+            $AllRecipientsSendas.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, trusteesidstring, accessrights, accesscontroltype, isinherited, inheritancetype } -ErrorAction Stop))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendas.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-recipientpermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, trusteesidstring, accessrights, accesscontroltype, isinherited, inheritancetype } -ErrorAction Stop))
+            $AllRecipientsSendas.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, trusteesidstring, accessrights, accesscontroltype, isinherited, inheritancetype } -ErrorAction Stop))
         }
 
         $AllRecipientsSendas.TrimToSize()
@@ -568,7 +635,14 @@ try {
     Write-Host
     Write-Host "Single-thread operations completed, remove connection to Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    Remove-PSSession $ExchangeSession
+    if ($ExportFromOnPrem -eq $false) {
+        Disconnect-ExchangeOnline -Confirm:$false
+        Remove-Module ExchangeOnlineManagement
+    }
+
+    if ($ExchangeSession) {
+        Remove-PSSession -Session $ExchangeSession
+    }
 
 
     # Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress
@@ -665,6 +739,7 @@ try {
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
                             $ExchangeCredential,
                             $UseDefaultCredential,
                             $ScriptPath,
@@ -720,8 +795,15 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccount"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            Remove-PSSession $ExchangeSession
-
+                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+                    
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+        
                             if ($DebugFile) {
                                 $null = Stop-Transcript
                                 Start-Sleep -Seconds 1
@@ -730,20 +812,21 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ErrorFile                = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        AllRecipients            = $AllRecipients
-                        AllRecipientsGuidToIndex = $AllRecipientsGuidToIndex
-                        tempConnectionUriQueue   = $tempConnectionUriQueue
-                        tempQueue                = $tempQueue
-                        ExportFromOnPrem         = $ExportFromOnPrem
-                        ConnectExchange          = $ConnectExchange
-                        ExchangeCredential       = $ExchangeCredential
-                        UseDefaultCredential     = $UseDefaultCredential
-                        ScriptPath               = $PSScriptRoot
-                        UTF8Encoding             = $UTF8Encoding
-                        VerbosePreference        = $VerbosePreference
-                        DebugPreference          = $DebugPreference
+                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        AllRecipients                      = $AllRecipients
+                        AllRecipientsGuidToIndex           = $AllRecipientsGuidToIndex
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
+                        ExportFromOnPrem                   = $ExportFromOnPrem
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                        ExchangeCredential                 = $ExchangeCredential
+                        UseDefaultCredential               = $UseDefaultCredential
+                        ScriptPath                         = $PSScriptRoot
+                        UTF8Encoding                       = $UTF8Encoding
+                        VerbosePreference                  = $VerbosePreference
+                        DebugPreference                    = $DebugPreference
                     }
                 )
 
@@ -846,6 +929,7 @@ try {
                             $UTF8Encoding,
                             $ExportFromOnPrem,
                             $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
                             $ExchangeCredential,
                             $UseDefaultCredential,
                             $ScriptPath,
@@ -905,8 +989,15 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Find each recipient's UserFriendlyNames"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            Remove-PSSession $ExchangeSession
-
+                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+                    
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+        
                             if ($DebugFile) {
                                 $null = Stop-Transcript
                                 Start-Sleep -Seconds 1
@@ -915,20 +1006,21 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients            = $AllRecipients
-                        tempConnectionUriQueue   = $tempConnectionUriQueue
-                        tempQueue                = $tempQueue
-                        AllRecipientsGuidToIndex = $AllRecipientsGuidToIndex
-                        DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ErrorFile                = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFromOnPrem         = $ExportFromOnPrem
-                        ExchangeCredential       = $ExchangeCredential
-                        UseDefaultCredential     = $UseDefaultCredential
-                        ScriptPath               = $PSScriptRoot
-                        ConnectExchange          = $ConnectExchange
-                        UTF8Encoding             = $UTF8Encoding
-                        VerbosePreference        = $VerbosePreference
-                        DebugPreference          = $DebugPreference
+                        AllRecipients                      = $AllRecipients
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
+                        AllRecipientsGuidToIndex           = $AllRecipientsGuidToIndex
+                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFromOnPrem                   = $ExportFromOnPrem
+                        ExchangeCredential                 = $ExchangeCredential
+                        UseDefaultCredential               = $UseDefaultCredential
+                        ScriptPath                         = $PSScriptRoot
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                        UTF8Encoding                       = $UTF8Encoding
+                        VerbosePreference                  = $VerbosePreference
+                        DebugPreference                    = $DebugPreference
                     }
                 )
 
@@ -1103,6 +1195,7 @@ try {
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
                             $ExchangeCredential,
                             $UseDefaultCredential,
                             $ScriptPath,
@@ -1234,8 +1327,15 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            Remove-PSSession $ExchangeSession
-
+                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+                    
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+        
                             if ($DebugFile) {
                                 $null = Stop-Transcript
                                 Start-Sleep -Seconds 1
@@ -1260,6 +1360,7 @@ try {
                         UseDefaultCredential                    = $UseDefaultCredential
                         ScriptPath                              = $PSScriptRoot
                         ConnectExchange                         = $ConnectExchange
+                        ExchangeOnlineConnectionParameters      = $ExchangeOnlineConnectionParameters
                         UTF8Encoding                            = $UTF8Encoding
                         VerbosePreference                       = $VerbosePreference
                         DebugPreference                         = $DebugPreference
@@ -1376,6 +1477,7 @@ try {
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
                             $ExchangeCredential,
                             $UseDefaultCredential,
                             $ScriptPath,
@@ -1495,11 +1597,7 @@ try {
                                                                 }
                                                             }
 
-                                                            if ($ExportFromOnPrem) {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
-                                                            } else {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
-                                                            }
+                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
 
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
@@ -1548,6 +1646,8 @@ try {
                                                                 }
                                                             }
 
+                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+
                                                             $ExportFileResult.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,
@@ -1559,7 +1659,7 @@ try {
                                                                                 'False',
                                                                                 'None',
                                                                                 $($FolderPermission.user.displayname),
-                                                                                $($Trustee.primarysmtpaddress.addres),
+                                                                                $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
                                                                                 ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
@@ -1579,8 +1679,15 @@ try {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
 
                         } finally {
-                            Remove-PSSession $ExchangeSession
-
+                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+                    
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+        
                             if ($DebugFile) {
                                 $null = Stop-Transcript
                                 Start-Sleep -Seconds 1
@@ -1608,6 +1715,7 @@ try {
                         UseDefaultCredential                            = $UseDefaultCredential
                         ScriptPath                                      = $PSScriptRoot
                         ConnectExchange                                 = $ConnectExchange
+                        ExchangeOnlineConnectionParameters              = $ExchangeOnlineConnectionParameters
                         UTF8Encoding                                    = $UTF8Encoding
                         VerbosePreference                               = $VerbosePreference
                         DebugPreference                                 = $DebugPreference
@@ -2720,7 +2828,16 @@ try {
     Write-Host
     Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if ($ExchangeSession) { Remove-PSSession $ExchangeSession }
+    if ($ExchangeSession) {
+        if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+            Disconnect-ExchangeOnline -Confirm:$false
+            Remove-Module ExchangeOnlineManagement
+        }
+
+        if ($ExchangeSession) {
+            Remove-PSSession -Session $ExchangeSession
+        }
+    }
 
     Write-Host "  Runspaces and RunspacePool @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
@@ -2741,12 +2858,13 @@ try {
 
     if ($ErrorFile) {
         Write-Host "  Temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $x = @()
         foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-            Get-Content $JobErrorFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+            $x += @(Get-Content $JobErrorFile -Encoding $UTF8Encoding)
             Remove-Item $JobErrorFile -Force
         }
 
-        Get-Content $ErrorFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ErrorFile -Force -Encoding $UTF8Encoding
+        $x | Sort-Object -Unique | Out-File $ErrorFile -Append -Force -Encoding $UTF8Encoding
     }
 
     Write-Host

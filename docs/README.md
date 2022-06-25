@@ -20,29 +20,30 @@ Compare exports from different times to detect permission changes (sample code i
 	- [1.2. Parameters](#12-parameters)
 		- [1.2.1. ExportFromOnPrem](#121-exportfromonprem)
 		- [1.2.2. ExchangeConnectionUriList](#122-exchangeconnectionurilist)
-		- [1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential](#123-exchangecredentialusernamefile-exchangecredentialpasswordfile-usedefaultcredential)
-		- [1.2.4. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal](#124-paralleljobsexchange-paralleljobsad-paralleljobslocal)
-		- [1.2.5. GrantorFilter](#125-grantorfilter)
-		- [1.2.6. TrusteeFilter](#126-trusteefilter)
-		- [1.2.7. ExportMailboxAccessRights](#127-exportmailboxaccessrights)
-		- [1.2.8. ExportMailboxAccessRightsSelf](#128-exportmailboxaccessrightsself)
-		- [1.2.9. ExportMailboxAccessRightsInherited](#129-exportmailboxaccessrightsinherited)
-		- [1.2.10. ExportMailboxFolderPermissions](#1210-exportmailboxfolderpermissions)
-		- [1.2.11. ExportMailboxFolderPermissionsAnonymous](#1211-exportmailboxfolderpermissionsanonymous)
-		- [1.2.12. ExportMailboxFolderPermissionsDefault](#1212-exportmailboxfolderpermissionsdefault)
-		- [1.2.13. ExportMailboxFolderPermissionsOwnerAtLocal](#1213-exportmailboxfolderpermissionsowneratlocal)
-		- [1.2.14. ExportMailboxFolderPermissionsMemberAtLocal](#1214-exportmailboxfolderpermissionsmemberatlocal)
-		- [1.2.15. ExportMailboxFolderPermissionsExcludeFoldertype](#1215-exportmailboxfolderpermissionsexcludefoldertype)
-		- [1.2.16. ExportSendAs](#1216-exportsendas)
-		- [1.2.17. ExportSendAsSelf](#1217-exportsendasself)
-		- [1.2.18. ExportSendOnBehalf](#1218-exportsendonbehalf)
-		- [1.2.19. ExportManagedBy](#1219-exportmanagedby)
-		- [1.2.20. ExportLinkedMasterAccount](#1220-exportlinkedmasteraccount)
-		- [1.2.21. ExportTrustees](#1221-exporttrustees)
-		- [1.2.22. ExportFile](#1222-exportfile)
-		- [1.2.23. ErrorFile](#1223-errorfile)
-		- [1.2.24. DebugFile](#1224-debugfile)
-		- [1.2.25. UpdateInverval](#1225-updateinverval)
+		- [1.2.3. ExchangeOnlineConnectionParameters](#123-exchangeonlineconnectionparameters)
+		- [1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential](#124-exchangecredentialusernamefile-exchangecredentialpasswordfile-usedefaultcredential)
+		- [1.2.5. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal](#125-paralleljobsexchange-paralleljobsad-paralleljobslocal)
+		- [1.2.6. GrantorFilter](#126-grantorfilter)
+		- [1.2.7. TrusteeFilter](#127-trusteefilter)
+		- [1.2.8. ExportMailboxAccessRights](#128-exportmailboxaccessrights)
+		- [1.2.9. ExportMailboxAccessRightsSelf](#129-exportmailboxaccessrightsself)
+		- [1.2.10. ExportMailboxAccessRightsInherited](#1210-exportmailboxaccessrightsinherited)
+		- [1.2.11. ExportMailboxFolderPermissions](#1211-exportmailboxfolderpermissions)
+		- [1.2.12. ExportMailboxFolderPermissionsAnonymous](#1212-exportmailboxfolderpermissionsanonymous)
+		- [1.2.13. ExportMailboxFolderPermissionsDefault](#1213-exportmailboxfolderpermissionsdefault)
+		- [1.2.14. ExportMailboxFolderPermissionsOwnerAtLocal](#1214-exportmailboxfolderpermissionsowneratlocal)
+		- [1.2.15. ExportMailboxFolderPermissionsMemberAtLocal](#1215-exportmailboxfolderpermissionsmemberatlocal)
+		- [1.2.16. ExportMailboxFolderPermissionsExcludeFoldertype](#1216-exportmailboxfolderpermissionsexcludefoldertype)
+		- [1.2.17. ExportSendAs](#1217-exportsendas)
+		- [1.2.18. ExportSendAsSelf](#1218-exportsendasself)
+		- [1.2.19. ExportSendOnBehalf](#1219-exportsendonbehalf)
+		- [1.2.20. ExportManagedBy](#1220-exportmanagedby)
+		- [1.2.21. ExportLinkedMasterAccount](#1221-exportlinkedmasteraccount)
+		- [1.2.22. ExportTrustees](#1222-exporttrustees)
+		- [1.2.23. ExportFile](#1223-exportfile)
+		- [1.2.24. ErrorFile](#1224-errorfile)
+		- [1.2.25. DebugFile](#1225-debugfile)
+		- [1.2.26. UpdateInverval](#1226-updateinverval)
 	- [1.3. Runtime](#13-runtime)
 	- [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -94,15 +95,21 @@ Server URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
 
 For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-### 1.2.3. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
+### 1.2.3. ExchangeOnlineConnectionParameters
+This hashtable will be passed as parameter to Connect-ExchangeOnline
+
+Allowed values: AppId, AzureADAuthorizationEndpointUri, BypassMailboxAnchoring, Certificate, CertificateFilePath, CertificatePassword, CertificateThumbprint, Credential, DelegatedOrganization, EnableErrorReporting, ExchangeEnvironmentName, LogDirectoryPath, LogLevel, Organization, PageSize, TrackPerformance, UseMultithreading, UserPrincipalName
+
+Values not in the allow list are removed or replaced with values determined by the script
+### 1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
 
 Username and password are stored as encrypted secure strings, if UseDefaultCredential is not enabled
-### 1.2.4. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
+### 1.2.5. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel.
 
 Watch CPU and RAM usage, and your Exchange throttling policy.
-### 1.2.5. GrantorFilter
+### 1.2.6. GrantorFilter
 Only check grantors where the filter criteria matches $true.
 
 Attributes of the variable $Grantor that can be filtered:
@@ -139,7 +146,7 @@ Example:
     ```
 
 Default: $null
-### 1.2.6. TrusteeFilter
+### 1.2.7. TrusteeFilter
 Only report trustees where the filter criteria matches $true.
 
 If the trustee matches a recipient, the available attributes are the same as für GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
@@ -154,66 +161,66 @@ Example:
     ```
 
 Default: $null
-### 1.2.7. ExportMailboxAccessRights
+### 1.2.8. ExportMailboxAccessRights
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 
 Default: $true
-### 1.2.8. ExportMailboxAccessRightsSelf
+### 1.2.9. ExportMailboxAccessRightsSelf
 Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
 
 Default: $false
-### 1.2.9. ExportMailboxAccessRightsInherited
+### 1.2.10. ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
 
 Default: $false
-### 1.2.10. ExportMailboxFolderPermissions
+### 1.2.11. ExportMailboxFolderPermissions
 This part of the report can take very long
 
 Default: $true
-### 1.2.11. ExportMailboxFolderPermissionsAnonymous
+### 1.2.12. ExportMailboxFolderPermissionsAnonymous
 Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
 Default: $false
-### 1.2.12. ExportMailboxFolderPermissionsDefault
+### 1.2.13. ExportMailboxFolderPermissionsDefault
 Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
 
 Default: $false
-### 1.2.13. ExportMailboxFolderPermissionsOwnerAtLocal
+### 1.2.14. ExportMailboxFolderPermissionsOwnerAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
 
 Default: $false
-### 1.2.14. ExportMailboxFolderPermissionsMemberAtLocal
+### 1.2.15. ExportMailboxFolderPermissionsMemberAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
 Default: $false
-### 1.2.15. ExportMailboxFolderPermissionsExcludeFoldertype
+### 1.2.16. ExportMailboxFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 
 Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
 
 Default: 'audits'
-### 1.2.16. ExportSendAs
+### 1.2.17. ExportSendAs
 Export Send As permissions
 
 Default: $true
-### 1.2.17. ExportSendAsSelf
+### 1.2.18. ExportSendAsSelf
 Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
 
 Default: $false
-### 1.2.18. ExportSendOnBehalf
+### 1.2.19. ExportSendOnBehalf
 Export Send On Behalf permissions
 
 Default: $true
-### 1.2.19. ExportManagedBy
+### 1.2.20. ExportManagedBy
 Only for distribution groups, and not to be confused with the "Manager" attribute
 
 Default: $true
-### 1.2.20. ExportLinkedMasterAccount
+### 1.2.21. ExportLinkedMasterAccount
 Export Linked Master Account
 
 Only works on-prem
 
 Default: $true
-### 1.2.21. ExportTrustees
+### 1.2.22. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -221,23 +228,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.22. ExportFile
+### 1.2.23. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.23. ErrorFile
+### 1.2.24. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.24. DebugFile
+### 1.2.25. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.25. UpdateInverval
+### 1.2.26. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
