@@ -247,7 +247,7 @@ Param(
 
     # Name (and path) of the debug log file
     # Set to $null or '' to disable debugging
-    [string]$DebugFile = '.\export\Export-RecipientPermissions_Debug.txt',
+    [string]$DebugFile = '',
 
 
     # Interval to update the job progress
