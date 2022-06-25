@@ -184,7 +184,7 @@ Param(
 
     # Maximum Exchange, AD and local sessions/jobs running in parallel
     # Watch CPU and RAM usage, and your Exchange throttling policy
-    [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count,
+    [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count * 3,
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 100,
 
@@ -1527,7 +1527,6 @@ try {
                                 } catch {
                                     . ([scriptblock]::Create($ConnectExchange))
                                     $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-mailboxfolderstatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder Permissions"";""Get-MailboxFolderStatistics $($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
 
                                 foreach ($Folder in $Folders) {
