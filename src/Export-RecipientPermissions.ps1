@@ -247,7 +247,7 @@ Param(
 
     # Name (and path) of the debug log file
     # Set to $null or '' to disable debugging
-    [string]$DebugFile = '.\export\Export-RecipientPermissions_Debug.txt',
+    [string]$DebugFile = '',
 
 
     # Interval to update the job progress
@@ -274,29 +274,30 @@ $ConnectExchange = {
 
     while ($Stoploop -ne $true) {
         try {
-            if ($ExchangeSession) {
-                if ($ExchangeSession.state -ine 'opened') {
-                    $ExchangeSessionWorking = $false
-                } else {
-                    $ExchangeSessionWorking = (@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction SilentlyContinue).count -eq 1)
-                }
-            } else {
-                $ExchangeSessionWorking = $false
+            if ($Retrycount -gt 1) {
+                Write-Host "Try $($Retrycount), via '$($connectionUri)'."
             }
 
-            if (-not $ExchangeSessionWorking) {
-                Write-Verbose "Session 'ExchangeSession' not established or working."
+            if ($ExchangeSession) {
+                $null = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction Stop
+
+                Write-Verbose "Exchange session established and working on try $($RetryCount)."
+            
+                $Stoploop = $true
+            } else {
+                throw
+            }
+        } catch {
+            try {
+                Write-Verbose "Exchange session not established or working on try $($RetryCount)."
+
+                if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                    Disconnect-ExchangeOnline -Confirm:$false
+                    Remove-Module ExchangeOnlineManagement
+                }
+
                 if ($ExchangeSession) {
-                    if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
-                        Disconnect-ExchangeOnline -Confirm:$false
-                        Remove-Module ExchangeOnlineManagement
-                    }
-
-                    if ($ExchangeSession) {
-                        Remove-PSSession -Session $ExchangeSession
-                    }
-
-                    Start-Sleep -Seconds 70
+                    Remove-PSSession -Session $ExchangeSession
                 }
 
                 if ($ExportFromOnPrem -eq $true) {
@@ -312,45 +313,45 @@ $ConnectExchange = {
                         $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
                     }
 
-                    if (Get-Module -Name 'ExchangeOnlineManagement') {
-                        Remove-Module ExchangeOnlineManagement
-                    }
+                    $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
+                    $ExchangeOnlineConnectionParameters['CommandName'] = ('Get-DistributionGroup', 'Get-DynamicDistributionGroup', 'Get-Mailbox', 'Get-MailboxFolderPermission', 'Get-MailboxFolderStatistics', 'Get-MailboxPermission', 'Get-Recipient', 'Get-RecipientPermission', 'Get-SecurityPrincipal', 'Get-UnifiedGroup')
 
                     Import-Module '.\bin\ExchangeOnlineManagement' -ErrorAction Stop
-                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -ConnectionUri $connectionUri -CommandName ('Get-DistributionGroup', 'Get-DynamicDistributionGroup', 'Get-Mailbox', 'Get-MailboxFolderPermission', 'Get-MailboxFolderStatistics', 'Get-MailboxPermission', 'Get-Recipient', 'Get-RecipientPermission', 'Get-SecurityPrincipal', 'Get-UnifiedGroup')
+                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
                     $ExchangeSession = Get-PSSession | Sort-Object -Property Id | Select-Object -Last 1
                 }
 
                 $null = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue } -ErrorAction Stop
-            }
 
-            Write-Verbose "Session 'ExchangeSession' established and working."
+                Write-Verbose "Exchange session established and working on try $($RetryCount)."
 
-            $Stoploop = $true
-        } catch {
-            if ($Retrycount -le 3) {
-                Write-Host "Could not connect to Exchange via '$connectionUri'."
-                Write-Host $error[0]
+                $Stoploop = $true
+            } catch {
+                if ($Retrycount -lt 3) {
+                    Write-Host "Exchange session could not be established in a working state to '$($connectionUri)' on try $($Retrycount)."
+                    Write-Host $error[0]
 
-                $connectionUri = $tempConnectionUriQueue.dequeue()
-
-                Write-Host "Trying again in 70 seconds via '$connectionUri'."
-
-                if ($ExchangeSession) {
-                    if ($ExportFromOnPrem -eq $false) {
+                    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                         Disconnect-ExchangeOnline -Confirm:$false
+                        Remove-Module ExchangeOnlineManagement
                     }
 
                     if ($ExchangeSession) {
                         Remove-PSSession -Session $ExchangeSession
                     }
-                }
 
-                Start-Sleep -Seconds 70
-                $Retrycount++
-            } else {
-                throw 'Could not connect to Exchange after three retries. Giving up.'
-                $Stoploop = $true
+                    $connectionUri = $tempConnectionUriQueue.dequeue()
+
+                    $SleepTime = (30 * $RetryCount * ($RetryCount / 2)) + 15
+
+                    Write-Host "Trying again in $($SleepTime) seconds via '$connectionUri'."
+
+                    Start-Sleep -Seconds $SleepTime
+                    $Retrycount++
+                } else {
+                    throw "Exchange session could not be established in a working state on $($Retrycount) retries. Giving up."
+                    $Stoploop = $true
+                }
             }
         }
     }
@@ -635,7 +636,7 @@ try {
     Write-Host
     Write-Host "Single-thread operations completed, remove connection to Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if ($ExportFromOnPrem -eq $false) {
+    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
         Disconnect-ExchangeOnline -Confirm:$false
         Remove-Module ExchangeOnlineManagement
     }
@@ -795,7 +796,7 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccount"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
                                 Remove-Module ExchangeOnlineManagement
                             }
@@ -989,7 +990,7 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Find each recipient's UserFriendlyNames"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
                                 Remove-Module ExchangeOnlineManagement
                             }
@@ -1327,7 +1328,7 @@ try {
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
                                 Remove-Module ExchangeOnlineManagement
                             }
@@ -1678,7 +1679,7 @@ try {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
 
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
                                 Remove-Module ExchangeOnlineManagement
                             }
@@ -2827,15 +2828,13 @@ try {
     Write-Host
     Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if ($ExchangeSession) {
-        if (($ExportFromOnPrem -eq $false) -and (Get-Module -Name 'ExchangeOnlineManagement')) {
-            Disconnect-ExchangeOnline -Confirm:$false
-            Remove-Module ExchangeOnlineManagement
-        }
+    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+        Disconnect-ExchangeOnline -Confirm:$false
+        Remove-Module ExchangeOnlineManagement
+    }
 
-        if ($ExchangeSession) {
-            Remove-PSSession -Session $ExchangeSession
-        }
+    if ($ExchangeSession) {
+        Remove-PSSession -Session $ExchangeSession
     }
 
     Write-Host "  Runspaces and RunspacePool @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
