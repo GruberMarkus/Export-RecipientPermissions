@@ -3,11 +3,15 @@
 
 # Changelog
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.5.1" target="_blank">v1.5.1</a> - 2022-06-27
+### Fixed
+- Make sure non-working Exchange Online connections are properly closed and do not remain active in the background
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.5.0" target="_blank">v1.5.0</a> - 2022-06-25
 ### Changed
 - The GrantorFilter parameter can now use the new reference variable '$Grantor' in addition to '$Recipient'. Both reference variables have identical values. '$Recipient' is now marked as obsolete and may removed in a future release.
 ### Added
-- New parameter 'GrantorFilter': Filter the trustees included in the export. See 'README' for details.
+- New parameter 'TrusteeFilter': Filter the trustees included in the export. See 'README' for details.
 - New sample code 'FiltersAndSidhistory.ps1' shows how to use TrusteeFilter and GrantorFilter to find permissions which may be affected by SIDHistory removal.
 - The connection to the cloud now uses the Exchange Online PowerShell V2 module (a preview version is used which allows traditional remote PowerShell access to all cmdlets). See '.\README' for details about the required 'ExchangeOnlineConnnectionParameters' parameter.
 
