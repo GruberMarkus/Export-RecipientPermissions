@@ -112,7 +112,7 @@ Watch CPU and RAM usage, and your Exchange throttling policy.
 ### 1.2.6. GrantorFilter
 Only check grantors where the filter criteria matches $true.
 
-The variable $Grantor has all attributes returned by '`invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'. For example:
+The variable $Grantor has all attributes returned by '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'. For example:
 - .DistinguishedName
 - .RecipientType, .RecipientTypeDetails
 - .DisplayName
