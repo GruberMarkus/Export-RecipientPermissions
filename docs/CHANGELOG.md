@@ -3,6 +3,10 @@
 
 # Changelog
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vx.x.x" target="_blank">vx.x.x</a> - YYYY-MM-DD
+### Changed
+- '`GrantorFilter`' and '`TrusteeFilter`' can now filter all attributes returned by '`invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.5.1" target="_blank">v1.5.1</a> - 2022-06-27
 ### Fixed
 - Make sure non-working Exchange Online connections are properly closed and do not remain active in the background

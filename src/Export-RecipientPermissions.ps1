@@ -36,7 +36,7 @@ Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
 .PARAMETER GrantorFilter
 Only check grantors where the filter criteria matches $true.
-Attributes of the variable $Grantor that can be filtered:
+The variable $Grantor has all attributes returned by '`invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'. For example:
   .DistinguishedName
   .RecipientType, .RecipientTypeDetails
   .DisplayName
@@ -62,7 +62,7 @@ Example: "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
 Default: $null
 .PARAMETER TrusteeFilter
 Only report trustees where the filter criteria matches $true.
-If the trustee matches a recipient, the available attributes are the same as fÃ¼r GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
+If the trustee matches a recipient, the available attributes are the same as for GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
 If the trustee does not match a recipient (because it no longer exists, for exampe), $Trustee is just a string. In this case, the export shows the following:
   Column "Trustee Original Identity" contains the trustee description string as reported by Exchange
   Columns "Trustee Primary SMTP" and "Trustee Display Name" are empty
@@ -72,7 +72,7 @@ Default: $null
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 Default: $true
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
@@ -100,7 +100,7 @@ Default: 'audits'
 Export Send As permissions
 Default: $true
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
 Default: $false
 .PARAMETER ExportSendOnBehalf
 Export Send On Behalf permissions
@@ -202,7 +202,7 @@ Param(
     # Mailbox Access Rights
     # Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
     [boolean]$ExportMailboxAccessRights = $true,
-    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
+    [boolean]$ExportMailboxAccessRightsSelf = $false, # Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
     [boolean]$ExportMailboxAccessRightsInherited = $false, # Report inherited mailbox access rights (only works on-prem)
     #
     # Mailbox Folder Permissions
@@ -216,7 +216,7 @@ Param(
     #
     # Send As
     [boolean]$ExportSendAs = $true,
-    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÃƒâ€žT\SELBST" in German, etc.)
+    [boolean]$ExportSendAsSelf = $false, # Report Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST" in German, etc.)
     #
     # Send On Behalf
     [boolean]$ExportSendOnBehalf = $true,
@@ -533,10 +533,10 @@ try {
     $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
     try {
-        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, distinguishedname, recipienttype, recipienttypedetails, displayname, primarysmtpaddress, emailaddresses, managedby, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property *, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
     } catch {
         . ([scriptblock]::Create($ConnectExchange))
-        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, distinguishedname, recipienttype, recipienttypedetails, displayname, primarysmtpaddress, emailaddresses, managedby, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property *, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
     }
 
     $AllRecipients.TrimToSize()
