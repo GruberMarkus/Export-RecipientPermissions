@@ -34,9 +34,15 @@ Values not in the allow list are removed or replaced with values determined by t
 .PARAMETER ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel
 Watch CPU and RAM usage, and your Exchange throttling policy
+.PARAMETER RecipientProperties
+Recipient properties to import.
+Be aware that these properties are not queried with a simple '`Get-Recipient`', but with '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties)`'.
+  This way, some properties have sub-values. For example, the property .PrimarySmtpAddress has .Local, .Domain and .Address as sub-values.
+These properties are available for GrantorFilter and TrusteeFilter. 
+Properties that are always included: 'Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount'
 .PARAMETER GrantorFilter
 Only check grantors where the filter criteria matches $true.
-The variable $Grantor has all attributes returned by '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'. For example:
+The variable $Grantor has all attributes defined by '`RecipientProperties`. For example:
   .DistinguishedName
   .RecipientType, .RecipientTypeDetails
   .DisplayName
@@ -188,6 +194,9 @@ Param(
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 100,
 
+
+    # Recipient properties to import
+    [string[]]$RecipientProperties = @(),
 
     # Grantors to consider
     [string]$GrantorFilter = $null, # "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
@@ -420,6 +429,7 @@ try {
         }
     }
 
+    
     if ($ErrorFile) {
         if (Test-Path $ErrorFile) {
             Remove-Item $ErrorFile -Force
@@ -433,11 +443,13 @@ try {
         '"Timestamp";"Task";"TaskDetail";"Error"' | Out-File $ErrorFile -Encoding $UTF8Encoding -Force
     }
 
+
     if ($DebugFile) {
         foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
             Remove-Item $JobDebugFile -Force
         }
     }
+
 
     if ($ExportFile) {
         if (Test-Path $ExportFile) {
@@ -452,12 +464,14 @@ try {
         '"Grantor Primary SMTP";"Grantor Display Name";"Grantor Recipient Type";"Grantor Environment";"Folder";"Permission";"Allow/Deny";"Inherited";"InheritanceType";"Trustee Original Identity";"Trustee Primary SMTP";"Trustee Display Name";"Trustee Recipient Type";"Trustee Environment"' | Out-File $ExportFile -Encoding $UTF8Encoding -Force
     }
 
+
     $tempConnectionUriQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new(10000))
     while ($tempConnectionUriQueue.count -le 10000) {
         foreach ($ExchangeConnectionUri in $ExchangeConnectionUriList) {
             $tempConnectionUriQueue.Enqueue($ExchangeConnectionUri.AbsoluteUri)
         }
     }
+
 
     if ($ExchangeOnlineConnectionParameters) {
         $ExchangeOnlineConnectionParametersFiltered = @{}
@@ -491,6 +505,19 @@ try {
         $ExchangeOnlineConnectionParameters.add('UseRPSSession', $true)
         $ExchangeOnlineConnectionParameters.add('ShowBanner', $false)
         $ExchangeOnlineConnectionParameters.add('ShowProgress', $false)
+
+
+        if ($RecipientProperties -contains '*') {
+            $RecipientProperties = @('*')
+        } else {
+            @('Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount') | ForEach-Object {
+                if ($RecipientProperties -inotcontains $_) {
+                    $RecipientProperties += $_
+                }
+            }
+        }
+        
+        $RecipientProperties = @($RecipientProperties | Select-Object -Unique)
     }
 
 
@@ -533,10 +560,10 @@ try {
     $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
     try {
-        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property *, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties) -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
     } catch {
         . ([scriptblock]::Create($ConnectExchange))
-        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property *, 'UserFriendlyName', 'LinkedMasterAccount' } -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties) -ErrorAction Stop) | Sort-Object { $_.primarysmtpaddress.address }))
     }
 
     $AllRecipients.TrimToSize()

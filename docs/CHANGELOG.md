@@ -5,7 +5,7 @@
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vx.x.x" target="_blank">vx.x.x</a> - YYYY-MM-DD
 ### Changed
-- '`GrantorFilter`' and '`TrusteeFilter`' can now filter all attributes returned by '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property * }`'
+- The new parameter '`RecipientProperties`' controls which recipient properties are loaded and can be used in '`GrantorFilter`' and '`TrusteeFilter`'. It also helps keep network traffic and memory usage low. See '`README`' for details.
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v1.5.1" target="_blank">v1.5.1</a> - 2022-06-27
 ### Fixed
