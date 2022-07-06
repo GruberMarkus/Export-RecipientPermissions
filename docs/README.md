@@ -40,11 +40,16 @@ Compare exports from different times to detect permission changes (sample code i
 		- [1.2.20. ExportSendOnBehalf](#1220-exportsendonbehalf)
 		- [1.2.21. ExportManagedBy](#1221-exportmanagedby)
 		- [1.2.22. ExportLinkedMasterAccount](#1222-exportlinkedmasteraccount)
-		- [1.2.23. ExportTrustees](#1223-exporttrustees)
-		- [1.2.24. ExportFile](#1224-exportfile)
-		- [1.2.25. ErrorFile](#1225-errorfile)
-		- [1.2.26. DebugFile](#1226-debugfile)
-		- [1.2.27. UpdateInverval](#1227-updateinverval)
+		- [1.2.23. ExportPublicFolderPermissions](#1223-exportpublicfolderpermissions)
+		- [1.2.24. ExportPublicFolderPermissionsAnonymous](#1224-exportpublicfolderpermissionsanonymous)
+		- [1.2.25. ExportPublicFolderPermissionsDefault](#1225-exportpublicfolderpermissionsdefault)
+		- [1.2.28. ExportPublicFolderPermissionsExcludeFoldertype](#1228-exportpublicfolderpermissionsexcludefoldertype)
+		- [1.2.29. ExportSendAs](#1229-exportsendas)
+		- [1.2.30. ExportTrustees](#1230-exporttrustees)
+		- [1.2.31. ExportFile](#1231-exportfile)
+		- [1.2.32. ErrorFile](#1232-errorfile)
+		- [1.2.33. DebugFile](#1233-debugfile)
+		- [1.2.34. UpdateInverval](#1234-updateinverval)
 	- [1.3. Runtime](#13-runtime)
 	- [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -69,12 +74,12 @@ Finds all recipients with a primary SMTP address in an on on-prem or online Exch
 - "managed by" permissions
 ## 1.1. Output
 The report is saved to the file 'Export-RecipientPermissions_Result.csv', which consists of the following columns:
-- Grantor Primary SMTP: The primary SMTP address of the object granting a permission.
+- Grantor Primary SMTP: The primary SMTP address of the object granting a permission, or 'Public Folder' when public folder permissions are exported.
 - Grantor Display Name: The display name of the grantor.
 - Grantor Recipient Type: The recipient type and recipient type detail of the grantor.
 - Grantor Environment: Shows if the grantor is held on-prem or in the cloud.
 - Folder: Mailbox folder the permission is granted on. Empty for non-folder permissions.
-- Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
+- Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.). When public folder permissions are exported and a folder is enabled, a "virtual" right 'MailEnabled' with the primary SMTP address of the public folder as trustee is exported. 
 - Allow/Deny: Shows if the permission is an allow or a deny permission.
 - Inherited: Shows if the permission is inherited or not.
 - InheritanceType: Shows if the permission is also valid for child objects, and if yes, which child objects.
@@ -232,7 +237,29 @@ Export Linked Master Account
 Only works on-prem
 
 Default: $true
-### 1.2.23. ExportTrustees
+### 1.2.23. ExportPublicFolderPermissions
+This part of the report can take very long
+
+Default: $true
+### 1.2.24. ExportPublicFolderPermissionsAnonymous
+Report public folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
+
+Default: $false
+### 1.2.25. ExportPublicFolderPermissionsDefault
+Report public folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
+
+Default: $false
+### 1.2.28. ExportPublicFolderPermissionsExcludeFoldertype
+List of Foldertypes to ignore.
+
+Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
+
+Default: ''
+### 1.2.29. ExportSendAs
+Export Send As permissions
+
+Default: $true
+### 1.2.30. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -240,23 +267,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.24. ExportFile
+### 1.2.31. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.25. ErrorFile
+### 1.2.32. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.26. DebugFile
+### 1.2.33. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.27. UpdateInverval
+### 1.2.34. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
