@@ -197,11 +197,11 @@ Default: $true
 ### 1.2.13. ExportMailboxFolderPermissionsAnonymous
 Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
-Default: $false
+Default: $true
 ### 1.2.14. ExportMailboxFolderPermissionsDefault
 Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
 
-Default: $false
+Default: $true
 ### 1.2.15. ExportMailboxFolderPermissionsOwnerAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
 
@@ -244,11 +244,11 @@ Default: $true
 ### 1.2.24. ExportPublicFolderPermissionsAnonymous
 Report public folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
-Default: $false
+Default: $true
 ### 1.2.25. ExportPublicFolderPermissionsDefault
 Report public folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
 
-Default: $false
+Default: $true
 ### 1.2.28. ExportPublicFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 

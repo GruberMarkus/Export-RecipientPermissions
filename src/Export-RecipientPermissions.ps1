@@ -88,10 +88,10 @@ This part of the report can take very long
 Default: $true
 .PARAMETER ExportMailboxFolderPermissionsAnonymous
 Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
-Default: $false
+Default: $true
 .PARAMETER ExportMailboxFolderPermissionsDefault
 Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
-Default: $false
+Default: $true
 .PARAMETER ExportMailboxFolderPermissionsOwnerAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
 Default: $false
@@ -123,10 +123,10 @@ This part of the report can take very long
 Default: $true
 .PARAMETER ExportPublicFolderPermissionsAnonymous
 Report public folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
-Default: $false
+Default: $true
 .PARAMETER ExportPublicFolderPermissionsDefault
 Report public folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
-Default: $false
+Default: $true
 .PARAMETER ExportPublicFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
@@ -230,8 +230,8 @@ Param(
     # Mailbox Folder Permissions
     # This part of the report can take very long
     [boolean]$ExportMailboxFolderPermissions = $true,
-    [boolean]$ExportMailboxFolderPermissionsAnonymous = $false, # Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
-    [boolean]$ExportMailboxFolderPermissionsDefault = $false, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
+    [boolean]$ExportMailboxFolderPermissionsAnonymous = $true, # Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
+    [boolean]$ExportMailboxFolderPermissionsDefault = $true, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
     [boolean]$ExportMailboxFolderPermissionsOwnerAtLocal = $false, # Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
     [boolean]$ExportMailboxFolderPermissionsMemberAtLocal = $false, # Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
     [string[]]$ExportMailboxFolderPermissionsExcludeFoldertype = ('audits'), # List of Foldertypes to ignore. Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
@@ -254,8 +254,8 @@ Param(
     # Public Folder Permissions
     # This part of the report can take very long
     [boolean]$ExportPublicFolderPermissions = $true,
-    [boolean]$ExportPublicFolderPermissionsAnonymous = $false, # Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
-    [boolean]$ExportPublicFolderPermissionsDefault = $false, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
+    [boolean]$ExportPublicFolderPermissionsAnonymous = $true, # Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
+    [boolean]$ExportPublicFolderPermissionsDefault = $true, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
     [string[]]$ExportPublicFolderPermissionsExcludeFoldertype = (''), # List of Foldertypes to ignore. Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
 
 
