@@ -696,10 +696,10 @@ try {
         $AllPublicFolders = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
         try {
-            $AllPublicFolders.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, MailEnabled, MailRecipientGuid, FolderClass, FolderPath } -ErrorAction Stop) | Sort-Object { $_.DisplayName }))
+            $AllPublicFolders.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, MailEnabled, MailRecipientGuid, FolderClass, FolderPath } -ErrorAction Stop) | Sort-Object { $_.FolderPath }))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AllPublicFolders.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, MailEnabled, MailRecipientGuid, FolderClass, FolderPath } -ErrorAction Stop) | Sort-Object { $_.DisplayName }))
+            $AllPublicFolders.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, MailEnabled, MailRecipientGuid, FolderClass, FolderPath } -ErrorAction Stop) | Sort-Object { $_.FolderPath }))
         }
 
         $AllPublicFolders.TrimToSize()
