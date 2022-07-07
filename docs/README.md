@@ -16,54 +16,55 @@ Compare exports from different times to detect permission changes (sample code i
 
 # Table of Contents <!-- omit in toc -->
 - [1. Export-RecipientPermissions.ps1](#1-export-recipientpermissionsps1)
-	- [1.1. Output](#11-output)
-	- [1.2. Parameters](#12-parameters)
-		- [1.2.1. ExportFromOnPrem](#121-exportfromonprem)
-		- [1.2.2. ExchangeConnectionUriList](#122-exchangeconnectionurilist)
-		- [1.2.3. ExchangeOnlineConnectionParameters](#123-exchangeonlineconnectionparameters)
-		- [1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential](#124-exchangecredentialusernamefile-exchangecredentialpasswordfile-usedefaultcredential)
-		- [1.2.5. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal](#125-paralleljobsexchange-paralleljobsad-paralleljobslocal)
-		- [1.2.6. RecipientProperties](#126-recipientproperties)
-		- [1.2.7. GrantorFilter](#127-grantorfilter)
-		- [1.2.8. TrusteeFilter](#128-trusteefilter)
-		- [1.2.9. ExportMailboxAccessRights](#129-exportmailboxaccessrights)
-		- [1.2.10. ExportMailboxAccessRightsSelf](#1210-exportmailboxaccessrightsself)
-		- [1.2.11. ExportMailboxAccessRightsInherited](#1211-exportmailboxaccessrightsinherited)
-		- [1.2.12. ExportMailboxFolderPermissions](#1212-exportmailboxfolderpermissions)
-		- [1.2.13. ExportMailboxFolderPermissionsAnonymous](#1213-exportmailboxfolderpermissionsanonymous)
-		- [1.2.14. ExportMailboxFolderPermissionsDefault](#1214-exportmailboxfolderpermissionsdefault)
-		- [1.2.15. ExportMailboxFolderPermissionsOwnerAtLocal](#1215-exportmailboxfolderpermissionsowneratlocal)
-		- [1.2.16. ExportMailboxFolderPermissionsMemberAtLocal](#1216-exportmailboxfolderpermissionsmemberatlocal)
-		- [1.2.17. ExportMailboxFolderPermissionsExcludeFoldertype](#1217-exportmailboxfolderpermissionsexcludefoldertype)
-		- [1.2.18. ExportSendAs](#1218-exportsendas)
-		- [1.2.19. ExportSendAsSelf](#1219-exportsendasself)
-		- [1.2.20. ExportSendOnBehalf](#1220-exportsendonbehalf)
-		- [1.2.21. ExportManagedBy](#1221-exportmanagedby)
-		- [1.2.22. ExportLinkedMasterAccount](#1222-exportlinkedmasteraccount)
-		- [1.2.23. ExportPublicFolderPermissions](#1223-exportpublicfolderpermissions)
-		- [1.2.24. ExportPublicFolderPermissionsAnonymous](#1224-exportpublicfolderpermissionsanonymous)
-		- [1.2.25. ExportPublicFolderPermissionsDefault](#1225-exportpublicfolderpermissionsdefault)
-		- [1.2.26. ExportPublicFolderPermissionsExcludeFoldertype](#1226-exportpublicfolderpermissionsexcludefoldertype)
-		- [1.2.27. ExportSendAs](#1227-exportsendas)
-		- [1.2.28. ExportManagementRoleGroupMembers](#1228-exportmanagementrolegroupmembers)
-		- [1.2.29. ExportTrustees](#1229-exporttrustees)
-		- [1.2.30. ExportFile](#1230-exportfile)
-		- [1.2.31. ErrorFile](#1231-errorfile)
-		- [1.2.32. DebugFile](#1232-debugfile)
-		- [1.2.33. UpdateInverval](#1233-updateinverval)
-	- [1.3. Runtime](#13-runtime)
-	- [1.4. Requirements](#14-requirements)
+  - [1.1. Output](#11-output)
+  - [1.2. Parameters](#12-parameters)
+    - [1.2.1. ExportFromOnPrem](#121-exportfromonprem)
+    - [1.2.2. ExchangeConnectionUriList](#122-exchangeconnectionurilist)
+    - [1.2.3. ExchangeOnlineConnectionParameters](#123-exchangeonlineconnectionparameters)
+    - [1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential](#124-exchangecredentialusernamefile-exchangecredentialpasswordfile-usedefaultcredential)
+    - [1.2.5. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal](#125-paralleljobsexchange-paralleljobsad-paralleljobslocal)
+    - [1.2.6. RecipientProperties](#126-recipientproperties)
+    - [1.2.7. GrantorFilter](#127-grantorfilter)
+    - [1.2.8. TrusteeFilter](#128-trusteefilter)
+    - [1.2.9. ExportMailboxAccessRights](#129-exportmailboxaccessrights)
+    - [1.2.10. ExportMailboxAccessRightsSelf](#1210-exportmailboxaccessrightsself)
+    - [1.2.11. ExportMailboxAccessRightsInherited](#1211-exportmailboxaccessrightsinherited)
+    - [1.2.12. ExportMailboxFolderPermissions](#1212-exportmailboxfolderpermissions)
+    - [1.2.13. ExportMailboxFolderPermissionsAnonymous](#1213-exportmailboxfolderpermissionsanonymous)
+    - [1.2.14. ExportMailboxFolderPermissionsDefault](#1214-exportmailboxfolderpermissionsdefault)
+    - [1.2.15. ExportMailboxFolderPermissionsOwnerAtLocal](#1215-exportmailboxfolderpermissionsowneratlocal)
+    - [1.2.16. ExportMailboxFolderPermissionsMemberAtLocal](#1216-exportmailboxfolderpermissionsmemberatlocal)
+    - [1.2.17. ExportMailboxFolderPermissionsExcludeFoldertype](#1217-exportmailboxfolderpermissionsexcludefoldertype)
+    - [1.2.18. ExportSendAs](#1218-exportsendas)
+    - [1.2.19. ExportSendAsSelf](#1219-exportsendasself)
+    - [1.2.20. ExportSendOnBehalf](#1220-exportsendonbehalf)
+    - [1.2.21. ExportManagedBy](#1221-exportmanagedby)
+    - [1.2.22. ExportLinkedMasterAccount](#1222-exportlinkedmasteraccount)
+    - [1.2.23. ExportPublicFolderPermissions](#1223-exportpublicfolderpermissions)
+    - [1.2.24. ExportPublicFolderPermissionsAnonymous](#1224-exportpublicfolderpermissionsanonymous)
+    - [1.2.25. ExportPublicFolderPermissionsDefault](#1225-exportpublicfolderpermissionsdefault)
+    - [1.2.26. ExportPublicFolderPermissionsExcludeFoldertype](#1226-exportpublicfolderpermissionsexcludefoldertype)
+    - [1.2.27. ExportSendAs](#1227-exportsendas)
+    - [1.2.28. ExportManagementRoleGroupMembers](#1228-exportmanagementrolegroupmembers)
+    - [1.2.29. ExportForwarders](#1229-exportforwarders)
+    - [1.2.30. ExportTrustees](#1230-exporttrustees)
+    - [1.2.31. ExportFile](#1231-exportfile)
+    - [1.2.32. ErrorFile](#1232-errorfile)
+    - [1.2.33. DebugFile](#1233-debugfile)
+    - [1.2.34. UpdateInverval](#1234-updateinverval)
+  - [1.3. Runtime](#13-runtime)
+  - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
-	- [2.1. Where can I find the changelog?](#21-where-can-i-find-the-changelog)
-	- [2.2. How can I contribute, propose a new feature or file a bug?](#22-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
-	- [2.3. How can I get more script output for troubleshooting?](#23-how-can-i-get-more-script-output-for-troubleshooting)
-	- [2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#24-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
-	- [2.5. Isn't a plural noun in the script name against PowerShell best practices?](#25-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
-	- [2.6. Is there a roadmap for future versions?](#26-is-there-a-roadmap-for-future-versions)
+  - [2.1. Where can I find the changelog?](#21-where-can-i-find-the-changelog)
+  - [2.2. How can I contribute, propose a new feature or file a bug?](#22-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
+  - [2.3. How can I get more script output for troubleshooting?](#23-how-can-i-get-more-script-output-for-troubleshooting)
+  - [2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#24-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
+  - [2.5. Isn't a plural noun in the script name against PowerShell best practices?](#25-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
+  - [2.6. Is there a roadmap for future versions?](#26-is-there-a-roadmap-for-future-versions)
 - [3. Sample code](#3-sample-code)
-	- [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
-	- [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
-	- [3.3. FiltersAndSidhistory.ps1](#33-filtersandsidhistoryps1)
+  - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
+  - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
+  - [3.3. FiltersAndSidhistory.ps1](#33-filtersandsidhistoryps1)
 - [4. Recommendations](#4-recommendations)
 
 # 1. Export-RecipientPermissions.ps1
@@ -87,6 +88,12 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
   - When public folder permissions are exported and a folder is mail-enabled, a "virtual" right 'MailEnabled' is exported
   - When management role group members are exported, a "virtual" right 'Member' is exported
+  - When forwarders are exported, one or more of the following "virtual" rights are exported:
+    - Forward_ExternalEmailAddress_ForwardOnly
+    - Forward_ForwardingAddress_DeliverAndForward
+    - Forward_ForwardingAddress_ForwardOnly
+    - Forward_ForwardingSmtpAddress_DeliverAndForward
+    - Forward_ForwardingSmtpAddress_ForwardOnly
 - Allow/Deny: Shows if the permission is an allow or a deny permission.
 - Inherited: Shows if the permission is inherited or not.
 - InheritanceType: Shows if the permission is also valid for child objects, and if yes, which child objects.
@@ -270,7 +277,29 @@ Default: $true
 Export members of management role groups
 
 Default: $true
-### 1.2.29. ExportTrustees
+### 1.2.29. ExportForwarders
+Export forwarders:
+- '`ExternalEmailAddress`' ('`targetAddress`' in Active Directory)
+  - Highest priority
+  - Can be configured on basically every mail-enabled object
+  - Can point to any SMTP address, existing in your directory or somewhere outside
+  - Is typically used for contacts, migration and co-existence scenarios
+  - '`DeliverToMailboxAndForward`' ('`deliverAndRedirect`' in Active Directory) is ignored, all e-mails sent to the recipient will unconditionally be forwarded without storing a copy or sending it to group members
+- '`ForwardingAddress`' ('`altRecipient`' in Active Directory)
+  - Medium priority
+  - Can be configured for mailboxes and mail-enabled public folders
+  - Needs a mail-enabled Object existing in your directory as target (a contact is required to forward to external e-mail addresses)
+  - This property is used when forwarding is configured in the Exchange Control Panel oder the Exchange Admin Center
+  - '`DeliverToMailboxAndForward`' ('`deliverAndRedirect`' in Active Directory) defines if the e-mail is forwarded only, or forwarded and stored
+- '`ForwardingSmtpAddress`' ('`msExchGenericForwardingAddress`' in Active Directory)
+  - Lowest priority
+  - Can be configured for mailboxes
+  - Can point to any SMTP address, existing in your directory or somewhere outside
+  - This property is used when a user configures forwarding for his mailbox in Outlook Web
+  - '`DeliverToMailboxAndForward`' ('`deliverAndRedirect`' in Active Directory) defines if the e-mail is forwarded only, or forwarded and stored
+
+Default: $true
+### 1.2.30. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -278,23 +307,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.30. ExportFile
+### 1.2.31. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.31. ErrorFile
+### 1.2.32. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.32. DebugFile
+### 1.2.33. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.33. UpdateInverval
+### 1.2.34. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration

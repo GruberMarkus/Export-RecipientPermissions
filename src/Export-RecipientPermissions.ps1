@@ -134,6 +134,9 @@ Default: ''
 .PARAMETER ExportManagementRoleGroupMembers
 Export members of management role groups
 Default: $true
+.PARAMETER ExportForwarders
+Export forwarders configured on recipients
+Default: $true
 .PARAMETER ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -263,6 +266,9 @@ Param(
     #
     # Management Role Groups
     [boolean]$ExportManagementRoleGroupMembers = $true,
+    #
+    # Forwarders
+    [boolean]$ExportForwarders = $true,
 
     # Include all trustees in permission report file, only valid or only invalid ones
     # Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -348,7 +354,7 @@ $ConnectExchange = {
                     }
 
                     $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
-                    $ExchangeOnlineConnectionParameters['CommandName'] = ('Get-DistributionGroup', 'Get-DynamicDistributionGroup', 'Get-Mailbox', 'Get-MailboxFolderPermission', 'Get-MailboxFolderStatistics', 'Get-MailboxPermission', 'Get-Publicfolder', 'Get-PublicFolderClientPermission', 'Get-Recipient', 'Get-RecipientPermission', 'Get-SecurityPrincipal', 'Get-UnifiedGroup')
+                    $ExchangeOnlineConnectionParameters['CommandName'] = ('Get-DistributionGroup', 'Get-DynamicDistributionGroup', 'Get-Mailbox', 'Get-MailboxFolderPermission', 'Get-MailboxFolderStatistics', 'Get-MailboxPermission', 'Get-MailPublicFolder', 'Get-Publicfolder', 'Get-PublicFolderClientPermission', 'Get-Recipient', 'Get-RecipientPermission', 'Get-SecurityPrincipal', 'Get-UnifiedGroup')
 
                     Import-Module '.\bin\ExchangeOnlineManagement' -Force -ErrorAction Stop
                     Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
@@ -535,7 +541,21 @@ try {
         if ($RecipientProperties -contains '*') {
             $RecipientProperties = @('*')
         } else {
-            @('Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount') | ForEach-Object {
+            @('Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy') | ForEach-Object {
+                if ($RecipientProperties -inotcontains $_) {
+                    $RecipientProperties += $_
+                }
+            }
+        }
+
+        @('UserFriendlyName', 'LinkedMasterAccount') | ForEach-Object {
+            if ($RecipientProperties -inotcontains $_) {
+                $RecipientProperties += $_
+            }
+        }
+
+        if ($ExportForwarders) {
+            @('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress', 'DeliverToMailboxAndForward') | ForEach-Object {
                 if ($RecipientProperties -inotcontains $_) {
                     $RecipientProperties += $_
                 }
@@ -748,6 +768,39 @@ try {
         $AllRoleGroupMembersTemp = $null
         $AllManagementRoleGroupMembers.TrimToSize()
         Write-Host ('  {0:0000000} Role Group memberships found' -f $($AllManagementRoleGroupMembers.count))
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
+
+    # Import forwarding addresses
+    Write-Host
+    Write-Host "Import forwarding addresses @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    if ($ExportForwarders) {
+        Write-Host '  Single-thread Exchange operation'
+
+        foreach ($Recipient in $AllRecipients) {
+            $Recipient.ExternalEmailAddress = $Recipient.ExternalEmailAddress.SmtpAddress
+        }
+
+        $AllForwardingAddresses = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
+
+        try {
+            $AllForwardingAddresses.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward } -ErrorAction Stop))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllForwardingAddresses.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward } -ErrorAction Stop))
+        }
+
+        try {
+            $AllForwardingAddresses.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailPublicFolder -filter 'ForwardingAddress -ne $null' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward } -ErrorAction Stop))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllForwardingAddresses.AddRange(@(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailPublicFolder -filter 'ForwardingAddress -ne $null' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward } -ErrorAction Stop))
+        }
+
+        $AllForwardingAddresses.TrimToSize()
+        Write-Host ('  {0:0000000} forwarding addresses found' -f $($AllForwardingAddresses.count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -3483,6 +3536,259 @@ try {
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '  Not all management role group members have been checked. Enable debugging option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
+                    Remove-Item $JobDebugFile -Force
+                }
+                $null = Start-Transcript -Path $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Remove-Item $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+
+        }
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
+
+    # Forwarders
+    Write-Host
+    Write-Host "Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    if ($ExportForwarders) {
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
+
+        foreach ($x in (0..($AllRecipients.count - 1))) {
+            $tempQueue.enqueue($x)
+        }
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsLocal)
+
+        Write-Host '  Prepare imported data'
+        $AllForwardingAddresses | ForEach-Object {
+            try {
+                try {
+                    $GrantorIndex = $null
+                    $GrantorIndex = $AllRecipientsGuidToIndex[$($_.Identity.ObjectGuid.Guid)]
+                } catch {
+                }
+
+                if ($GrantorIndex -ge 0) {
+                    $Grantor = $AllRecipients[$GrantorIndex]
+
+                    if ($_.ForwardingAddress.ObjectGuid.Guid) {
+                        try {
+                            $TrusteeIndex = $null
+                            $TrusteeIndex = $AllRecipientsGuidToIndex[$($_.ForwardingAddress.ObjectGuid.Guid)]
+                        } catch {
+                        }
+
+                        if ($TrusteeIndex -ge 0) {
+                            $AllRecipients[$GrantorIndex].ForwardingAddress = $AllRecipients[$TrusteeIndex].PrimarySmtpAddress.Address
+                        }
+                    }
+
+                    $Grantor.ForwardingSmtpAddress = $_.ForwardingSmtpAddress.SmtpAddress
+                    $Grantor.DeliverToMailboxAndForward = $_.DeliverToMailboxAndForward
+                }
+            } catch {
+            }
+        }
+
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel local jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllRecipients,
+                            $AllRecipientsSmtpToIndex,
+                            $tempQueue,
+                            $ExportFile,
+                            $ExportTrustees,
+                            $ErrorFile,
+                            $UTF8Encoding,
+                            $DebugFile,
+                            $ScriptPath,
+                            $ExportFromOnPrem,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $TrusteeFilter
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -Path $DebugFile -Force
+                            }
+
+                            Write-Host "Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            $ExportFileResult = [system.collections.arraylist]::new(1000)
+
+                            while ($tempQueue.count -gt 0) {
+                                $ExportFileresult.clear()
+
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                $Grantor = $AllRecipients[$RecipientID]
+
+                                $GrantorDisplayName = $Grantor.DisplayName
+                                $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
+                                $GrantorRecipientType = $Grantor.RecipientType.value
+                                $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+                                if ($ExportFromOnPrem) {
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                } else {
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                }
+
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                foreach ($ForwarderType in ('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress')) {
+                                    try {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType)]
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $Trustee = $AllRecipients[$index]
+                                        } else {
+                                            $Trustee = $Grantor.$ForwarderType
+                                        }
+
+                                        if ($Grantor.$ForwarderType) {
+                                            if ($TrusteeFilter) {
+                                                if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                    continue
+                                                }
+                                            }
+
+                                            if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                                if ($ExportFromOnPrem) {
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                } else {
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                }
+
+                                                if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                                    $ExportFileresult.add((('"' + ((
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $Grantor.$ForwarderType,
+                                                                        $Trustee.PrimarySmtpAddress.address,
+                                                                        $Trustee.DisplayName,
+                                                                        $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                }
+                                            }
+                                        }
+                                    } catch {
+                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                                    }
+                                }
+                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                            }
+                        } catch {
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                        } finally {
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        AllRecipients            = $AllRecipients
+                        AllRecipientsSmtpToIndex = $AllRecipientsSmtpToIndex
+                        tempQueue                = $tempQueue
+                        ExportFile               = $ExportFile
+                        ExportTrustees           = $ExportTrustees
+                        ErrorFile                = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath               = $PSScriptRoot
+                        UTF8Encoding             = $UTF8Encoding
+                        ExportFromOnPrem         = $ExportFromOnPrem
+                        VerbosePreference        = $VerbosePreference
+                        DebugPreference          = $DebugPreference
+                        TrusteeFilter            = $TrusteeFilter
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host "  $($tempQueueCount) recipients to check. Done (in steps of $($UpdateInterval)):"
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+            Write-Host
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '  Not all recipients have been checked. Enable debugging option and check log file.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {

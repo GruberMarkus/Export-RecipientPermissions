@@ -11,6 +11,7 @@
 - Mail-enabled public folders are now considered when exporting Send As and Send On Behalf permissions
 - Support for export of public folder permissions. See '`README`' for details regarding the new parameters '`ExportPublicFolderPermissions`', '`ExportPublicFolderPermissionsAnonymous`', '`ExportPublicFolderPermissionsDefault`' and '`ExportPublicFolderPermissionsExcludeFoldertype`'.
 - Support for export management role group permissiones. See '`README`' for new parameter '`ExportManagementRoleGroupMembers`'.
+- Support for export of forwarders. See '`README`' for details regarding the '`ExportForwarders`' parameter.
 ### Fixed
 - Export all Send As permissions, not only the one granted by the last recipient checked by each parallel job
 
