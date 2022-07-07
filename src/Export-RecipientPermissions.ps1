@@ -466,7 +466,7 @@ try {
             Remove-Item $ErrorFile -Force
         }
         try {
-            foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))) -ErrorAction stop)) {
+            foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))) -ErrorAction stop)) {
                 Remove-Item $JobErrorFile -Force
             }
         } catch {}
@@ -476,7 +476,7 @@ try {
 
 
     if ($DebugFile) {
-        foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+        foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
             Remove-Item $JobDebugFile -Force
         }
     }
@@ -487,7 +487,7 @@ try {
             Remove-Item $ExportFile -Force
         }
         try {
-            foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))) -ErrorAction stop)) {
+            foreach ($RecipientFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))) -ErrorAction stop)) {
                 Remove-Item $Recipientfile -Force
             }
         } catch {}
@@ -749,23 +749,23 @@ try {
             $AllRoleGroups = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroup -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Name, Guid } -ErrorAction Stop) | Sort-Object -Property name
         }
 
-        $AllRoleGroupMembersTemp = @()
-
         foreach ($RoleGroup in $AllRoleGroups) {
+            $RoleGroupMembers = @()
+
             try {
-                $AllRoleGroupMembersTemp += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
+                $RoleGroupMembers += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
             } catch {
                 . ([scriptblock]::Create($ConnectExchange))
-                $AllRoleGroupMembersTemp += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
+                $RoleGroupMembers += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
+            }
+
+            foreach ($RoleGroupMember in $RoleGroupMembers) {
+                $AllManagementRoleGroupMembers.AddRange(@($RoleGroupMember | Select-Object @{name = 'RoleGroup'; expression = { $RoleGroup.Name } }, @{name = 'TrusteeOriginalIdentity'; expression = { $_.Identity.name } }, @{name = 'TrusteePrimarySmtpAddress'; expression = { $_.PrimarySmtpAddress.address } } | Sort-Object -Property RoleGroup, TrusteeOriginalIdentity, TrusteePrimarySmtpAddress))
             }
         }
 
-        foreach ($RoleGroupMember in $AllRoleGroupMembersTemp) {
-            $AllManagementRoleGroupMembers.AddRange(@($RoleGroupMember | Select-Object @{name = 'RoleGroup'; expression = { $RoleGroup.Name } }, @{name = 'TrusteeOriginalIdentity'; expression = { $_.Identity.name } }, @{name = 'TrusteePrimarySmtpAddress'; expression = { $_.PrimarySmtpAddress.address } }))
-        }
-
         $AllRoleGroups = $null
-        $AllRoleGroupMembersTemp = $null
+        $RoleGroupMembers = $null
         $AllManagementRoleGroupMembers.TrimToSize()
         Write-Host ('  {0:0000000} Role Group memberships found' -f $($AllManagementRoleGroupMembers.count))
     } else {
@@ -1015,7 +1015,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} databases to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} databases to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1045,7 +1045,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -1053,7 +1053,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -1209,7 +1209,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1239,7 +1239,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -1247,7 +1247,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -1550,7 +1550,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1580,7 +1580,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -1588,7 +1588,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -1909,7 +1909,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1939,7 +1939,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -1947,7 +1947,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -2215,7 +2215,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2245,7 +2245,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -2253,7 +2253,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -2497,7 +2497,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2527,7 +2527,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -2535,7 +2535,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -2719,7 +2719,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2749,7 +2749,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -2757,7 +2757,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -2948,7 +2948,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2978,7 +2978,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -2986,7 +2986,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -3318,7 +3318,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} Public Folders to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} Public Folders to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3348,7 +3348,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -3356,7 +3356,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -3500,7 +3500,7 @@ try {
                                 }
 
                                 if ($ExportFileResult) {
-                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.ManagementRoleGroup{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.ManagementRoleGroup{0:0000000}.txt' -f $RoleGroupMemberId))) -Append -Force -Encoding $UTF8Encoding
                                 }
                             }
                         } catch {
@@ -3541,7 +3541,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} management role group members to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} management role group members to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3571,7 +3571,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -3579,7 +3579,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -3800,7 +3800,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host '  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
+            Write-Host ('  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3830,7 +3830,7 @@ try {
             if ($DebugFile) {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobDebugFile -Force
                 }
@@ -3838,7 +3838,7 @@ try {
             }
 
             if ($ErrorFile) {
-                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
                     Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
                     Remove-Item $JobErrorFile -Force
                 }
@@ -3878,39 +3878,55 @@ try {
     }
 
     Write-Host "  Temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $RecipientFiles = Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt')))
+    $RecipientFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
 
-    Write-Host '    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $RecipientFiles.count, $UpdateInterval
+    if ($RecipientFiles.count -gt 0) {
+        Write-Host ('    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $RecipientFiles.count, $UpdateInterval)
+        Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
 
-    for ($index = 0; $index -lt $RecipientFiles.count; $index++) {
-        if ($RecipientFiles[$index].length -gt 0) {
-            Get-Content $RecipientFiles[$index] -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
-        }
+        $lastCount = 1
 
-        Remove-Item $Recipientfiles[$index] -Force
+        foreach ($RecipientFile in $RecipientFiles) {
+            if ($RecipientFile.length -gt 0) {
+                Get-Content $RecipientFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
+            }
 
-        if (($index % $UpdateInterval -eq 0) -or ($index -eq $RecipientFiles.count - 1)) {
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $index, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-            if (($index -eq 0) -or ($index -eq $RecipientFiles.count - 1)) { Write-Host }
+            Remove-Item $RecipientFile -Force
+
+            if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $RecipientFiles.count)) {
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                if ($lastcount -eq $RecipientFiles.count) { Write-Host }
+            }
+
+            $lastCount++
         }
     }
 
     if ($ErrorFile) {
         Write-Host "  Temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $JobErrorFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))
 
-        $x = @()
-        $JobErrorFiles = Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt')))
+        if ($JobErrorFiles.count -gt 0) {
+            Write-Host ('    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $RecipientFiles.count, $UpdateInterval)
+            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
 
-        for ($index = 0; $index -lt $JobErrorFiles.count; $index++) {
-            if ($JobErrorFiles[$index].length -gt 0) {
-                $x += @(Get-Content $JobErrorFiles[$index] -Encoding $UTF8Encoding)
-            }
+            $x = @()
 
-            Remove-Item $JobErrorFiles[$index] -Force
+            $lastCount = 1
 
-            if (($index % $UpdateInterval -eq 0) -or ($index -eq $JobErrorFiles.count - 1)) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $index, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                if (($index -eq 0) -or ($index -eq $JobErrorFiles.count - 1)) { Write-Host }
+            foreach ($JobErrorFile in $JobErrorFiles) {
+                if ($JobErrorFile.length -gt 0) {
+                    $x += @(Get-Content $JobErrorFile -Encoding $UTF8Encoding)
+                }
+
+                Remove-Item $JobErrorFile -Force
+
+                if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobErrorFiles.count)) {
+                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    if ($lastcount -eq $JobErrorFiles.count) { Write-Host }
+                }
+
+                $lastCount++
             }
         }
 
@@ -3923,7 +3939,7 @@ try {
     if ($DebugFile) {
         $null = Stop-Transcript
         Start-Sleep -Seconds 1
-        foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+        foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
             Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
             Remove-Item $JobDebugFile -Force
         }
