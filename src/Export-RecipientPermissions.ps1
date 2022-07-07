@@ -131,6 +131,9 @@ Default: $true
 List of Foldertypes to ignore.
 Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
 Default: ''
+.PARAMETER ExportManagementRoleGroupMembers
+Export members of management role groups
+Default: $true
 .PARAMETER ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -257,7 +260,9 @@ Param(
     [boolean]$ExportPublicFolderPermissionsAnonymous = $true, # Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
     [boolean]$ExportPublicFolderPermissionsDefault = $true, # Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
     [string[]]$ExportPublicFolderPermissionsExcludeFoldertype = (''), # List of Foldertypes to ignore. Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
-
+    #
+    # Management Role Groups
+    [boolean]$ExportManagementRoleGroupMembers = $true,
 
     # Include all trustees in permission report file, only valid or only invalid ones
     # Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -659,7 +664,7 @@ try {
         }
 
         $AllRecipientsSendonbehalf.TrimToSize()
-        Write-Host ('  {0:0000000} recipients with Send On Behalf permissions found' -f $($AllRecipientsSendonbehalf.count))
+        Write-Host ('  {0:0000000} Send On Behalf permissions found' -f $($AllRecipientsSendonbehalf.count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -707,6 +712,46 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
+
+
+    # Import Management Role Groups and their members
+    Write-Host
+    Write-Host "Import Management Role Groups and their members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    if ($ExportManagementRoleGroupMembers) {
+        Write-Host '  Single-thread Exchange operation'
+
+        $AllManagementRoleGroupMembers = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
+
+        try {
+            $AllRoleGroups = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroup -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Name, Guid } -ErrorAction Stop) | Sort-Object -Property name
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRoleGroups = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroup -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Name, Guid } -ErrorAction Stop) | Sort-Object -Property name
+        }
+
+        $AllRoleGroupMembersTemp = @()
+
+        foreach ($RoleGroup in $AllRoleGroups) {
+            try {
+                $AllRoleGroupMembersTemp += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
+            } catch {
+                . ([scriptblock]::Create($ConnectExchange))
+                $AllRoleGroupMembersTemp += @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { get-rolegroupmember $args[0] -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity, PrimarySmtpAddress } -ArgumentList $RoleGroup.guid.guid -ErrorAction Stop)
+            }
+        }
+
+        foreach ($RoleGroupMember in $AllRoleGroupMembersTemp) {
+            $AllManagementRoleGroupMembers.AddRange(@($RoleGroupMember | Select-Object @{name = 'RoleGroup'; expression = { $RoleGroup.Name } }, @{name = 'TrusteeOriginalIdentity'; expression = { $_.Identity.name } }, @{name = 'TrusteePrimarySmtpAddress'; expression = { $_.PrimarySmtpAddress.address } }))
+        }
+
+        $AllRoleGroups = $null
+        $AllRoleGroupMembersTemp = $null
+        $AllManagementRoleGroupMembers.TrimToSize()
+        Write-Host ('  {0:0000000} Role Group memberships found' -f $($AllManagementRoleGroupMembers.count))
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
 
     # Disconnect from Exchange
     Write-Host
@@ -2961,9 +3006,9 @@ try {
 
                                 $folder = $AllPublicFolders[$PublicFolderId]
 
-                                $GrantorDisplayName = $null # $Grantor.DisplayName
-                                $GrantorPrimarySMTP = 'Public Folder' # $Grantor.PrimarySMTPAddress.address
-                                $GrantorRecipientType = 'PublicFolder'# $Grantor.RecipientType.value
+                                $GrantorDisplayName = $null
+                                $GrantorPrimarySMTP = 'Public Folder'
+                                $GrantorRecipientType = 'PublicFolder'
                                 $GrantorRecipientTypeDetails = $AllPublicFolders[$PublicFolderId].FolderClass # $Grantor.RecipientTypeDetails.value
                                 if ($ExportFromOnPrem) {
                                     $GrantorEnvironment = 'On-Prem'
@@ -3028,7 +3073,7 @@ try {
 
                                         }
                                     }
-                                    
+
                                     foreach ($FolderPermissions in
                                         @($(
                                                 try {
@@ -3244,6 +3289,228 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
+        }
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
+
+    # Management Role Group Members
+    Write-Host
+    Write-Host "Management Role Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    if ($ExportManagementRoleGroupMembers) {
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllManagementRoleGroupMembers.count))
+
+        foreach ($x in (0..($AllManagementRoleGroupMembers.count - 1))) {
+            $tempQueue.enqueue($x)
+        }
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsLocal)
+
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel local jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllManagementRoleGroupMembers,
+                            $AllRecipients,
+                            $tempQueue,
+                            $ExportFile,
+                            $ExportTrustees,
+                            $ErrorFile,
+                            $UTF8Encoding,
+                            $AllRecipientsSmtpToIndex,
+                            $DebugFile,
+                            $ScriptPath,
+                            $ExportFromOnPrem,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $TrusteeFilter
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -Path $DebugFile -Force
+                            }
+
+                            Write-Host "Linked Master Account @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            $ExportFileResult = [system.collections.arraylist]::new(1000)
+
+                            while ($tempQueue.count -gt 0) {
+                                $ExportFileresult.clear()
+
+                                try {
+                                    $RoleGroupMemberId = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                $RoleGroupMember = $AllManagementRoleGroupMembers[$RoleGroupMemberId]
+
+                                $GrantorDisplayName = $null
+                                $GrantorPrimarySMTP = 'Management Role Group'
+                                $GrantorRecipientType = 'ManagementRoleGroup'
+                                $GrantorRecipientTypeDetails = $null
+                                if ($ExportFromOnPrem) {
+                                    $GrantorEnvironment = 'On-Prem'
+                                } else {
+                                    $GrantorEnvironment = 'Cloud'
+                                }
+
+                                Write-Host "$($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                try {
+                                    try {
+                                        $index = $null
+                                        $index = $AllRecipientsSmtpToIndex[$($RoleGroupMember.TrusteePrimarySmtpAddress)]
+                                    } catch {
+                                    }
+
+                                    if ($index -ge 0) {
+                                        $Trustee = $AllRecipients[$index]
+                                    } else {
+                                        $Trustee = $RoleGroupMember.TrusteeOriginalIdentity
+                                    }
+
+                                    if ($RoleGroupMember.TrusteePrimarySmtpAddress) {
+                                        if ($TrusteeFilter) {
+                                            if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                continue
+                                            }
+                                        }
+
+                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                            if ($ExportFromOnPrem) {
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            } else {
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            }
+
+                                            if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                                $ExportFileresult.add((('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $GrantorRecipientType,
+                                                                    $GrantorEnvironment,
+                                                                    $RoleGroupMember.RoleGroup,
+                                                                    'Member',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $RoleGroupMember.TrusteeOriginalIdentity,
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                            }
+                                        }
+                                    }
+                                } catch {
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                                }
+                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.ManagementRoleGroup{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                            }
+                        } catch {
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
+                        } finally {
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        AllManagementRoleGroupMembers = $AllManagementRoleGroupMembers
+                        AllRecipients                 = $AllRecipients
+                        tempQueue                     = $tempQueue
+                        ExportFile                    = $ExportFile
+                        ExportTrustees                = $ExportTrustees
+                        AllRecipientsSmtpToIndex      = $AllRecipientsSmtpToIndex
+                        ErrorFile                     = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                     = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                    = $PSScriptRoot
+                        UTF8Encoding                  = $UTF8Encoding
+                        ExportFromOnPrem              = $ExportFromOnPrem
+                        VerbosePreference             = $VerbosePreference
+                        DebugPreference               = $DebugPreference
+                        TrusteeFilter                 = $TrusteeFilter
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host "  $($tempQueueCount) management role group members to check. Done (in steps of $($UpdateInterval)):"
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+            Write-Host
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '  Not all management role group members have been checked. Enable debugging option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in (Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobDebugFile | Out-File $DebugFile -Append -Encoding $UTF8Encoding
+                    Remove-Item $JobDebugFile -Force
+                }
+                $null = Start-Transcript -Path $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Out-File $ErrorFile -Append -Encoding $UTF8Encoding
+                    Remove-Item $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+
         }
     } else {
         Write-Host '  Not required with current export settings.'
