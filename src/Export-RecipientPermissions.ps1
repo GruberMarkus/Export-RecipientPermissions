@@ -2987,6 +2987,7 @@ try {
     Write-Host "Public Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportPublicFolderPermissions) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllPublicFolders.count))
+
         for ($x = 0; $x -lt $AllPublicFolders.count; $x++) {
             $tempQueue.enqueue($x)
         }
@@ -3577,8 +3578,11 @@ try {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
-            $tempQueue.enqueue($x)
+            if ($x -in $GrantorsToConsider) {
+                $tempQueue.enqueue($x)
+            }
         }
+
         $tempQueueCount = $tempQueue.count
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsLocal)
