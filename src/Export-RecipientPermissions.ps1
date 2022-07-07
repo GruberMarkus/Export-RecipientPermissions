@@ -1015,7 +1015,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) databases to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} databases to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1209,7 +1209,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) recipients to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1491,7 +1491,10 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -1547,7 +1550,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantor mailboxes to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -1843,7 +1846,10 @@ try {
                                         """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                     }
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -1903,7 +1909,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantor mailboxes to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantor mailboxes to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2163,7 +2169,10 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""SendAs"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send As"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -2206,7 +2215,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantors to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2444,7 +2453,10 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -2485,7 +2497,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantors to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2665,7 +2677,10 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Managed By"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Managed By"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -2704,7 +2719,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantors to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -2890,7 +2905,10 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Linked Master Account"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Linked Master Account"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -2930,7 +2948,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) grantors to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} grantors to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3238,7 +3256,9 @@ try {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Public Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
 
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.PublicFolder{0:0000000}.txt' -f $PublicfolderID))) -Append -Force -Encoding $UTF8Encoding
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.PublicFolder{0:0000000}.txt' -f $PublicfolderID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Public Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -3298,7 +3318,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) Public Folders to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} Public Folders to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3420,7 +3440,6 @@ try {
                                 $GrantorDisplayName = $null
                                 $GrantorPrimarySMTP = 'Management Role Group'
                                 $GrantorRecipientType = 'ManagementRoleGroup'
-                                $GrantorRecipientTypeDetails = $null
                                 if ($ExportFromOnPrem) {
                                     $GrantorEnvironment = 'On-Prem'
                                 } else {
@@ -3448,38 +3467,41 @@ try {
                                                 continue
                                             }
                                         }
+                                    }
+
+                                    if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                        if ($ExportFromOnPrem) {
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                        } else {
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                        }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                            if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
-                                            } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
-                                            }
-
-                                            if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                $ExportFileresult.add((('"' + ((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $GrantorRecipientType,
-                                                                    $GrantorEnvironment,
-                                                                    $RoleGroupMember.RoleGroup,
-                                                                    'Member',
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $RoleGroupMember.TrusteeOriginalIdentity,
-                                                                    $Trustee.PrimarySmtpAddress.address,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
-                                            }
+                                            $ExportFileresult.add((('"' + ((
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $GrantorRecipientType,
+                                                                $GrantorEnvironment,
+                                                                $RoleGroupMember.RoleGroup,
+                                                                'Member',
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $RoleGroupMember.TrusteeOriginalIdentity,
+                                                                $Trustee.PrimarySmtpAddress.address,
+                                                                $Trustee.DisplayName,
+                                                                $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
                                         }
                                     }
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.ManagementRoleGroup{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.ManagementRoleGroup{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -3519,7 +3541,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) management role group members to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} management role group members to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3736,7 +3758,10 @@ try {
                                         """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
                                     }
                                 }
-                                $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+
+                                if ($ExportFileResult) {
+                                    $ExportFileResult | Sort-Object -Unique | Out-File ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Append -Force -Encoding $UTF8Encoding
+                                }
                             }
                         } catch {
                             """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -PassThru -Encoding $UTF8Encoding
@@ -3775,7 +3800,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host "  $($tempQueueCount) recipients to check. Done (in steps of $($UpdateInterval)):"
+            Write-Host '  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -3853,17 +3878,40 @@ try {
     }
 
     Write-Host "  Temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    foreach ($RecipientFile in (Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))) {
-        Get-Content $RecipientFile -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
-        Remove-Item $Recipientfile -Force
+    $RecipientFiles = Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt')))
+
+    Write-Host '    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $RecipientFiles.count, $UpdateInterval
+
+    for ($index = 0; $index -lt $RecipientFiles.count; $index++) {
+        if ($RecipientFiles[$index].length -gt 0) {
+            Get-Content $RecipientFiles[$index] -Encoding $UTF8Encoding | Sort-Object -Unique | Out-File $ExportFile -Append -Force -Encoding $UTF8Encoding
+        }
+
+        Remove-Item $Recipientfiles[$index] -Force
+
+        if (($index % $UpdateInterval -eq 0) -or ($index -eq $RecipientFiles.count - 1)) {
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $index, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+            if (($index -eq 0) -or ($index -eq $RecipientFiles.count - 1)) { Write-Host }
+        }
     }
 
     if ($ErrorFile) {
         Write-Host "  Temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
         $x = @()
-        foreach ($JobErrorFile in (Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-            $x += @(Get-Content $JobErrorFile -Encoding $UTF8Encoding)
-            Remove-Item $JobErrorFile -Force
+        $JobErrorFiles = Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt')))
+
+        for ($index = 0; $index -lt $JobErrorFiles.count; $index++) {
+            if ($JobErrorFiles[$index].length -gt 0) {
+                $x += @(Get-Content $JobErrorFiles[$index] -Encoding $UTF8Encoding)
+            }
+
+            Remove-Item $JobErrorFiles[$index] -Force
+
+            if (($index % $UpdateInterval -eq 0) -or ($index -eq $JobErrorFiles.count - 1)) {
+                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $index, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                if (($index -eq 0) -or ($index -eq $JobErrorFiles.count - 1)) { Write-Host }
+            }
         }
 
         $x | Sort-Object -Unique | Out-File $ErrorFile -Append -Force -Encoding $UTF8Encoding
