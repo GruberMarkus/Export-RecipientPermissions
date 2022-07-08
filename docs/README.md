@@ -77,14 +77,20 @@ Finds all recipients with a primary SMTP address in an on on-prem or online Exch
 ## 1.1. Output
 The report is saved to the file 'Export-RecipientPermissions_Result.csv', which consists of the following columns:
 - Grantor Primary SMTP: The primary SMTP address of the object granting a permission
-  - When public folder permissions are exported, this column contains the value 'Public Folder'
-  - When management role group members are exported, this column contains the value 'Management Role Group'
+  - When management role group members are exported, this column contains 'Management Role Group'
+  - When public folder permissions are exported, this column represents the folder's content mailbox
 - Grantor Display Name: The display name of the grantor.
+  - When management role group members are exported, this column is empty
+  - When public folder permissions are exported, this column represents the folder's content mailbox
 - Grantor Recipient Type: The recipient type and recipient type detail of the grantor.
+  - When management role group members are exported, this column contains 'ManagementRoleGoup'
+  - When public folder permissions are exported, this column represents the folder's content mailbox ('UserMailbox/PublicFolderMailbox')
 - Grantor Environment: Shows if the grantor is held on-prem or in the cloud.
-- Folder: Mailbox folder the permission is granted on
-  - When management role group members are exported, this column contains the name of the management role group
+  - When public folder permissions are exported, this column represents the folder's content mailbox
+- Folder: Folder the permission is granted on
   - Empty for non-folder permissions
+  - All folder names start with '/', '/' representing the root folder
+  - When management role group members are exported, this column contains the name of the group and no '/' prefix (as this is not a real folder)
 - Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
   - When public folder permissions are exported and a folder is mail-enabled, a "virtual" right 'MailEnabled' is exported
   - When management role group members are exported, a "virtual" right 'Member' is exported
@@ -207,7 +213,7 @@ Default: $false
 ### 1.2.12. ExportMailboxFolderPermissions
 This part of the report can take very long
 
-Default: $true
+Default: $false
 ### 1.2.13. ExportMailboxFolderPermissionsAnonymous
 Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
@@ -252,7 +258,11 @@ Only works on-prem
 
 Default: $true
 ### 1.2.23. ExportPublicFolderPermissions
+Export public folder permissions
+
 This part of the report can take very long
+
+GrantorFilter refers to the public folder content mailbox
 
 Default: $true
 ### 1.2.24. ExportPublicFolderPermissionsAnonymous
@@ -276,6 +286,8 @@ Default: $true
 ### 1.2.28. ExportManagementRoleGroupMembers
 Export members of management role groups
 
+GrantorFilter does not apply to the export of management role groups, but TrusteeFilter does
+
 Default: $true
 ### 1.2.29. ExportForwarders
 Export forwarders:
@@ -297,6 +309,13 @@ Export forwarders:
   - Can point to any SMTP address, existing in your directory or somewhere outside
   - This property is used when a user configures forwarding for his mailbox in Outlook Web
   - '`DeliverToMailboxAndForward`' ('`deliverAndRedirect`' in Active Directory) defines if the e-mail is forwarded only, or forwarded and stored
+
+When forwarders are exported, one or more of the following "virtual" rights are exported:
+- Forward_ExternalEmailAddress_ForwardOnly
+- Forward_ForwardingAddress_DeliverAndForward
+- Forward_ForwardingAddress_ForwardOnly
+- Forward_ForwardingSmtpAddress_DeliverAndForward
+- Forward_ForwardingSmtpAddress_ForwardOnly
 
 Default: $true
 ### 1.2.30. ExportTrustees
