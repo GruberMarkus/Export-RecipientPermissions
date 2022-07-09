@@ -1,15 +1,18 @@
 <#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
-Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf" and "managed by".
+Document, filter and compare Exchange mailbox access rights, mailbox folder permissions, public folder permissions, "send as", "send on behalf", "managed by", linked master accounts, forwarders and management role groups
 .DESCRIPTION
-Finds all recipients with a primary SMTP address in an on on-prem or online Exchange environment and documents their
+Document, filter and compare
 - mailbox access rights,
 - mailbox folder permissions,
+- public folder permissions,
 - "send as" permissions,
 - "send on behalf" permissions,
 - "managed by" permissions,
-- and linked master accounts
+- linked master accounts,
+- forwarders,
+- and management role groups
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 

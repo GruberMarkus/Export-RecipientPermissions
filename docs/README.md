@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document Exchange mailbox access rights, folder permissions, "send as", "send on behalf", "managed by" and linked master accounts<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document, filter and compare Exchange mailbox access rights, mailbox folder permissions, public folder permissions, "send as", "send on behalf", "managed by", linked master accounts, forwarders and management role groups<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
 
 # Features <!-- omit in toc -->
 Finds all recipients with a primary SMTP address in an on on-prem or online Exchange environment and documents their
@@ -55,12 +55,14 @@ Compare exports from different times to detect permission changes (sample code i
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
-  - [2.1. Where can I find the changelog?](#21-where-can-i-find-the-changelog)
-  - [2.2. How can I contribute, propose a new feature or file a bug?](#22-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
-  - [2.3. How can I get more script output for troubleshooting?](#23-how-can-i-get-more-script-output-for-troubleshooting)
-  - [2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#24-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
-  - [2.5. Isn't a plural noun in the script name against PowerShell best practices?](#25-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
-  - [2.6. Is there a roadmap for future versions?](#26-is-there-a-roadmap-for-future-versions)
+  - [2.1. Which permissions are required?](#21-which-permissions-are-required)
+  - [2.2. Can the script resolve permissions granted to a group to it's individual members?](#22-can-the-script-resolve-permissions-granted-to-a-group-to-its-individual-members)
+  - [2.3. Where can I find the changelog?](#23-where-can-i-find-the-changelog)
+  - [2.4. How can I contribute, propose a new feature or file a bug?](#24-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
+  - [2.5. How can I get more script output for troubleshooting?](#25-how-can-i-get-more-script-output-for-troubleshooting)
+  - [2.6. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#26-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
+  - [2.7. Isn't a plural noun in the script name against PowerShell best practices?](#27-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
+  - [2.8. Is there a roadmap for future versions?](#28-is-there-a-roadmap-for-future-versions)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -369,15 +371,50 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 }
 ```
 # 2. FAQ
-## 2.1. Where can I find the changelog?
+## 2.1. Which permissions are required?
+Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
+- '`Get-DistributionGroup`'
+- '`Get-DynamicDistributionGroup`'
+- '`Get-Mailbox`'
+- '`Get-MailboxFolderPermission`'
+- '`Get-MailboxFolderStatistics`'
+- '`Get-MailboxPermission`'
+- '`Get-MailPublicFolder`'
+- '`Get-Publicfolder`'
+- '`Get-PublicFolderClientPermission`'
+- '`Get-Recipient`'
+- '`Get-RecipientPermission`'
+- '`Get-SecurityPrincipal`'
+- '`Get-UnifiedGroup`'
+
+In on-premises environments, membership in the Exchange management role group 'View-Only Organization Management' is sufficient.
+
+In Exchange Online, the Exchange management role group 'View-Only Organization Management' (which contains the Azure AD role group 'Global Reader' per default) is not sufficient, as - for an unkown reason - the cmdlet '`Get-RecipientPermission`' is not included this management role group.  
+'`Get-RecipientPermission`' is included in the management role groups 'Recipient Management' and 'Organization Management' per default.
+
+In both environments, a tailored custom management role group with the required permissions and recipient restrictions can be created.
+## 2.2. Can the script resolve permissions granted to a group to it's individual members?
+No, Export-RecipientPermissions does not resolve trustee groups to their individual members.
+
+Yes, it is technically possible and the main code for it has already been written and is actively used by <a href="https://github.com/GruberMarkus/Set-OutlookSignatures" target="_blank">Set-OutlookSignatures</a>.
+
+It works well in Set-OutlookSignatures, because querying and caching group membership is restricted to the number of mailboxes a user has configured in Outlook, which is usually very low.
+
+The code does not work well in Export-RecipientPermissions, where the number of the groups to query and cache is much higher. It works in very small (test) environments, but is not suited for even the smallest medium environments.
+
+Resolving group membership will not be implemented in Export-RecipientPermissions until the following problem can be solved: Query members every time the script comes across a group - or cache all the direct and indirect memberships?  
+- Both approaches work in very small environments, but are not suited even for the smallest medium environments:
+- The 'query every time' approach is wasteful on time, network and Exchange/AD resources.
+- The 'cache memberships' approach very fast requires lots and lots of RAM.
+## 2.3. Where can I find the changelog?
 The changelog is located in the `'.\docs'` folder, along with other documents related to Set-OutlookSignatures.
-## 2.2. How can I contribute, propose a new feature or file a bug?
+## 2.4. How can I contribute, propose a new feature or file a bug?
 If you have an idea for a new feature or have found a problem, please <a href="https://github.com/GruberMarkus/Set-OutlookSignatures/issues" target="_blank">create an issue on GitHub</a>.
 
 If you want to contribute code, please have a look at `'.\docs\CONTRIBUTING'` for a rough overview of the proposed process.
-## 2.3. How can I get more script output for troubleshooting?
+## 2.5. How can I get more script output for troubleshooting?
 Start the script with the '-verbose' parameter to get the maximum output for troubleshooting.
-## 2.4. A permission is reported, but the trustee details (primary SMTP address etc.) are empty
+## 2.6. A permission is reported, but the trustee details (primary SMTP address etc.) are empty
 When excluding a bug in the script, there are three possible reasons why a trustee does not have details like a primary SMTP address in the result file:
 - The trustee is a valid Active Directory object, but not a valid Exchange recipient.  
 Examples: 'NT AUTHORITY\SELF', 'Domain Admins', 'Enterprise Admins'
@@ -387,11 +424,11 @@ As Exchange stores trustees in different formats, the trustee original identity 
 - Multiple recipients share the same linked master account, user friendly name, distinguished name, GUID or primary SMTP address. As the search for this value returns multiple recipients, no details are shown.  
 This should not happen when using the built-in Exchange tools, due to their built-in quality checks. It happens more often, when Exchange attributes are modified directly in Active Directory.  
 Whe passing the '-verbose' PowerShell parameter, the script outputs recipients with non-unique attributes in the verbose stream.  
-## 2.5. Isn't a plural noun in the script name against PowerShell best practices?
+## 2.7. Isn't a plural noun in the script name against PowerShell best practices?
 Absolutely. PowerShell best practices recommend using singular nouns, but Export-RecipientPermissions contains a plural noun.
 
 I intentionally decided not to follow the singular noun convention, as another language as PowerShell was initially used for coding and the name of the tool was already defined. If this was a commercial enterprise project, marketing would have overruled development.
-## 2.6. Is there a roadmap for future versions?
+## 2.8. Is there a roadmap for future versions?
 There is no binding roadmap for future versions, although I maintain a list of ideas in the 'Contribution opportunities' chapter of '.\docs\CONTRIBUTING.html'.
 
 Fixing issues has priority over new features, of course.
