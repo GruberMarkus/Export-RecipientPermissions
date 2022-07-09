@@ -406,6 +406,8 @@ Resolving group membership will not be implemented in Export-RecipientPermission
 - Both approaches work in very small environments, but are not suited even for the smallest medium environments:
 - The 'query every time' approach is wasteful on time, network and Exchange/AD resources.
 - The 'cache memberships' approach very fast requires lots and lots of RAM.
+
+The best approach by now is to connect the output of Export-RecipientPermissions with the output of your system documenting your Active Directory (for example, a snapshot of the concerned directories exported by an identity management system).
 ## 2.3. Where can I find the changelog?
 The changelog is located in the `'.\docs'` folder, along with other documents related to Set-OutlookSignatures.
 ## 2.4. How can I contribute, propose a new feature or file a bug?
