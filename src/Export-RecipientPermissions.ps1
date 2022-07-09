@@ -1,18 +1,18 @@
 <#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
-Document, filter and compare Exchange mailbox access rights, mailbox folder permissions, public folder permissions, "send as", "send on behalf", "managed by", linked master accounts, forwarders and management role groups
+Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups
 .DESCRIPTION
-Document, filter and compare
-- mailbox access rights,
-- mailbox folder permissions,
-- public folder permissions,
-- "send as" permissions,
-- "send on behalf" permissions,
-- "managed by" permissions,
-- linked master accounts,
-- forwarders,
-- and management role groups
+Document, filter and compare Exchange permissions:
+- mailbox access rights
+- mailbox folder permissions
+- public folder permissions
+- send as
+- send on behalf
+- managed by
+- linked master accounts
+- forwarders
+- management role groups
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
