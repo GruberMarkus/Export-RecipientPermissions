@@ -447,7 +447,7 @@ try {
     Write-Host
     Write-Host "Script notes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     Write-Host '  Script : Export-RecipientPermissions'
-    Write-Host '  Version: XXXVersionString'
+    Write-Host '  Version: XXXVersionStringXXX'
     Write-Host '  Web    : https://github.com/GruberMarkus/Export-RecipientPermissions'
     Write-Host "  License: MIT license (see '.\docs\LICENSE.txt' for details and copyright)"
 
