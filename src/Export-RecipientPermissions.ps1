@@ -850,36 +850,42 @@ try {
     Write-Host "  DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
-            # Same DN defined multiple times - set index to $null
-            Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
-            $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
-        } else {
-            $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $x
+        if ($AllRecipients[$x].distinguishedname) {
+            if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
+                # Same DN defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
+                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
+            } else {
+                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $x
+            }
         }
     }
 
     Write-Host "  Identity GUID to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
-            # Same GUID defined multiple times - set index to $null
-            Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
-            $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
-        } else {
-            $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $x
+        if ($AllRecipients[$x].identity.objectguid.guid) {
+            if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
+                # Same GUID defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
+                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
+            } else {
+                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $x
+            }
         }
     }
 
     Write-Host "  Exchange GUID to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
-            # Same GUID defined multiple times - set index to $null
-            Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
-            $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
-        } else {
-            $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $x
+        if ($AllRecipients[$x].ExchangeGuid.Guid) {
+            if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
+                # Same GUID defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
+                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
+            } else {
+                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $x
+            }
         }
     }
 
@@ -887,7 +893,7 @@ try {
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].EmailAddresses) {
-            foreach ($EmailAddress in $AllRecipients[$x].EmailAddresses.SmtpAddress) {
+            foreach ($EmailAddress in (@($AllRecipients[$x].EmailAddresses.SmtpAddress | Where-Object { $_ }))) {
                 if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
                     # Same EmailAddress defined multiple times - set index to $null
                     Write-Verbose "    '$($EmailAddress)' is not unique."
