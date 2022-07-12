@@ -851,13 +851,8 @@ try {
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
-            # Same DN defined multiple time - set index to $null
-            if ($AllRecipientsUfnToIndex[$(($AllRecipients[$x]).distinguishedname)]) {
-                Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' used not only once: '$($AllRecipients[$($AllRecipientsUfnToIndex[$(($AllRecipients[$x]).distinguishedname)])].primarysmtpaddress.address)'"
-            }
-
-            Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
-
+            # Same DN defined multiple times - set index to $null
+            Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
             $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
         } else {
             $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $x
@@ -868,13 +863,8 @@ try {
     $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
-            # Same GUID defined multiple time - set index to $null
-            if ($AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)]) {
-                Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' used not only once: '$($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)])].primarysmtpaddress.address)'"
-            }
-
-            Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
-
+            # Same GUID defined multiple times - set index to $null
+            Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
             $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
         } else {
             $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $x
@@ -885,34 +875,26 @@ try {
     $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
-            # Same GUID defined multiple time - set index to $null
-            if ($AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)]) {
-                Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' used not only once: '$($AllRecipients[$($AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)])].primarysmtpaddress.address)'"
-            }
-
-            Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
-
+            # Same GUID defined multiple times - set index to $null
+            Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
             $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
         } else {
             $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $x
         }
     }
 
-    Write-Host "  PrimarySmtpAddress to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $AllRecipientsPrimarySmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
+    Write-Host "  EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if (($AllRecipients[$x]).primarysmtpaddress.address) {
-            if ($AllRecipientsPrimarySmtpToIndex.ContainsKey($(($AllRecipients[$x]).primarysmtpaddress.address))) {
-                # Same PrimarySmtpAddress defined multiple time - set index to $null
-                if ($AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)]) {
-                    Write-Verbose "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)])].primarysmtpaddress.address)'"
+        if ($AllRecipients[$x].EmailAddresses) {
+            foreach ($EmailAddress in $AllRecipients[$x].EmailAddresses.SmtpAddress) {
+                if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
+                    # Same EmailAddress defined multiple times - set index to $null
+                    Write-Verbose "    '$($EmailAddress)' is not unique."
+                    $AllRecipientsSmtpToIndex[$EmailAddress] = $null
+                } else {
+                    $AllRecipientsSmtpToIndex[$EmailAddress] = $x
                 }
-
-                Write-Verbose "    '$(($AllRecipients[$x]).primarysmtpaddress.address)' used not only once: '$(($AllRecipients[$x]).primarysmtpaddress.address)'"
-
-                $AllRecipientsPrimarySmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $null
-            } else {
-                $AllRecipientsPrimarySmtpToIndex[$(($AllRecipients[$x]).primarysmtpaddress.address)] = $x
             }
         }
     }
@@ -1692,7 +1674,7 @@ try {
                             $ExportFile,
                             $ErrorFile,
                             $ExportTrustees,
-                            $AllRecipientsPrimarySmtpToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
@@ -1802,7 +1784,7 @@ try {
 
                                                             try {
                                                                 $index = $null
-                                                                $index = $AllRecipientsPrimarySmtpToIndex[$($FolderPermission.user.adrecipient.primarysmtpaddress)]
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.adrecipient.primarysmtpaddress)]
                                                             } catch {
                                                             }
 
@@ -1851,7 +1833,7 @@ try {
 
                                                             try {
                                                                 $index = $null
-                                                                $index = $AllRecipientsPrimarySmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
                                                             } catch {
                                                             }
 
@@ -1930,7 +1912,7 @@ try {
                         ExportMailboxFolderPermissionsExcludeFoldertype = $ExportMailboxFolderPermissionsExcludeFoldertype
                         ExportFile                                      = $ExportFile
                         ExportTrustees                                  = $ExportTrustees
-                        AllRecipientsPrimarySmtpToIndex                 = $AllRecipientsPrimarySmtpToIndex
+                        AllRecipientsSmtpToIndex                        = $AllRecipientsSmtpToIndex
                         ErrorFile                                       = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugFile                                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ExportFromOnPrem                                = $ExportFromOnPrem
@@ -2050,7 +2032,7 @@ try {
                             $ErrorFile,
                             $AllRecipientsUfnToIndex,
                             $AllRecipientsLinkedMasterAccountToIndex,
-                            $AllRecipientsPrimarySmtpToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $ExportSendAsSelf,
                             $DebugFile,
                             $ExportFromOnPrem,
@@ -2171,7 +2153,7 @@ try {
                                                     }
                                                 } elseif ($entry.trustee -ilike '*@*') {
                                                     $index = $null
-                                                    $index = $AllRecipientsPrimarySmtpToIndex[$($entry.trustee)]
+                                                    $index = $AllRecipientsSmtpToIndex[$($entry.trustee)]
                                                 }
 
                                                 if ($index -ge 0) {
@@ -2240,7 +2222,7 @@ try {
                         ExportFile                              = $ExportFile
                         ExportTrustees                          = $ExportTrustees
                         AllRecipientsUfnToIndex                 = $AllRecipientsUfnToIndex
-                        AllRecipientsPrimarySmtpToIndex         = $AllRecipientsPrimarySmtpToIndex
+                        AllRecipientsSmtpToIndex                = $AllRecipientsSmtpToIndex
                         AllRecipientsLinkedMasterAccountToIndex = $AllRecipientsLinkedMasterAccountToIndex
                         ExportSendAsSelf                        = $ExportSendAsSelf
                         ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
@@ -3102,7 +3084,7 @@ try {
                             $ExportTrustees,
                             $GrantorFilter,
                             $AllRecipients,
-                            $AllRecipientsPrimarySmtpToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $AllRecipientsIdentityGuidToIndex,
                             $AllRecipientsExchangeGuidToIndex,
                             $DebugFile,
@@ -3257,7 +3239,7 @@ try {
 
                                                         try {
                                                             $index = $null
-                                                            $index = $AllRecipientsPrimarySmtpToIndex[$($FolderPermission.user.adrecipient.primarysmtpaddress)]
+                                                            $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.adrecipient.primarysmtpaddress)]
                                                         } catch {
                                                         }
 
@@ -3298,7 +3280,7 @@ try {
 
                                                         try {
                                                             $index = $null
-                                                            $index = $AllRecipientsPrimarySmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
+                                                            $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
                                                         } catch {
                                                         }
 
@@ -3376,7 +3358,7 @@ try {
                         ExportTrustees                                 = $ExportTrustees
                         GrantorFilter                                  = $GrantorFilter
                         AllRecipients                                  = $AllRecipients
-                        AllRecipientsPrimarySmtpToIndex                = $AllRecipientsPrimarySmtpToIndex
+                        AllRecipientsSmtpToIndex                       = $AllRecipientsSmtpToIndex
                         AllRecipientsIdentityGuidToIndex               = $AllRecipientsIdentityGuidToIndex
                         AllRecipientsExchangeGuidToIndex               = $AllRecipientsExchangeGuidToIndex
                         ErrorFile                                      = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
@@ -3499,7 +3481,7 @@ try {
                             $ExportFile,
                             $ExportTrustees,
                             $ErrorFile,
-                            $AllRecipientsPrimarySmtpToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ScriptPath,
                             $ExportFromOnPrem,
@@ -3548,7 +3530,7 @@ try {
                                 try {
                                     try {
                                         $index = $null
-                                        $index = $AllRecipientsPrimarySmtpToIndex[$($RoleGroupMember.TrusteePrimarySmtpAddress)]
+                                        $index = $AllRecipientsSmtpToIndex[$($RoleGroupMember.TrusteePrimarySmtpAddress)]
                                     } catch {
                                     }
 
@@ -3610,20 +3592,20 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllManagementRoleGroupMembers   = $AllManagementRoleGroupMembers
-                        AllRecipients                   = $AllRecipients
-                        tempQueue                       = $tempQueue
-                        ExportFile                      = $ExportFile
-                        ExportTrustees                  = $ExportTrustees
-                        AllRecipientsPrimarySmtpToIndex = $AllRecipientsPrimarySmtpToIndex
-                        ErrorFile                       = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                      = $PSScriptRoot
-                        ExportFromOnPrem                = $ExportFromOnPrem
-                        VerbosePreference               = $VerbosePreference
-                        DebugPreference                 = $DebugPreference
-                        TrusteeFilter                   = $TrusteeFilter
-                        UTF8Encoding                    = $UTF8Encoding
+                        AllManagementRoleGroupMembers = $AllManagementRoleGroupMembers
+                        AllRecipients                 = $AllRecipients
+                        tempQueue                     = $tempQueue
+                        ExportFile                    = $ExportFile
+                        ExportTrustees                = $ExportTrustees
+                        AllRecipientsSmtpToIndex      = $AllRecipientsSmtpToIndex
+                        ErrorFile                     = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                     = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                    = $PSScriptRoot
+                        ExportFromOnPrem              = $ExportFromOnPrem
+                        VerbosePreference             = $VerbosePreference
+                        DebugPreference               = $DebugPreference
+                        TrusteeFilter                 = $TrusteeFilter
+                        UTF8Encoding                  = $UTF8Encoding
                     }
                 )
 
@@ -3755,7 +3737,7 @@ try {
                     {
                         param(
                             $AllRecipients,
-                            $AllRecipientsPrimarySmtpToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $tempQueue,
                             $ExportFile,
                             $ExportTrustees,
@@ -3809,7 +3791,7 @@ try {
                                     try {
                                         try {
                                             $index = $null
-                                            $index = $AllRecipientsPrimarySmtpToIndex[$($Grantor.$ForwarderType)]
+                                            $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType)]
                                         } catch {
                                         }
 
@@ -3873,19 +3855,19 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                   = $AllRecipients
-                        AllRecipientsPrimarySmtpToIndex = $AllRecipientsPrimarySmtpToIndex
-                        tempQueue                       = $tempQueue
-                        ExportFile                      = $ExportFile
-                        ExportTrustees                  = $ExportTrustees
-                        ErrorFile                       = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                      = $PSScriptRoot
-                        ExportFromOnPrem                = $ExportFromOnPrem
-                        VerbosePreference               = $VerbosePreference
-                        DebugPreference                 = $DebugPreference
-                        TrusteeFilter                   = $TrusteeFilter
-                        UTF8Encoding                    = $UTF8Encoding
+                        AllRecipients            = $AllRecipients
+                        AllRecipientsSmtpToIndex = $AllRecipientsSmtpToIndex
+                        tempQueue                = $tempQueue
+                        ExportFile               = $ExportFile
+                        ExportTrustees           = $ExportTrustees
+                        ErrorFile                = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath               = $PSScriptRoot
+                        ExportFromOnPrem         = $ExportFromOnPrem
+                        VerbosePreference        = $VerbosePreference
+                        DebugPreference          = $DebugPreference
+                        TrusteeFilter            = $TrusteeFilter
+                        UTF8Encoding             = $UTF8Encoding
                     }
                 )
 
