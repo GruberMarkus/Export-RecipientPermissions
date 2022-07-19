@@ -97,7 +97,7 @@ function main {
     $ChangeLogLines = Get-Content $Changelog
     $ChangelogStartline = $null
     $ChangelogEndline = $null
-    $ReleaseTagDate = $(Get-Date -Format 'yyyy-MM-dd')
+    $ReleaseTagDate = $(Get-Date ([System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'W. Europe Standard Time')) -Format 'yyyy-MM-dd')
     for ($i = 0; $i -lt $ChangeLogLines.count; $i++) {
         if (-not $ChangelogStartline) {
             if ($ChangeLogLines[$i] -match ("^##\s*(\[$ReleaseTag\] - $ReleaseTagDate\s*|$ReleaseTag - $ReleaseTagDate\s*|$ReleaseTag - $ReleaseTagDate$)|>$ReleaseTag</a> - $ReleaseTagDate\s*")) {
