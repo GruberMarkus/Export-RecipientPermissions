@@ -16,7 +16,7 @@
   ### Fixed
 -->
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0-beta1" target="_blank">v2.0.0-beta1</a> - 2022-07-09
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.0.0</a> - 2022-07-19
  _**Breaking:** See '`Changed`' section for breaking changes_  
 ### Changed
 - **Breaking:** New default values for several parameters:
