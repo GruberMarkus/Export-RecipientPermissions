@@ -916,7 +916,7 @@ try {
     Write-Host "Import group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ResolveGroups) {
-        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllMailboxDatabases.count))
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             if (($AllRecipients[$x].RecipientTypeDetails -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails -ilike '*Group')) {
                 $tempQueue.enqueue($x)
@@ -991,11 +991,29 @@ try {
 
                                             if ($GroupToCheck.RecipientTypeDetails.Value -ilike '*Group') {
                                                 if ($GroupToCheck.RecipientTypeDetails.Value -ieq 'DynamicDistributionGroup') {
-                                                    try {
-                                                        $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroupMember -identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
-                                                    } catch {
-                                                        . ([scriptblock]::Create($ConnectExchange))
-                                                        $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroupMember -identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
+                                                    if ($ExportFromOnPrem) {
+                                                      try {
+                                                        $DynamicGroup = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroup -Identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientFilter, RecipientContainer } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
+                                                      } catch {
+                                                        . ([scriptblock]::Create($ConnectExchange))                                                      
+                                                        $DynamicGroup = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroup -Identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientFilter, RecipientContainer } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
+                                                      }
+                                                      
+                                                      if ($DynamicGroup) {
+                                                        try {
+                                                          $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientPreviewFilter $args[0] -OrganizationalUnit $args[1] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $DynamicGroup.RecipientFilter, $DynamicGroup.RecipientContainer -ErrorAction Stop)
+                                                        } catch {
+                                                          . ([scriptblock]::Create($ConnectExchange))                                                      
+                                                          $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientPreviewFilter $args[0] -OrganizationalUnit $args[1] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $DynamicGroup.RecipientFilter, $DynamicGroup.RecipientContainer -ErrorAction Stop)
+                                                        }
+                                                      }                                                     
+                                                    } else {                                                    
+                                                      try {
+                                                          $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroupMember -identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
+                                                      } catch {
+                                                          . ([scriptblock]::Create($ConnectExchange))
+                                                          $members = @(Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-DynamicDistributionGroupMember -identity $args[0] -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object PrimarySmtpAddress, RecipientTypeDetails } -ArgumentList $GroupToCheck.PrimarySmtpAddress.Address -ErrorAction Stop)
+                                                      }
                                                     }
                                                 } else {
                                                     try {
