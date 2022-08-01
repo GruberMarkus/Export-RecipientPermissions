@@ -51,11 +51,12 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.27. ExportSendAs](#1227-exportsendas)
     - [1.2.28. ExportManagementRoleGroupMembers](#1228-exportmanagementrolegroupmembers)
     - [1.2.29. ExportForwarders](#1229-exportforwarders)
-    - [1.2.30. ExportTrustees](#1230-exporttrustees)
-    - [1.2.31. ExportFile](#1231-exportfile)
-    - [1.2.32. ErrorFile](#1232-errorfile)
-    - [1.2.33. DebugFile](#1233-debugfile)
-    - [1.2.34. UpdateInverval](#1234-updateinverval)
+    - [1.2.30. ResolveGroups](#1230-resolvegroups)
+    - [1.2.31. ExportTrustees](#1231-exporttrustees)
+    - [1.2.32. ExportFile](#1232-exportfile)
+    - [1.2.33. ErrorFile](#1233-errorfile)
+    - [1.2.34. DebugFile](#1234-debugfile)
+    - [1.2.35. UpdateInverval](#1235-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -162,7 +163,7 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 - .PrimarySmtpAddress: .Local, .Domain, .Address
 - .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
   - This attribute is an array. Code example:
-    ```PowerShell
+    ```
     $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
                       'addressA@example.com’,
                       'addressB@example.com’
@@ -171,7 +172,7 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 - .UserFriendlyName: User account holding the mailbox in the `"<NetBIOS domain name>\<sAMAccountName>"` format
 - .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
   - This attribute is an array. Code example:
-    ```PowerShell
+    ```
     $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
                           'example.com/OU1/OU2/ObjectA’,
                           'example.com/OU3/OU4/ObjectB’,
@@ -184,7 +185,7 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 Set to \$null or '' to define all recipients as grantors to consider
 
 Example:
-```PowerShell
+```
 "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
 ```
 
@@ -199,7 +200,7 @@ If the trustee does not match a recipient (because it no longer exists, for exam
 - Columns "Trustee Primary SMTP" and "Trustee Display Name" are empty
 
 Example:
-```PowerShell
+```
 "`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
 ```
 
@@ -324,7 +325,15 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 - Forward_ForwardingSmtpAddress_ForwardOnly
 
 Default: $true
-### 1.2.30. ExportTrustees
+### 1.2.30. ResolveGroups
+Resolve groups to their members, including nested groups and dynamic groups
+
+This may drastically increase script run time
+
+Trustee original identity is preserved, but suffixed with ' [resolved to members]' for resolved members
+
+Default: $false
+### 1.2.31. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -332,23 +341,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.31. ExportFile
+### 1.2.32. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.32. ErrorFile
+### 1.2.33. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.33. DebugFile
+### 1.2.34. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.34. UpdateInverval
+### 1.2.35. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
@@ -366,7 +375,7 @@ The script needs to be run with an account that has read permissions to all reci
 As the credentials are stored in the encrypted secure string file format and can be re-used, the script can be fully automated and run as a scheduled job.
 
 Per default, the script uses multiple parallel threads, each one consuming one Exchange PowerShell session. Please watch CPU and RAM usage, as well as your Exchange throttling policy:
-```PowerShell
+```
 (Get-ThrottlingPolicyAssociation -Identity ([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name) | foreach {
 	"THROTTLING POLICY ASSOCIATION"
 	$_
@@ -401,7 +410,7 @@ In Exchange Online, the Exchange management role group 'View-Only Organization M
 - '`Get-SecurityPrincipal`' is included in the role group '`Organization Management`'.  
 
 You can use the following script to find out which cmdlet is assisgned to which management role:
-```PowerShell
+```
 $ExportFile = '.\Required Cmdlets and their management role assignment.csv'
 
 $Cmdlets = (
@@ -476,24 +485,11 @@ Write-Host 'Done'
 
 In both environments, a tailored custom management role group with the required permissions and recipient restrictions can be created.
 ## 2.2. Can the script resolve permissions granted to a group to it's individual members?
-No, Export-RecipientPermissions does not resolve trustee groups to their individual members.
-
-Yes, it is technically possible and the main code for it has already been written and is actively used by <a href="https://github.com/GruberMarkus/Set-OutlookSignatures" target="_blank">Set-OutlookSignatures</a>.
-
-It works well in Set-OutlookSignatures, because querying and caching group membership is restricted to the number of mailboxes a user has configured in Outlook, which is usually very low.
-
-The code does not work well in Export-RecipientPermissions, where the number of the groups to query and cache is much higher. It works in very small (test) environments, but is not suited for even the smallest medium environments.
-
-Resolving group membership will not be implemented in Export-RecipientPermissions until the following problem can be solved: Query members every time the script comes across a group - or cache all the direct and indirect memberships?  
-- Both approaches work in very small environments, but are not suited even for the smallest medium environments:
-- The 'query every time' approach is wasteful on time, network and Exchange/AD resources.
-- The 'cache memberships' approach very fast requires lots and lots of RAM.
-
-The best approach by now is to connect the output of Export-RecipientPermissions with the output of your system documenting your Active Directory (for example, a snapshot of the concerned directories exported by an identity management system).
+Yes, Export-RecipientPermissions can resolve trustee groups to their individual members. Use the parameter `'ResolveGroups'` to enable this feature.
 ## 2.3. Where can I find the changelog?
-The changelog is located in the `'.\docs'` folder, along with other documents related to Set-OutlookSignatures.
+The changelog is located in the `'.\docs'` folder, along with other documents related to Export-RecipientPermissions.
 ## 2.4. How can I contribute, propose a new feature or file a bug?
-If you have an idea for a new feature or have found a problem, please <a href="https://github.com/GruberMarkus/Set-OutlookSignatures/issues" target="_blank">create an issue on GitHub</a>.
+If you have an idea for a new feature or have found a problem, please <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank">create an issue on GitHub</a>.
 
 If you want to contribute code, please have a look at `'.\docs\CONTRIBUTING'` for a rough overview of the proposed process.
 ## 2.5. How can I get more script output for troubleshooting?
