@@ -162,7 +162,7 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 - .PrimarySmtpAddress: .Local, .Domain, .Address
 - .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
   - This attribute is an array. Code example:
-    ```
+    ```PowerShell
     $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
                       'addressA@example.com’,
                       'addressB@example.com’
@@ -171,7 +171,7 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 - .UserFriendlyName: User account holding the mailbox in the `"<NetBIOS domain name>\<sAMAccountName>"` format
 - .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
   - This attribute is an array. Code example:
-    ```
+    ```PowerShell
     $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
                           'example.com/OU1/OU2/ObjectA’,
                           'example.com/OU3/OU4/ObjectB’,
@@ -184,9 +184,9 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`. For 
 Set to \$null or '' to define all recipients as grantors to consider
 
 Example:
-    ```
-    "`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
-    ```
+```PowerShell
+"`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
+```
 
 Default: $null
 ### 1.2.8. TrusteeFilter
@@ -199,9 +199,9 @@ If the trustee does not match a recipient (because it no longer exists, for exam
 - Columns "Trustee Primary SMTP" and "Trustee Display Name" are empty
 
 Example:
-    ```
-    "`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
-    ```
+```PowerShell
+"`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
+```
 
 Default: $null
 ### 1.2.9. ExportMailboxAccessRights
@@ -366,7 +366,7 @@ The script needs to be run with an account that has read permissions to all reci
 As the credentials are stored in the encrypted secure string file format and can be re-used, the script can be fully automated and run as a scheduled job.
 
 Per default, the script uses multiple parallel threads, each one consuming one Exchange PowerShell session. Please watch CPU and RAM usage, as well as your Exchange throttling policy:
-```
+```PowerShell
 (Get-ThrottlingPolicyAssociation -Identity ([System.Security.Principal.WindowsIdentity]::GetCurrent()).Name) | foreach {
 	"THROTTLING POLICY ASSOCIATION"
 	$_
@@ -378,7 +378,9 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 ## 2.1. Which permissions are required?
 Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
 - '`Get-DistributionGroup`'
+- '`Get-DistributionGroupMember`'
 - '`Get-DynamicDistributionGroup`'
+- '`Get-DynamicDistributionGroupMember`' (this cmdlet is only available in Exchange Online)
 - '`Get-Mailbox`'
 - '`Get-MailboxFolderPermission`'
 - '`Get-MailboxFolderStatistics`'
@@ -389,12 +391,88 @@ Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
 - '`Get-Recipient`'
 - '`Get-RecipientPermission`'
 - '`Get-SecurityPrincipal`'
-- '`Get-UnifiedGroup`'
+- '`Get-UnifiedGroup`' (this cmdlet is only available in Exchange Online)
+- '`Get-UnifiedGroupLinks`' (this cmdlet is only available in Exchange Online)
 
 In on-premises environments, membership in the Exchange management role group 'View-Only Organization Management' is sufficient.
 
-In Exchange Online, the Exchange management role group 'View-Only Organization Management' (which contains the Azure AD role group 'Global Reader' per default) is not sufficient, as - for an unkown reason - the cmdlet '`Get-RecipientPermission`' is not included this management role group.  
-'`Get-RecipientPermission`' is included in the management role groups 'Recipient Management' and 'Organization Management' per default.
+In Exchange Online, the Exchange management role group 'View-Only Organization Management' (which contains the Azure AD role group 'Global Reader' per default) is not sufficient, as - for an unknown reason - the cmdlets '`Get-RecipientPermission`' and '`Get-SecurityPrincipal`' are not included in this management role group.
+- '`Get-RecipientPermission`' is included in the role groups '`Organization Management`' and '`Recipient Management`'
+- '`Get-SecurityPrincipal`' is included in the role group '`Organization Management`'.  
+
+You can use the following script to find out which cmdlet is assisgned to which management role:
+```PowerShell
+$ExportFile = '.\Required Cmdlets and their management role assignment.csv'
+
+$Cmdlets = (
+    'Get-DistributionGroup',
+    'Get-DistributionGroupMember',
+    'Get-DynamicDistributionGroup',
+    'Get-DynamicDistributionGroupMember', # this cmdlet is only available in Exchange Online
+    'Get-Mailbox',
+    'Get-MailboxFolderPermission',
+    'Get-MailboxFolderStatistics',
+    'Get-MailboxPermission',
+    'Get-MailPublicFolder',
+    'Get-Publicfolder',
+    'Get-PublicFolderClientPermission',
+    'Get-Recipient',
+    'Get-RecipientPermission',
+    'Get-SecurityPrincipal',
+    'Get-UnifiedGroup', # this cmdlet is only available in Exchange Online
+    'Get-UnifiedGroupLinks' # this cmdlet is only available in Exchange Online
+)
+
+
+if ($PSVersionTable.PSEdition -ieq 'desktop') {
+    $UTF8Encoding = 'UTF8'
+} else {
+    $UTF8Encoding = 'UTF8BOM'
+}
+
+
+Write-Host 'Get management role assignment per cmdlet'
+
+$ResultTable = New-Object System.Data.DataTable 'ResultTable'
+$null = $ResultTable.Columns.Add('Cmdlet')
+
+foreach ($Cmdlet in @($Cmdlets | Sort-Object -Unique)) {
+    Write-Host "  $($cmdlet)"
+    $TempRoleAssigneeNames = @()
+
+    foreach ($CmdletPerm in (Get-ManagementRole -Cmdlet $Cmdlet)) {
+        foreach ($ManagementRoleAssignment in @(Get-ManagementRoleAssignment -Role $CmdletPerm.Name -Delegating $false | Select-Object RoleAssigneeType, RoleAssigneeName)) {
+            $TempRoleAssigneeNames += "$($ManagementRoleAssignment.RoleAssigneeType): $($ManagementRoleAssignment.RoleAssigneeName)"
+        }
+    }
+
+    foreach ($TempRoleAssigneeName in @($TempRoleAssigneeNames | Where-Object { $_ } | Sort-Object -Unique)) {
+        if ($TempRoleAssigneeName -notin $ResultTable.Columns.ColumnName) {
+            $null = $ResultTable.Columns.Add($TempRoleAssigneeName)
+        }
+    }
+
+    $CmdletRow = $ResultTable.NewRow()
+    $CmdletRow.'Cmdlet' = $Cmdlet
+
+    foreach ($TempRoleAssigneeName in @($TempRoleAssigneeNames | Where-Object { $_ })) {
+        $CmdletRow."$TempRoleAssigneeName" = $true
+    }
+
+    $ResultTable.Rows.Add($CmdletRow)
+}
+
+
+Write-Host
+Write-Host 'Create export file'
+Write-Host "  '$ExportFile'"
+
+$ResultTable | Select-Object @(@('Cmdlet') + @($ResultTable.Columns.ColumnName | Where-Object { $_ -ne 'Cmdlet' } | Sort-Object -Unique)) | Export-Csv -Path $ExportFile -Force -Encoding $UTF8Encoding -Delimiter ';' -NoTypeInformation
+
+
+Write-Host
+Write-Host 'Done'
+```
 
 In both environments, a tailored custom management role group with the required permissions and recipient restrictions can be created.
 ## 2.2. Can the script resolve permissions granted to a group to it's individual members?
