@@ -426,6 +426,7 @@ Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
 - '`Get-DynamicDistributionGroup`'
 - '`Get-DynamicDistributionGroupMember`' (this cmdlet is only available in Exchange Online)
 - '`Get-Mailbox`'
+- '`Get-MailboxDatabase`' (this cmdlet is only used on premises)
 - '`Get-MailboxFolderPermission`'
 - '`Get-MailboxFolderStatistics`'
 - '`Get-MailboxPermission`'
@@ -434,6 +435,8 @@ Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
 - '`Get-PublicFolderClientPermission`'
 - '`Get-Recipient`'
 - '`Get-RecipientPermission`'
+- '`Get-RoleGroup`'
+- '`Get-RoleGroupMember`'
 - '`Get-SecurityPrincipal`'
 - '`Get-UnifiedGroup`' (this cmdlet is only available in Exchange Online)
 - '`Get-UnifiedGroupLinks`' (this cmdlet is only available in Exchange Online)
@@ -454,6 +457,7 @@ $Cmdlets = (
     'Get-DynamicDistributionGroup',
     'Get-DynamicDistributionGroupMember', # this cmdlet is only available in Exchange Online
     'Get-Mailbox',
+    'Get-MailboxDatabase', # this cmdlet is only used on premises
     'Get-MailboxFolderPermission',
     'Get-MailboxFolderStatistics',
     'Get-MailboxPermission',
@@ -462,6 +466,8 @@ $Cmdlets = (
     'Get-PublicFolderClientPermission',
     'Get-Recipient',
     'Get-RecipientPermission',
+    'Get-RoleGroup',
+    'Get-RoleGroupMember',
     'Get-SecurityPrincipal',
     'Get-UnifiedGroup', # this cmdlet is only available in Exchange Online
     'Get-UnifiedGroupLinks' # this cmdlet is only available in Exchange Online
