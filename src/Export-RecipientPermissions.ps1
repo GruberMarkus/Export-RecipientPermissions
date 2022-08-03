@@ -1885,7 +1885,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -2336,7 +2336,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -2716,7 +2716,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -3061,7 +3061,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -3343,7 +3343,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -3630,7 +3630,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -4132,7 +4132,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $RecipientId, $PublicFolderId))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $RecipientId, $PublicFolderId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -4441,7 +4441,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $RoleGroupMemberId))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $RoleGroupMemberId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
@@ -4760,7 +4760,7 @@ try {
                                         $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
