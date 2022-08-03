@@ -30,33 +30,34 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.6. RecipientProperties](#126-recipientproperties)
     - [1.2.7. GrantorFilter](#127-grantorfilter)
     - [1.2.8. TrusteeFilter](#128-trusteefilter)
-    - [1.2.9. ExportMailboxAccessRights](#129-exportmailboxaccessrights)
-    - [1.2.10. ExportMailboxAccessRightsSelf](#1210-exportmailboxaccessrightsself)
-    - [1.2.11. ExportMailboxAccessRightsInherited](#1211-exportmailboxaccessrightsinherited)
-    - [1.2.12. ExportMailboxFolderPermissions](#1212-exportmailboxfolderpermissions)
-    - [1.2.13. ExportMailboxFolderPermissionsAnonymous](#1213-exportmailboxfolderpermissionsanonymous)
-    - [1.2.14. ExportMailboxFolderPermissionsDefault](#1214-exportmailboxfolderpermissionsdefault)
-    - [1.2.15. ExportMailboxFolderPermissionsOwnerAtLocal](#1215-exportmailboxfolderpermissionsowneratlocal)
-    - [1.2.16. ExportMailboxFolderPermissionsMemberAtLocal](#1216-exportmailboxfolderpermissionsmemberatlocal)
-    - [1.2.17. ExportMailboxFolderPermissionsExcludeFoldertype](#1217-exportmailboxfolderpermissionsexcludefoldertype)
-    - [1.2.18. ExportSendAs](#1218-exportsendas)
-    - [1.2.19. ExportSendAsSelf](#1219-exportsendasself)
-    - [1.2.20. ExportSendOnBehalf](#1220-exportsendonbehalf)
-    - [1.2.21. ExportManagedBy](#1221-exportmanagedby)
-    - [1.2.22. ExportLinkedMasterAccount](#1222-exportlinkedmasteraccount)
-    - [1.2.23. ExportPublicFolderPermissions](#1223-exportpublicfolderpermissions)
-    - [1.2.24. ExportPublicFolderPermissionsAnonymous](#1224-exportpublicfolderpermissionsanonymous)
-    - [1.2.25. ExportPublicFolderPermissionsDefault](#1225-exportpublicfolderpermissionsdefault)
-    - [1.2.26. ExportPublicFolderPermissionsExcludeFoldertype](#1226-exportpublicfolderpermissionsexcludefoldertype)
-    - [1.2.27. ExportSendAs](#1227-exportsendas)
-    - [1.2.28. ExportManagementRoleGroupMembers](#1228-exportmanagementrolegroupmembers)
-    - [1.2.29. ExportForwarders](#1229-exportforwarders)
-    - [1.2.30. ResolveGroups](#1230-resolvegroups)
-    - [1.2.31. ExportTrustees](#1231-exporttrustees)
-    - [1.2.32. ExportFile](#1232-exportfile)
-    - [1.2.33. ErrorFile](#1233-errorfile)
-    - [1.2.34. DebugFile](#1234-debugfile)
-    - [1.2.35. UpdateInverval](#1235-updateinverval)
+    - [1.2.9. ExportFileFilter](#129-exportfilefilter)
+    - [1.2.10. ExportMailboxAccessRights](#1210-exportmailboxaccessrights)
+    - [1.2.11. ExportMailboxAccessRightsSelf](#1211-exportmailboxaccessrightsself)
+    - [1.2.12. ExportMailboxAccessRightsInherited](#1212-exportmailboxaccessrightsinherited)
+    - [1.2.13. ExportMailboxFolderPermissions](#1213-exportmailboxfolderpermissions)
+    - [1.2.14. ExportMailboxFolderPermissionsAnonymous](#1214-exportmailboxfolderpermissionsanonymous)
+    - [1.2.15. ExportMailboxFolderPermissionsDefault](#1215-exportmailboxfolderpermissionsdefault)
+    - [1.2.16. ExportMailboxFolderPermissionsOwnerAtLocal](#1216-exportmailboxfolderpermissionsowneratlocal)
+    - [1.2.17. ExportMailboxFolderPermissionsMemberAtLocal](#1217-exportmailboxfolderpermissionsmemberatlocal)
+    - [1.2.18. ExportMailboxFolderPermissionsExcludeFoldertype](#1218-exportmailboxfolderpermissionsexcludefoldertype)
+    - [1.2.19. ExportSendAs](#1219-exportsendas)
+    - [1.2.20. ExportSendAsSelf](#1220-exportsendasself)
+    - [1.2.21. ExportSendOnBehalf](#1221-exportsendonbehalf)
+    - [1.2.22. ExportManagedBy](#1222-exportmanagedby)
+    - [1.2.23. ExportLinkedMasterAccount](#1223-exportlinkedmasteraccount)
+    - [1.2.24. ExportPublicFolderPermissions](#1224-exportpublicfolderpermissions)
+    - [1.2.25. ExportPublicFolderPermissionsAnonymous](#1225-exportpublicfolderpermissionsanonymous)
+    - [1.2.26. ExportPublicFolderPermissionsDefault](#1226-exportpublicfolderpermissionsdefault)
+    - [1.2.27. ExportPublicFolderPermissionsExcludeFoldertype](#1227-exportpublicfolderpermissionsexcludefoldertype)
+    - [1.2.28. ExportSendAs](#1228-exportsendas)
+    - [1.2.29. ExportManagementRoleGroupMembers](#1229-exportmanagementrolegroupmembers)
+    - [1.2.30. ExportForwarders](#1230-exportforwarders)
+    - [1.2.31. ExpandGroups](#1231-expandgroups)
+    - [1.2.32. ExportTrustees](#1232-exporttrustees)
+    - [1.2.33. ExportFile](#1233-exportfile)
+    - [1.2.34. ErrorFile](#1234-errorfile)
+    - [1.2.35. DebugFile](#1235-debugfile)
+    - [1.2.36. UpdateInverval](#1236-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -205,66 +206,90 @@ Example:
 ```
 
 Default: $null
-### 1.2.9. ExportMailboxAccessRights
+### 1.2.9. ExportFileFilter
+Only report results where the filter criteria matches $true.
+
+This filter works against every single row of the results found. ExportFile will only contain lines where this filter returns $true.
+
+The $ExportFileLine contains an object with the header names from $ExportFile as string properties:
+- 'Grantor Primary SMTP'
+- 'Grantor Display Name'
+- 'Grantor Recipient Type'
+- 'Grantor Environment'
+- 'Folder'
+- 'Permission'
+- 'Allow/Deny'
+- 'Inherited'
+- 'InheritanceType'
+- 'Trustee Original Identity'
+- 'Trustee Primary SMTP'
+- 'Trustee Display Name'
+- 'Trustee Recipient Type'
+- 'Trustee Environment'
+
+Example: "`$ExportFileFilter.'Trustee Environment' -ieq 'On-Prem'"
+
+Default: $null
+### 1.2.10. ExportMailboxAccessRights
 Rights set on the mailbox itself, such as "FullAccess" and "ReadAccess"
 
 Default: $true
-### 1.2.10. ExportMailboxAccessRightsSelf
+### 1.2.11. ExportMailboxAccessRightsSelf
 Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
 
 Default: $false
-### 1.2.11. ExportMailboxAccessRightsInherited
+### 1.2.12. ExportMailboxAccessRightsInherited
 Report inherited mailbox access rights (only works on-prem)
 
 Default: $false
-### 1.2.12. ExportMailboxFolderPermissions
+### 1.2.13. ExportMailboxFolderPermissions
 This part of the report can take very long
 
 Default: $false
-### 1.2.13. ExportMailboxFolderPermissionsAnonymous
+### 1.2.14. ExportMailboxFolderPermissionsAnonymous
 Report mailbox folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
 Default: $true
-### 1.2.14. ExportMailboxFolderPermissionsDefault
+### 1.2.15. ExportMailboxFolderPermissionsDefault
 Report mailbox folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
 
 Default: $true
-### 1.2.15. ExportMailboxFolderPermissionsOwnerAtLocal
+### 1.2.16. ExportMailboxFolderPermissionsOwnerAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Owner@Local" user.
 
 Default: $false
-### 1.2.16. ExportMailboxFolderPermissionsMemberAtLocal
+### 1.2.17. ExportMailboxFolderPermissionsMemberAtLocal
 Exchange Online only. For group mailboxes, export permissions granted to the special "Member@Local" user.
 Default: $false
-### 1.2.17. ExportMailboxFolderPermissionsExcludeFoldertype
+### 1.2.18. ExportMailboxFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 
 Some known folder types are: Audits, Calendar, CalendarLogging, CommunicatorHistory, Conflicts, Contacts, ConversationActions, DeletedItems, Drafts, ExternalContacts, Files, GalContacts, ImContactList, Inbox, Journal, JunkEmail, LocalFailures, Notes, Outbox, QuickContacts, RecipientCache, RecoverableItemsDeletions, RecoverableItemsPurges, RecoverableItemsRoot, RecoverableItemsVersions, Root, RssSubscription, SentItems, ServerFailures, SyncIssues, Tasks, WorkingSet, YammerFeeds, YammerInbound, YammerOutbound, YammerRoot
 
 Default: 'audits'
-### 1.2.18. ExportSendAs
+### 1.2.19. ExportSendAs
 Export Send As permissions
 
 Default: $true
-### 1.2.19. ExportSendAsSelf
+### 1.2.20. ExportSendAsSelf
 Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORITÄT\SELBST in German, etc.)
 
 Default: $false
-### 1.2.20. ExportSendOnBehalf
+### 1.2.21. ExportSendOnBehalf
 Export Send On Behalf permissions
 
 Default: $true
-### 1.2.21. ExportManagedBy
+### 1.2.22. ExportManagedBy
 Only for distribution groups, and not to be confused with the "Manager" attribute
 
 Default: $true
-### 1.2.22. ExportLinkedMasterAccount
+### 1.2.23. ExportLinkedMasterAccount
 Export Linked Master Account
 
 Only works on-prem
 
 Default: $true
-### 1.2.23. ExportPublicFolderPermissions
+### 1.2.24. ExportPublicFolderPermissions
 Export public folder permissions
 
 This part of the report can take very long
@@ -272,31 +297,31 @@ This part of the report can take very long
 GrantorFilter refers to the public folder content mailbox
 
 Default: $true
-### 1.2.24. ExportPublicFolderPermissionsAnonymous
+### 1.2.25. ExportPublicFolderPermissionsAnonymous
 Report public folder permissions granted to the special "Anonymous" user ("Anonymous" in English, "Anonym" in German, etc.)
 
 Default: $true
-### 1.2.25. ExportPublicFolderPermissionsDefault
+### 1.2.26. ExportPublicFolderPermissionsDefault
 Report public folder permissions granted to the special "Default" user ("Default" in English, "Standard" in German, etc.)
 
 Default: $true
-### 1.2.26. ExportPublicFolderPermissionsExcludeFoldertype
+### 1.2.27. ExportPublicFolderPermissionsExcludeFoldertype
 List of Foldertypes to ignore.
 
 Some known folder types are: IPF.Appointment, IPF.Contact, IPF.Note, IPF.Task
 
 Default: ''
-### 1.2.27. ExportSendAs
+### 1.2.28. ExportSendAs
 Export Send As permissions
 
 Default: $true
-### 1.2.28. ExportManagementRoleGroupMembers
+### 1.2.29. ExportManagementRoleGroupMembers
 Export members of management role groups
 
 GrantorFilter does not apply to the export of management role groups, but TrusteeFilter does
 
 Default: $true
-### 1.2.29. ExportForwarders
+### 1.2.30. ExportForwarders
 Export forwarders:
 - '`ExternalEmailAddress`' ('`targetAddress`' in Active Directory)
   - Highest priority
@@ -325,15 +350,25 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 - Forward_ForwardingSmtpAddress_ForwardOnly
 
 Default: $true
-### 1.2.30. ResolveGroups
-Resolve groups to their members, including nested groups and dynamic groups
+### 1.2.31. ExpandGroups
+Expand groups to their members, including nested groups and dynamic groups
 
 This may drastically increase script run time
 
-Trustee original identity is preserved, but suffixed with ' [resolved to members]' for resolved members
+This only works for mail-enabled groups
 
-Default: $false
-### 1.2.31. ExportTrustees
+The original permission is still documented, with one additional line for each member of the group
+- For each member of the group, 'Trustee Original Identity' is preserved but suffixed with:
+  ```
+     [GroupExpanded]
+  ```
+  The whitespace before '[GroupExpanded]' consists of five space characters for sorting reasons.
+- The other trustee properties are the ones of the member
+- TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
+- Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
+
+Default value: $false
+### 1.2.32. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -341,23 +376,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.32. ExportFile
+### 1.2.33. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.33. ErrorFile
+### 1.2.34. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.34. DebugFile
+### 1.2.35. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.35. UpdateInverval
+### 1.2.36. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
@@ -485,7 +520,7 @@ Write-Host 'Done'
 
 In both environments, a tailored custom management role group with the required permissions and recipient restrictions can be created.
 ## 2.2. Can the script resolve permissions granted to a group to it's individual members?
-Yes, Export-RecipientPermissions can resolve trustee groups to their individual members. Use the parameter `'ResolveGroups'` to enable this feature.
+Yes, Export-RecipientPermissions can resolve trustee groups to their individual members. Use the parameter `'ExpandGroups'` to enable this feature.
 ## 2.3. Where can I find the changelog?
 The changelog is located in the `'.\docs'` folder, along with other documents related to Export-RecipientPermissions.
 ## 2.4. How can I contribute, propose a new feature or file a bug?
