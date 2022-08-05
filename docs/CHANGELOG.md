@@ -18,7 +18,8 @@
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.1.0</a> - YYYY-MM-DD
 ### Added
-- The new parameter '`ExpandGroups`' expands groups (including nested and dynamic groups) and exports the granted permission for each individual member. See '`README`' for details.
+- The new parameter '`ExpandGroups`' expands groups (including nested and dynamic groups) and exports the granted permission for each individual member. See '`README`' for details and comparison to '`ExportDistributionGroupMembers`'.
+- The new parameter '`ExportDistributionGroupMembers`' exports distribution group members, including nested groups and dynamic groups. See '`README`' for details and comparison to '`ExpandGroups`'.
 - The new parameter '`ExportFileFilter`' allows filtering the final results before they are written to the export file. See '`README`' for details.
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.0.0</a> - 2022-07-19

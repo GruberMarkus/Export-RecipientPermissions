@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
-Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups
+Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups, distribution group members
 .DESCRIPTION
 Document, filter and compare Exchange permissions:
-- mailbox access rights
+- mailbox access rights, 
 - mailbox folder permissions
 - public folder permissions
 - send as
@@ -13,6 +13,7 @@ Document, filter and compare Exchange permissions:
 - linked master accounts
 - forwarders
 - management role groups
+- distribution group members
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
@@ -63,7 +64,7 @@ Properties that are always included: 'Identity', 'DistinguishedName', 'Recipient
 Only check grantors where the filter criteria matches $true.
 The variable $Grantor has all attributes defined by '`RecipientProperties`. For example:
   .DistinguishedName
-  .RecipientType, .RecipientTypeDetails
+  .RecipientType.Value, .RecipientTypeDetails.Value
   .DisplayName
   .PrimarySmtpAddress: .Local, .Domain, .Address
   .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
@@ -113,7 +114,7 @@ Default: $true
 
 
 .PARAMETER ExportMailboxAccessRightsSelf
-Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORIT�T\SELBST" in German, etc.)
+Report mailbox access rights granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORIT T\SELBST" in German, etc.)
 Default: $false
 
 
@@ -159,7 +160,7 @@ Default: $true
 
 
 .PARAMETER ExportSendAsSelf
-Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORIT�T\SELBST" in German, etc.)
+Export Send As right granted to the SID "S-1-5-10" ("NT AUTHORITY\SELF" in English, "NT-AUTORIT T\SELBST" in German, etc.)
 Default: $false
 
 
@@ -213,12 +214,25 @@ Export forwarders configured on recipients
 Default: $true
 
 
+.PARAMETER ExportDistributionGroupMembers
+Export distribution group members, including nested groups and dynamic groups
+This may drastically increase script run time and file size
+This only works for mail-enabled groups and members
+The virtual Right 'MemberRecursive' is used in the export file
+The parameter ExpandGroups can be used independently: ExpandGroups lists all members of a group every time a group is used as a trustee, ExportDistributionGroupMembers only lists the members of each group only once
+Valid values: 'None', 'All', 'OnlyTrustees'
+  'None': Distribution group members are not exported Parameter ExpandGroups can still be used.
+  'All': Members of all distribution groups are exported, parameter GrantorFilter is considerd
+  'OnlyTrustees': Only export members of those distribution groups that are used as trustees, even when they are excluded via GrantorFilter
+Default: 'OnlyTrustees'
+
+
 .PARAMETER ExpandGroups
 Expand groups to their members, including nested groups and dynamic groups
-This may drastically increase script run time
+This may drastically increase script run time and file size
 This only works for mail-enabled groups
 The original permission is still documented, with one additional line for each member of the group
-  For each member of the group, 'Trustee Original Identity' is preserved but suffixed with '     [GroupExpanded]' (the whitespace consists of five space characters for sorting reasons)
+  For each member of the group, 'Trustee Original Identity' is preserved but suffixed with '     [GroupExpandedRecursive]' (the whitespace consists of five space characters for sorting reasons)
   The other trustee properties are the ones of the member
 TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
   Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
@@ -319,6 +333,7 @@ Param(
     [string[]]$ExportPublicFolderPermissionsExcludeFoldertype = (''),
     [boolean]$ExportManagementRoleGroupMembers = $true,
     [boolean]$ExportForwarders = $true,
+    [ValidateSet('None', 'All', 'OnlyTrustees')]$ExportDistributionGroupMembers = 'OnlyTrustees',
     [boolean]$ExpandGroups = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
     [string]$ExportFile = '.\export\Export-RecipientPermissions_Result.csv',
@@ -595,7 +610,7 @@ try {
             }
         }
 
-        @('UserFriendlyName', 'LinkedMasterAccount', 'Members') | ForEach-Object {
+        @('UserFriendlyName', 'LinkedMasterAccount', 'Members', 'IsTrustee') | ForEach-Object {
             if ($RecipientProperties -inotcontains $_) {
                 $RecipientProperties += $_
             }
@@ -946,10 +961,10 @@ try {
     Write-Host
     Write-Host "Import group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if ($ExpandGroups) {
+    if ($ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-            if (($AllRecipients[$x].RecipientTypeDetails -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails -ilike '*Group')) {
+            if (($AllRecipients[$x].RecipientTypeDetails.Value -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails.Value -ilike '*Group')) {
                 $tempQueue.enqueue($x)
             }
         }
@@ -1010,12 +1025,14 @@ try {
                                     $script:GetMemberRecurseTempLoopProtection = @()
                                 }
 
+
                                 if (($GroupToCheck.RecipientTypeDetails.Value -ilike '*Group') -or ($GroupToCheck.RecipientTypeDetails.Value -ilike 'Group*')) {
                                     try {
                                         $index = $null
                                         $index = $AllRecipientsSmtpToIndex[$GroupToCheck.PrimarySmtpAddress.Address]
                                     } catch {
                                     }
+
                                     if ($index -ge 0) {
                                         if ($index -notin $script:GetMemberRecurseTempLoopProtection) {
                                             $script:GetMemberRecurseTempLoopProtection += $index
@@ -1208,9 +1225,9 @@ try {
     }
 
 
-    # Import LinkedMasterAccount
+    # Import LinkedMasterAccounts
     Write-Host
-    Write-Host "Import LinkedMasterAccount of each mailbox by database @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import LinkedMasterAccounts of each mailbox by database @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportFromOnPrem) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllMailboxDatabases.count))
@@ -1262,7 +1279,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Import LinkedMasterAccount @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import LinkedMasterAccounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -1293,11 +1310,11 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccount"";""Database GUID $($MailboxDatabaseGuid)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccounts"";""Database GUID $($MailboxDatabaseGuid)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccount"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import LinkedMasterAccounts"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
@@ -1398,9 +1415,9 @@ try {
     }
 
 
-    # UserFriendlyNames
+    # Import UserFriendlyNames
     Write-Host
-    Write-Host "Find each recipient's UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportMailboxAccessRights -or $ExportSendAs) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -1450,7 +1467,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Create connection between UserFriendlyNames and recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -1487,13 +1504,13 @@ try {
                                             Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
                                             ($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$($securityprincipal.guid.guid)])]).UserFriendlyName = $securityprincipal.UserFriendlyName
                                         } catch {
-                                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Find each recipient's UserFriendlyNames"";""$($securityprincipcal.UserFriendlyName)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import UserFriendlyNames"";""$($securityprincipcal.UserFriendlyName)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                         }
                                     }
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Find each recipient's UserFriendlyNames"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import UserFriendlyNames"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
@@ -1659,15 +1676,15 @@ try {
     Write-Host ('  {0:0000000}/{1:0000000} recipients are considered as grantors' -f $($GrantorsToConsider.count), $($AllRecipients.count))
 
 
-    # Mailbox Access Rights
+    # Get and export Mailbox Access Rights
     Write-Host
-    Write-Host "Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportMailboxAccessRights) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             $Recipient = $AllRecipients[$x]
 
-            if (($Recipient.recipienttypedetails -ilike '*mailbox') -and ($x -in $GrantorsToConsider)) {
+            if (($Recipient.RecipientTypeDetails.Value -ilike '*mailbox') -and ($x -in $GrantorsToConsider)) {
                 $tempQueue.enqueue($x)
             }
         }
@@ -1713,7 +1730,8 @@ try {
                             $UTF8Encoding,
                             $ExpandGroups,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $AllRecipientsSmtpToIndex
                         )
 
                         try {
@@ -1725,7 +1743,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Mailbox access rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -1748,10 +1766,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -1800,9 +1819,9 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
                                                 foreach ($Accessright in ($TrusteeRight.Accessrights -split ', ')) {
@@ -1837,9 +1856,9 @@ try {
                                                             }
 
                                                             if ($ExportFromOnPrem) {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                             } else {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                             }
 
                                                             $ExportFileLines.add((('"' + ((
@@ -1852,7 +1871,7 @@ try {
                                                                                 $(if ($Trusteeright.deny) { 'Deny' } else { 'Allow' }),
                                                                                 $Trusteeright.IsInherited,
                                                                                 $Trusteeright.InheritanceType,
-                                                                                $("$($TrusteeRight.trustee)     [GroupExpanded]"),
+                                                                                $("$($TrusteeRight.trustee)     [GroupExpandedRecursive]"),
                                                                                 $Trustee.PrimarySmtpAddress.address,
                                                                                 $Trustee.DisplayName,
                                                                                 $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -1865,31 +1884,42 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+                                    
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Mailbox Access Rights"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
@@ -1918,6 +1948,7 @@ try {
                         ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         AllRecipientsUfnToIndex                 = $AllRecipientsUfnToIndex
                         AllRecipientsLinkedMasterAccountToIndex = $AllRecipientsLinkedMasterAccountToIndex
+                        AllRecipientsSmtpToIndex                = $AllRecipientsSmtpToIndex
                         DebugFile                               = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExchangeCredential                      = $ExchangeCredential
@@ -1999,18 +2030,19 @@ try {
     }
 
 
-    # Mailbox Folder Permissions
+    # Get and export Mailbox Folder permissions
     Write-Host
-    Write-Host "Mailbox Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Mailbox Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportMailboxFolderPermissions) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             $Recipient = $AllRecipients[$x]
 
-            if (($Recipient.recipienttypedetails -ilike '*mailbox') -and ($x -in $GrantorsToConsider)) {
+            if (($Recipient.RecipientTypeDetails.Value -ilike '*Mailbox') -and ($x -in $GrantorsToConsider) -and ($Recipient.RecipientTypeDetails.Value -ine 'PublicFolderMailbox')) {
                 $tempQueue.enqueue($x)
             }
         }
+
         $tempQueueCount = $tempQueue.count
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
@@ -2067,7 +2099,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Mailbox folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Mailbox Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -2086,10 +2118,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -2170,7 +2203,7 @@ try {
                                                                 }
                                                             }
 
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
 
                                                             $ExportFileLines.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
@@ -2201,9 +2234,9 @@ try {
                                                                     }
 
                                                                     if ($ExportFromOnPrem) {
-                                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                                     } else {
-                                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                                     }
 
                                                                     $ExportFileLines.add((('"' + ((
@@ -2216,7 +2249,7 @@ try {
                                                                                         'Allow',
                                                                                         'False',
                                                                                         'None',
-                                                                                        $("$($FolderPermission.user.displayname)     [GroupExpanded]"),
+                                                                                        $("$($FolderPermission.user.displayname)     [GroupExpandedRecursive]"),
                                                                                         $($Trustee.primarysmtpaddress.address),
                                                                                         $($Trustee.displayname),
                                                                                         ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -2255,7 +2288,7 @@ try {
                                                                 }
                                                             }
 
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
 
                                                             $ExportFileLines.Add((('"' + ((
                                                                                 $GrantorPrimarySMTP,
@@ -2286,9 +2319,9 @@ try {
                                                                     }
 
                                                                     if ($ExportFromOnPrem) {
-                                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                                     } else {
-                                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                                     }
 
                                                                     $ExportFileLines.add((('"' + ((
@@ -2301,7 +2334,7 @@ try {
                                                                                         'Allow',
                                                                                         'False',
                                                                                         'None',
-                                                                                        $("$($FolderPermission.user.displayname)     [GroupExpanded]"),
+                                                                                        $("$($FolderPermission.user.displayname)     [GroupExpandedRecursive]"),
                                                                                         $($Trustee.primarysmtpaddress.address),
                                                                                         $($Trustee.displayname),
                                                                                         ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -2315,32 +2348,43 @@ try {
                                             }
                                         }
                                     } catch {
-                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Mailbox Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Mailbox Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
@@ -2453,9 +2497,9 @@ try {
     }
 
 
-    # Send As
+    # Get and export Send As permissions
     Write-Host
-    Write-Host "Send As @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportSendAs) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -2517,7 +2561,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Send As @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -2534,10 +2578,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -2573,9 +2618,9 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -2608,9 +2653,9 @@ try {
                                                             }
 
                                                             if ($ExportFromOnPrem) {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                             } else {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                             }
 
                                                             $ExportFileLines.add((('"' + ((
@@ -2623,7 +2668,7 @@ try {
                                                                                 $entry.AccessControlType,
                                                                                 $entry.IsInherited,
                                                                                 $entry.InheritanceType,
-                                                                                $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpanded]"),
+                                                                                $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpandedRecursive]"),
                                                                                 $Trustee.PrimarySmtpAddress.address,
                                                                                 $Trustee.DisplayName,
                                                                                 $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -2666,9 +2711,9 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
                                                 foreach ($AccessRight in $entry.AccessRights) {
@@ -2696,31 +2741,42 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""SendAs"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Send As permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send As"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Send As permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2818,9 +2874,9 @@ try {
     }
 
 
-    # Send On Behalf
+    # Get and export Send On Behalf permissions
     Write-Host
-    Write-Host "Send On Behalf @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportSendOnBehalf) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -2859,6 +2915,7 @@ try {
                             $ErrorFile,
                             $AllRecipientsDnToIndex,
                             $AllRecipientsIdentityGuidToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ExportFromOnPrem,
                             $ScriptPath,
@@ -2881,7 +2938,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Send On Behalf @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -2898,10 +2955,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -2931,9 +2989,9 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -2966,9 +3024,9 @@ try {
                                                             }
 
                                                             if ($ExportFromOnPrem) {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                             } else {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                             }
 
                                                             $ExportFileLines.add((('"' + ((
@@ -2981,7 +3039,7 @@ try {
                                                                                 'Allow',
                                                                                 'False',
                                                                                 'None',
-                                                                                $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpanded]"),
+                                                                                $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpandedRecursive]"),
                                                                                 $Trustee.PrimarySmtpAddress.address,
                                                                                 $Trustee.DisplayName,
                                                                                 $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3013,9 +3071,9 @@ try {
                                                     }
 
                                                     if ($ExportFromOnPrem) {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                     } else {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -3041,31 +3099,42 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Send On Behalf permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Send On Behalf"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Send On Behalf permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3081,6 +3150,7 @@ try {
                         ExportTrustees                   = $ExportTrustees
                         AllRecipientsDnToIndex           = $AllRecipientsDnToIndex
                         AllRecipientsIdentityGuidToIndex = $AllRecipientsIdentityGuidToIndex
+                        AllRecipientsSmtpToIndex         = $AllRecipientsSmtpToIndex
                         ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ExportFromOnPrem                 = $ExportFromOnPrem
@@ -3160,9 +3230,9 @@ try {
     }
 
 
-    # Managed By
+    # Get and export Managed By permissions
     Write-Host
-    Write-Host "Managed By @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportManagedBy) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -3196,6 +3266,7 @@ try {
                             $ExportTrustees,
                             $ErrorFile,
                             $AllRecipientsIdentityGuidToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ScriptPath,
                             $ExportFromOnPrem,
@@ -3216,7 +3287,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Managed By @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -3233,10 +3304,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -3261,9 +3333,9 @@ try {
                                             }
 
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -3296,9 +3368,9 @@ try {
                                                         }
 
                                                         if ($ExportFromOnPrem) {
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                         } else {
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                         }
 
                                                         $ExportFileLines.add((('"' + ((
@@ -3311,7 +3383,7 @@ try {
                                                                             'Allow',
                                                                             'False',
                                                                             'None',
-                                                                            $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpanded]"),
+                                                                            $("$(($OriginalTrustee.displayname, $OriginalTrustee) | Select-Object -First 1)     [GroupExpandedRecursive]"),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3323,31 +3395,42 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Managed By"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Managed By permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Managed By"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Managed By permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3362,6 +3445,7 @@ try {
                         ExportFile                       = $ExportFile
                         ExportTrustees                   = $ExportTrustees
                         AllRecipientsIdentityGuidToIndex = $AllRecipientsIdentityGuidToIndex
+                        AllRecipientsSmtpToIndex         = $AllRecipientsSmtpToIndex
                         ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ScriptPath                       = $PSScriptRoot
@@ -3441,16 +3525,16 @@ try {
     }
 
 
-    # Linked Master Account
+    # Get and export Linked Master Accounts
     Write-Host
-    Write-Host "Linked Master Account @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportLinkedMasterAccount -and $ExportFromOnPrem) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
             $Recipient = $AllRecipients[$x]
 
-            if (($Recipient.recipienttypedetails -ilike '*mailbox') -and ($x -in $GrantorsToConsider)) {
+            if (($Recipient.recipienttypedetails.Value -ilike '*mailbox') -and ($x -in $GrantorsToConsider)) {
                 $tempQueue.enqueue($x)
             }
         }
@@ -3480,6 +3564,7 @@ try {
                             $ExportTrustees,
                             $ErrorFile,
                             $AllRecipientsLinkedmasteraccountToIndex,
+                            $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ScriptPath,
                             $ExportFromOnPrem,
@@ -3501,7 +3586,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Linked Master Account @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -3518,10 +3603,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -3548,9 +3634,9 @@ try {
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -3583,9 +3669,9 @@ try {
                                                         }
 
                                                         if ($ExportFromOnPrem) {
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                         } else {
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                         }
 
                                                         $ExportFileLines.add((('"' + ((
@@ -3598,7 +3684,7 @@ try {
                                                                             'Allow',
                                                                             'False',
                                                                             'None',
-                                                                            $("$($Grantor.LinkedMasterAccount)     [GroupExpanded]"),
+                                                                            $("$($Grantor.LinkedMasterAccount)     [GroupExpandedRecursive]"),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3610,31 +3696,42 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Linked Master Account"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Linked Master Accounts"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Linked Master Account"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Linked Master Accounts"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3650,6 +3747,7 @@ try {
                         ExportFile                              = $ExportFile
                         ExportTrustees                          = $ExportTrustees
                         AllRecipientsLinkedmasteraccountToIndex = $AllRecipientsLinkedmasteraccountToIndex
+                        AllRecipientsSmtpToIndex                = $AllRecipientsSmtpToIndex
                         ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugFile                               = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ScriptPath                              = $PSScriptRoot
@@ -3729,15 +3827,34 @@ try {
     }
 
 
-    # Public Folder Permissions
+    # Get and export Public Folder permissions
     Write-Host
-    Write-Host "Public Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Public Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportPublicFolderPermissions) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllPublicFolders.count))
 
         for ($x = 0; $x -lt $AllPublicFolders.count; $x++) {
-            $tempQueue.enqueue($x)
+            $folder = $AllPublicFolders[$x]
+
+            try {
+                $index = $null
+                $index = $AllRecipientsExchangeGuidToIndex[$($folder.ContentMailboxGuid.Guid)]
+            } catch {
+            }
+
+            if ($index -ge 0) {
+                $Grantor = $AllRecipients[$index]
+
+                if ($GrantorFilter) {
+                    if ((. ([scriptblock]::Create($GrantorFilter))) -ne $true) {
+                        continue
+                    }
+                }
+
+                $tempQueue.enqueue($x)
+            }
         }
+
         $tempQueueCount = $tempQueue.count
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
@@ -3796,7 +3913,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Public folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Public folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3835,10 +3952,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -3874,9 +3992,9 @@ try {
                                         }
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                             }
 
                                             $ExportFileLines.Add((('"' + ((
@@ -3908,9 +4026,9 @@ try {
                                                     }
 
                                                     if ($ExportFromOnPrem) {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                     } else {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                     }
 
                                                     $ExportFileLines.add((('"' + ((
@@ -3923,7 +4041,7 @@ try {
                                                                         'Allow',
                                                                         'False',
                                                                         'None',
-                                                                        $("$(($OriginalTrustee.primarysmtpaddress.address, $OriginalTrustee) | Select-Object -First 1)     [GroupExpanded]"),
+                                                                        $("$(($OriginalTrustee.primarysmtpaddress.address, $OriginalTrustee) | Select-Object -First 1)     [GroupExpandedRecursive]"),
                                                                         $($Trustee.primarysmtpaddress.address),
                                                                         $($Trustee.displayname),
                                                                         $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -3976,7 +4094,7 @@ try {
                                                             }
                                                         }
 
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
 
                                                         $ExportFileLines.Add((('"' + ((
                                                                             $GrantorPrimarySMTP,
@@ -4007,9 +4125,9 @@ try {
                                                                 }
 
                                                                 if ($ExportFromOnPrem) {
-                                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                                 } else {
-                                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                                 }
 
                                                                 $ExportFileLines.add((('"' + ((
@@ -4022,7 +4140,7 @@ try {
                                                                                     'Allow',
                                                                                     'False',
                                                                                     'None',
-                                                                                    $("$($FolderPermission.user.displayname)     [GroupExpanded]"),
+                                                                                    $("$($FolderPermission.user.displayname)     [GroupExpandedRecursive]"),
                                                                                     $($Trustee.primarysmtpaddress.address),
                                                                                     $($Trustee.displayname),
                                                                                     $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -4053,7 +4171,7 @@ try {
                                                             }
                                                         }
 
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
 
                                                         $ExportFileLines.Add((('"' + ((
                                                                             $GrantorPrimarySMTP,
@@ -4084,9 +4202,9 @@ try {
                                                                 }
 
                                                                 if ($ExportFromOnPrem) {
-                                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                                 } else {
-                                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                                 }
 
                                                                 $ExportFileLines.add((('"' + ((
@@ -4099,7 +4217,7 @@ try {
                                                                                     'Allow',
                                                                                     'False',
                                                                                     'None',
-                                                                                    $("$($FolderPermission.user.displayname)     [GroupExpanded]"),
+                                                                                    $("$($FolderPermission.user.displayname)     [GroupExpandedRecursive]"),
                                                                                     $($Trustee.primarysmtpaddress.address),
                                                                                     $($Trustee.displayname),
                                                                                     $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -4113,11 +4231,11 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Public Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Public Folder permissions"";""$($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
@@ -4129,14 +4247,26 @@ try {
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $RecipientId, $PublicFolderId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $RecipientId, $PublicFolderId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Public Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Public Folder permissions"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
@@ -4239,14 +4369,14 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Add-Content $ErrorFile -Encoding $UTF8Encoding -Force
+                    Import-Csv $JobErrorFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ErrorFile -Encoding $UTF8Encoding -Force -Append -NoTypeInformation -Delimiter ';'
                     Remove-Item $JobErrorFile -Force
                 }
             }
 
             if ($ResultFile) {
                 foreach ($JobResultFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ResultFile), ('TEMP.*.PF*.txt'))))) {
-                    Get-Content $JobResultFile -Encoding $UTF8Encoding | Add-Content ($JobResultFile.fullname -replace '\.PF\d{7}.txt$', '.txt') -Encoding $UTF8Encoding -Force
+                    Get-Content $JobResultFile -Encoding $UTF8Encoding | Select-Object * -Skip 1 | Add-Content ($JobResultFile.fullname -replace '\.PF\d{7}.txt$', '.txt') -Encoding $UTF8Encoding -Force
                     Remove-Item $JobResultFile -Force
                 }
             }
@@ -4258,9 +4388,9 @@ try {
     }
 
 
-    # Management Role Group Members
+    # Get and export Management Role Group Members
     Write-Host
-    Write-Host "Management Role Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportManagementRoleGroupMembers) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllManagementRoleGroupMembers.count))
 
@@ -4314,7 +4444,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Management Role Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -4330,6 +4460,7 @@ try {
                                 $GrantorPrimarySMTP = 'Management Role Group'
                                 $GrantorDisplayName = $null
                                 $GrantorRecipientType = 'ManagementRoleGroup'
+
                                 if ($ExportFromOnPrem) {
                                     $GrantorEnvironment = 'On-Prem'
                                 } else {
@@ -4361,9 +4492,9 @@ try {
 
                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                         if ($ExportFromOnPrem) {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                         } else {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -4396,21 +4527,22 @@ try {
                                                     }
 
                                                     if ($ExportFromOnPrem) {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                     } else {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                     }
 
                                                     $ExportFileLines.add((('"' + ((
                                                                         $GrantorPrimarySMTP,
                                                                         $GrantorDisplayName,
-                                                                        $GrantorRecipientType, $GrantorEnvironment,
+                                                                        $GrantorRecipientType,
+                                                                        $GrantorEnvironment,
                                                                         $RoleGroupMember.RoleGroup,
                                                                         'Member',
                                                                         'Allow',
                                                                         'False',
                                                                         'None',
-                                                                        $("$($RoleGroupMember.TrusteeOriginalIdentity)     [GroupExpanded]"),
+                                                                        $("$($RoleGroupMember.TrusteeOriginalIdentity)     [GroupExpandedRecursive]"),
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -4421,31 +4553,40 @@ try {
                                         }
                                     }
                                 } catch {
-                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Management Role Group members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
-
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
-
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $RoleGroupMemberId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $RoleGroupMemberId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Management Role Group Members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Management Role Group members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -4540,9 +4681,9 @@ try {
     }
 
 
-    # Forwarders
+    # Get and export Forwarders
     Write-Host
-    Write-Host "Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     if ($ExportForwarders) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -4629,7 +4770,7 @@ try {
                                 $null = Start-Transcript -Path $DebugFile -Force
                             }
 
-                            Write-Host "Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -4646,10 +4787,11 @@ try {
                                 $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
                                 $GrantorRecipientType = $Grantor.RecipientType.value
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -4677,9 +4819,9 @@ try {
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
@@ -4712,9 +4854,9 @@ try {
                                                             }
 
                                                             if ($ExportFromOnPrem) {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
                                                             } else {
-                                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                             }
 
                                                             $ExportFileLines.add((('"' + ((
@@ -4727,7 +4869,7 @@ try {
                                                                                 'Allow',
                                                                                 'False',
                                                                                 'None',
-                                                                                $("$($Grantor.$ForwarderType) [resolved to members"),
+                                                                                $("$($Grantor.$ForwarderType)     [GroupExpandedRecursive]"),
                                                                                 $Trustee.PrimarySmtpAddress.address,
                                                                                 $Trustee.DisplayName,
                                                                                 $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -4739,32 +4881,43 @@ try {
                                             }
                                         }
                                     } catch {
-                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
                                 if ($ExportFileLines) {
-                                    $ExportFileLines = $ExportFileLines | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
                                     if ($ExportFileFilter) {
                                         $ExportFileLinesIndex = @()
 
                                         For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
                                             $ExportFileLine = $ExportFileLines[$x]
-
                                             if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
                                                 $ExportFileLinesIndex += $x
                                             }
                                         }
 
-                                        $ExportFileLines = $ExportFileLines[$ExportFileLinesIndex]
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    $ExportFileLines | Select-Object -Unique | Sort-Object -Property * | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientID))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
                         } catch {
-                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Forwarders"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -4856,6 +5009,259 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
+
+
+    # Get and export Distribution Group Members
+    # Must be the last export step because of '(($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -and ($AllRecipients[$x].IsTrustee -eq $true))'
+    Write-Host
+    Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    if (($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
+
+        foreach ($x in (0..($AllRecipients.count - 1))) {
+            if (($AllRecipients[$x].RecipientTypeDetails.Value -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails.Value -ilike '*Group')) {
+                if ((($ExportDistributionGroupMembers -ieq 'All') -and ($x -in $GrantorsToConsider)) -or (($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -and ($AllRecipients[$x].IsTrustee -eq $true))) {
+                    $tempQueue.enqueue($x)
+                }
+            }
+        }
+
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsLocal)
+
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel local jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllRecipients,
+                            $tempQueue,
+                            $ExportFile,
+                            $ExportTrustees,
+                            $ErrorFile,
+                            $DebugFile,
+                            $ScriptPath,
+                            $ExportFromOnPrem,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $TrusteeFilter,
+                            $UTF8Encoding,
+                            $ExpandGroups,
+                            $ExportFileHeader,
+                            $ExportFileFilter
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -Path $DebugFile -Force
+                            }
+
+                            Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            while ($tempQueue.count -gt 0) {
+                                $ExportFileLines = [system.collections.arraylist]::new(1000)
+
+                                try {
+                                    $RecipientID = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                $Grantor = $AllRecipients[$RecipientID]
+
+                                $GrantorDisplayName = $Grantor.DisplayName
+                                $GrantorPrimarySMTP = $Grantor.PrimarySMTPAddress.address
+                                $GrantorRecipientType = $Grantor.RecipientType.value
+                                $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails.value
+
+                                if ($ExportFromOnPrem) {
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                } else {
+                                    if ($Grantor.RecipientTypeDetails.Value -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                }
+
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                foreach ($index in $Grantor.Members) {
+                                    try {
+                                        $Trustee = $AllRecipients[$index]
+
+                                        if ($TrusteeFilter) {
+                                            if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
+                                                continue
+                                            }
+                                        }
+
+                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                            if ($ExportFromOnPrem) {
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            } else {
+                                                if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            }
+
+                                            if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
+                                                $ExportFileLines.add((('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'MemberRecursive',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+
+                                            }
+                                        }
+                                    } catch {
+                                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Distribution Group Members"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                                    }
+                                }
+
+                                if ($ExportFileLines) {
+                                    $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
+
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+
+                                    foreach ($ExportFileLine in $ExportFileLines) {
+                                        try {
+                                            $index = $null
+                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
+                                        } catch {
+                                        }
+
+                                        if ($index -ge 0) {
+                                            $AllRecipients[$index].IsTrustee = $true
+                                        }
+                                    }
+
+                                    $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -Path ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                                }
+                            }
+                        } catch {
+                            """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Distribution Group Members"";""$($GrantorPrimarySMTP)"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                        } finally {
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        AllRecipients     = $AllRecipients
+                        tempQueue         = $tempQueue
+                        ExportFile        = $ExportFile
+                        ExportTrustees    = $ExportTrustees
+                        ErrorFile         = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile         = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath        = $PSScriptRoot
+                        ExportFromOnPrem  = $ExportFromOnPrem
+                        VerbosePreference = $VerbosePreference
+                        DebugPreference   = $DebugPreference
+                        TrusteeFilter     = $TrusteeFilter
+                        UTF8Encoding      = $UTF8Encoding
+                        ExpandGroups      = $ExpandGroups
+                        ExportFileHeader  = $ExportFileHeader
+                        ExportFileFilter  = $ExportFileFilter
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host ('  {0:0000000} distribution groups to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+
+            if ($tempQueue.count -eq 0) {
+                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                Write-Host
+            } else {
+                Write-Host
+                Write-Host '  Not all distribution groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobDebugFile | Add-Content $DebugFile -Encoding $UTF8Encoding -Force
+                    Remove-Item $JobDebugFile -Force
+                }
+                $null = Start-Transcript -Path $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding | Add-Content $ErrorFile -Encoding $UTF8Encoding -Force
+                    Remove-Item $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+
+        }
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
 } catch {
     Write-Host 'Unexpected error. Exiting.'
     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";"""";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
@@ -4883,33 +5289,39 @@ try {
         $RunspacePool.dispose()
     }
 
-    Write-Host "  Temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $RecipientFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
+    if ($ExportFile) {
+        Write-Host "  Sort and combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $JobResultFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
 
-    if ($RecipientFiles.count -gt 0) {
-        Write-Host ('    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $RecipientFiles.count, $UpdateInterval)
-        Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
+        if ($JobResultFiles.count -gt 0) {
+            Write-Host ('    {0:0000000} files to check. Done (in steps of {1:0000000}):' -f $JobResultFiles.count, $UpdateInterval)
+            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
 
-        $lastCount = 1
+            $lastCount = 1
 
-        foreach ($RecipientFile in $RecipientFiles) {
-            if ($RecipientFile.length -gt 0) {
-                Get-Content $RecipientFile -Encoding $UTF8Encoding | Sort-Object -Unique | Add-Content $ExportFile -Encoding $UTF8Encoding -Force
+            foreach ($JobResultFile in $JobResultFiles) {
+                if ($JobResultFile.length -gt 0) {
+                    Import-Csv $JobResultFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ExportFile -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                }
+
+                Remove-Item $JobResultFile -Force
+
+                if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobResultFiles.count)) {
+                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    if ($lastcount -eq $JobResultFiles.count) { Write-Host }
+                }
+
+                $lastCount++
             }
-
-            Remove-Item $RecipientFile -Force
-
-            if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $RecipientFiles.count)) {
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                if ($lastcount -eq $RecipientFiles.count) { Write-Host }
-            }
-
-            $lastCount++
+        } else {
+            Write-Host ('    {0:0000000} files to check.' -f $JobResultFiles.count)
         }
+
+        Write-Host "    '$($ExportFile)'"
     }
 
     if ($ErrorFile) {
-        Write-Host "  Temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Sort and combine temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         $JobErrorFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))
 
         if ($JobErrorFiles.count -gt 0) {
@@ -4936,7 +5348,21 @@ try {
             }
 
             $x | Sort-Object -Unique | Add-Content $ErrorFile -Encoding $UTF8Encoding -Force
+        } else {
+            Write-Host ('    {0:0000000} files to check.' -f $JobResultFiles.count)
         }
+
+        Write-Host "    '$($ErrorFile)'"
+    }
+
+    if ($DebugFile) {
+        Write-Host "  Sort and combine temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $JobDebugFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))
+
+        Write-Host ('    {0:0000000} files to check.' -f $JobResultFiles.count)
+        Write-Host '    Sort and combine will be performed after the step ''End script'' to ensure a complete debug log.'
+
+        Write-Host "    '$($DebugFile)'"
     }
 
     Write-Host
