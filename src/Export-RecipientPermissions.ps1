@@ -1742,6 +1742,7 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
+                            $ExportFileFilter,
                             $AllRecipientsSmtpToIndex
                         )
 
@@ -1861,6 +1862,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -1919,6 +1933,7 @@ try {
                         TrusteeFilter                           = $TrusteeFilter
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
                     }
                 )
 
@@ -2042,7 +2057,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -2236,7 +2252,20 @@ try {
 
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
-
+                                    
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -2297,6 +2326,7 @@ try {
                         TrusteeFilter                                   = $TrusteeFilter
                         UTF8Encoding                                    = $UTF8Encoding
                         ExportFileHeader                                = $ExportFileHeader
+                        ExportFileFilter                                = $ExportFileFilter
                     }
                 )
 
@@ -2414,7 +2444,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -2576,6 +2607,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -2620,6 +2664,7 @@ try {
                         TrusteeFilter                           = $TrusteeFilter
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
                     }
                 )
 
@@ -2738,7 +2783,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -2881,6 +2927,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -2924,6 +2983,7 @@ try {
                         TrusteeFilter                    = $TrusteeFilter
                         UTF8Encoding                     = $UTF8Encoding
                         ExportFileHeader                 = $ExportFileHeader
+                        ExportFileFilter                 = $ExportFileFilter
                     }
                 )
 
@@ -3035,7 +3095,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -3124,6 +3185,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -3165,6 +3239,7 @@ try {
                         TrusteeFilter                    = $TrusteeFilter
                         UTF8Encoding                     = $UTF8Encoding
                         ExportFileHeader                 = $ExportFileHeader
+                        ExportFileFilter                 = $ExportFileFilter
                     }
                 )
 
@@ -3280,7 +3355,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -3372,6 +3448,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -3414,6 +3503,7 @@ try {
                         TrusteeFilter                           = $TrusteeFilter
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
                     }
                 )
 
@@ -3555,7 +3645,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -3782,6 +3873,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -3844,6 +3948,7 @@ try {
                         TrusteeFilter                                  = $TrusteeFilter
                         UTF8Encoding                                   = $UTF8Encoding
                         ExportFileHeader                               = $ExportFileHeader
+                        ExportFileFilter                               = $ExportFileFilter
                     }
                 )
 
@@ -3962,7 +4067,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -4049,9 +4155,23 @@ try {
                                 } catch {
                                     """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Get and export Management Role Group members"";""$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
+
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -4093,6 +4213,7 @@ try {
                         TrusteeFilter                 = $TrusteeFilter
                         UTF8Encoding                  = $UTF8Encoding
                         ExportFileHeader              = $ExportFileHeader
+                        ExportFileFilter              = $ExportFileFilter
                     }
                 )
 
@@ -4236,7 +4357,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -4330,6 +4452,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -4370,6 +4505,7 @@ try {
                         TrusteeFilter            = $TrusteeFilter
                         UTF8Encoding             = $UTF8Encoding
                         ExportFileHeader         = $ExportFileHeader
+                        ExportFileFilter         = $ExportFileFilter
                     }
                 )
 
@@ -4484,7 +4620,8 @@ try {
                             $DebugPreference,
                             $TrusteeFilter,
                             $UTF8Encoding,
-                            $ExportFileHeader
+                            $ExportFileHeader,
+                            $ExportFileFilter
                         )
 
                         try {
@@ -4567,6 +4704,19 @@ try {
                                 if ($ExportFileLines) {
                                     $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
 
+                                    if ($ExportFileFilter) {
+                                        $ExportFileLinesIndex = @()
+                                    
+                                        For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
+                                            $ExportFileLine = $ExportFileLines[$x]
+                                            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
+                                                $ExportFileLinesIndex += $x
+                                            }
+                                        }
+                                    
+                                        $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
+                                    }
+                                    
                                     foreach ($ExportFileLine in $ExportFileLines) {
                                         try {
                                             $index = $null
@@ -4606,6 +4756,7 @@ try {
                         TrusteeFilter     = $TrusteeFilter
                         UTF8Encoding      = $UTF8Encoding
                         ExportFileHeader  = $ExportFileHeader
+                        ExportFileFilter  = $ExportFileFilter
                     }
                 )
 
@@ -4802,20 +4953,10 @@ try {
 
 
 <#
-BEI JEDEM EXPORT
-if ($ExportFileFilter) {
-	$ExportFileLinesIndex = @()
+Get and export Distribution Group Members anpassen
 
-      For ($x = 0; $x -lt $ExportFileLines.count; $x++) {
-      	$ExportFileLine = $ExportFileLines[$x]
-            if ((. ([scriptblock]::Create($ExportFileFilter))) -eq $true) {
-            	$ExportFileLinesIndex += $x
-		}
-	}
 
-      $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
-}
-
+$AllRecipients braucht kein Feld members mehr
 
 
 VOR DEM ZUSAMMENFÜGEN DER EXPORT-DATEIEN MIT PARALLELEN LOKALEN JOBS
