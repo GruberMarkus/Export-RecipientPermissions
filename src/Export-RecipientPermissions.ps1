@@ -802,6 +802,17 @@ try {
         }
     }
 
+    if ($ExportPublicFolderPermissions) {
+        Write-Host "    RecipientTypeDetails 'PublicFolderMailbox'"
+
+        try {
+            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails PublicFolderMailbox -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails PublicFolderMailbox -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
+        }
+    }
+
     $AllRecipients.AddRange(@($x | Sort-Object @{Expression = { $_.PrimarySmtpAddress.Address } }))
     $AllRecipients.TrimToSize()
 
