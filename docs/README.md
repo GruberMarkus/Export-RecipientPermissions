@@ -1,10 +1,10 @@
 <!-- omit in toc -->
-# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups
+# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document, filter and compare Exchange permissions: Mailbox Access Rights, Mailbox Folder permissions, Public Folder permissions, Send As, Send On Behalf, Managed By, Linked Master Accounts, Forwarders, Group members, Management Role Group members
 <br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
 
 # Features <!-- omit in toc -->
-Find all recipients with a primary SMTP address in an on on-prem or Exchange Online environment and document, filter and compare permissions:
-- mailbox access rights
+Document, filter and compare Exchange permissions:
+- mailbox access rights,
 - mailbox folder permissions
 - public folder permissions
 - send as
@@ -12,7 +12,8 @@ Find all recipients with a primary SMTP address in an on on-prem or Exchange Onl
 - managed by
 - linked master accounts
 - forwarders
-- management role groups
+- group members
+- management role group members
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
@@ -89,7 +90,7 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
   - When management role group members are exported, this column contains 'Management Role Group'
   - When public folder permissions are exported, this column represents the folder's content mailbox
 - Grantor Display Name: The display name of the grantor.
-  - When management role group members are exported, this column is empty
+  - When management role group members are exported, this column contains the name of the Management Role Group
   - When public folder permissions are exported, this column represents the folder's content mailbox
 - Grantor Recipient Type: The recipient type and recipient type detail of the grantor.
   - When management role group members are exported, this column contains 'ManagementRoleGoup'
@@ -99,10 +100,9 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Folder: Folder the permission is granted on
   - Empty for non-folder permissions
   - All folder names start with '/', '/' representing the root folder
-  - When management role group members are exported, this column contains the name of the group and no '/' prefix (as this is not a real folder)
 - Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
   - When public folder permissions are exported and a folder is mail-enabled, a "virtual" right 'MailEnabled' is exported
-  - When management role group members are exported, a "virtual" right 'Member' is exported
+  - When management role group members are exported, a "virtual" right 'MemberRecurse' is exported
   - When forwarders are exported, one or more of the following "virtual" rights are exported:
     - Forward_ExternalEmailAddress_ForwardOnly
     - Forward_ForwardingAddress_DeliverAndForward
@@ -113,10 +113,15 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Inherited: Shows if the permission is inherited or not.
 - InheritanceType: Shows if the permission is also valid for child objects, and if yes, which child objects.
 - Trustee Original Identity: The original identity string of the trustee.
+  - When 'ExpandGroups' is enabled, this column contains the original identity string of the original trustee groups, extended with the string '     [MemberRecurse] ' and the original identity of the resolved group member
 - Trustee Primary SMTP: The primary SMTP address of the object receiving a permission.
+  - When 'ExpandGroups' is enabled, the primary SMTP address comes from the resolved group member
 - Trustee Display Name: The display name of the trustee.
+  - When 'ExpandGroups' is enabled, the display name comes from the resolved group member
 - Trustee Recipient Type: The recipient type of the trustee.
+-   - When 'ExpandGroups' is enabled, the recipient type comes from the resolved group member
 - Trustee Environment: Shows if the trustee is held on-prem or in the cloud.
+  - When 'ExpandGroups' is enabled, the trustee environment comes from the resolved group member
 ## 1.2. Parameters
 ### 1.2.1. ExportFromOnPrem
 Export from On-Prem or from Exchange Online
@@ -358,7 +363,7 @@ This may drastically increase script run time and file size
 
 This only works for mail-enabled groups and members
 
-The virtual Right 'MemberRecursive' is used in the export file
+The virtual Right 'MemberRecure' is used in the export file
 
 The parameter ExpandGroups can be used independently: ExpandGroups lists all members of a group every time a group is used as a trustee, ExportDistributionGroupMembers only lists the members of each group only once
 
@@ -378,9 +383,9 @@ This only works for mail-enabled groups
 The original permission is still documented, with one additional line for each member of the group
 - For each member of the group, 'Trustee Original Identity' is preserved but suffixed with
   ```
-       [GroupExpandedRecursive]
+       [MemberRecurse] 
   ```
-  (the whitespace consists of five space characters for sorting reasons)
+  The whitespace consists of five space characters in front of 'MemberRecurse' for sorting reasons, and one space at the end. Then the original identity string of the resolved group member is added.
   The other trustee properties are the ones of the member
 
 TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
