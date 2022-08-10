@@ -982,7 +982,11 @@ try {
                 if ($Recipient.ExternalEmailAddress.SmtpAddress) {
                     $Recipient.ExternalEmailAddress = $Recipient.ExternalEmailAddress.SmtpAddress
                 } else {
-                    $Recipient.ExternalEmailAddress = $Recipient.ExternalEmailAddress.ToString()
+                    if ($Recipient.RecipientTypeDetails -ieq 'PublicFolder') {
+                        $Recipient.ExternalEmailAddress = $null
+                    } else {
+                        $Recipient.ExternalEmailAddress = $Recipient.ExternalEmailAddress.ToString()
+                    }
                 }
             }
         }
