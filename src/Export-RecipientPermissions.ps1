@@ -304,7 +304,7 @@ Param(
     [boolean]$UseDefaultCredential = $false,
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
-    [hashtable]$ExchangeOnlineConnectionParameters = @{ Credential = $true },
+    [hashtable]$ExchangeOnlineConnectionParameters = @{ Credential = $null },
     [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count * 3,
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 50,
@@ -700,7 +700,7 @@ try {
         if ($RecipientProperties -contains '*') {
             $RecipientProperties = @('*')
         } else {
-            @('Identity', 'DistinguishedName', 'ExchangeGuid', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy') | ForEach-Object {
+            @('Identity', 'DistinguishedName', 'ExchangeGuid', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'WhenSoftDeleted') | ForEach-Object {
                 if ($RecipientProperties -inotcontains $_) {
                     $RecipientProperties += $_
                 }
@@ -750,7 +750,11 @@ try {
     # Credentials
     Write-Host
     Write-Host "Exchange credentials @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if ((-not $UseDefaultCredential) -or (($ExportFromOnPrem -eq $false) -and ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')))) {
+
+    if (
+        (($ExportFromOnPrem -eq $true) -and ($UseDefaultCredential -eq $false)) -or
+        (($ExportFromOnPrem -eq $false) -and ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')))
+    ) {
         if (-not ((Test-Path $ExchangeCredentialUsernameFile) -and (Test-Path $ExchangeCredentialPasswordFile))) {
             Write-Host '  No stored credential found'
             Write-Host '    Username and password are stored as encrypted secure strings'
@@ -780,12 +784,7 @@ try {
     # Import recipients
     Write-Host
     Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host "  Default recipients, filtered by RecipientTypeDetails and Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-    $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
-
-    $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
-
+    Write-Host '  Enumerate possible values RecipientTypeDetails'
     try {
         $null = @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails '!!!Fail!!!' -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue } -ErrorAction Stop))
     } catch {
@@ -814,6 +813,8 @@ try {
 
     $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
 
+    $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
+
     foreach ($RecipientTypeDetail in $RecipientTypeDetailsList) {
         foreach ($Filter in $Filters) {
             $tempQueue.enqueue((, $RecipientTypeDetail, $Filter))
@@ -822,6 +823,10 @@ try {
 
     $RecipientTypeDetailsList = $null
     $Filters = $null
+
+    Write-Host "  Default recipients, filtered by RecipientTypeDetails and Name groups (A-Z, 0-9, rest) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+    $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
     $tempQueueCount = $tempQueue.count
 
@@ -1302,7 +1307,7 @@ try {
     Write-Host
     Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if ($ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
+    if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
         Write-Host '  Single-thread Exchange operation'
 
         $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(100000))
@@ -1950,11 +1955,20 @@ try {
                                                     }
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
-                                                        try {
-                                                            Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                        } catch {
-                                                            . ([scriptblock]::Create($ConnectExchange))
-                                                            Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                        if ($Grantor.WhenSoftDeleted) {
+                                                            try {
+                                                                Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -SoftDeletedMailbox -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                            } catch {
+                                                                . ([scriptblock]::Create($ConnectExchange))
+                                                                Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -SoftDeletedMailbox -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                            }
+                                                        } else {
+                                                            try {
+                                                                Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                            } catch {
+                                                                . ([scriptblock]::Create($ConnectExchange))
+                                                                Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxPermission -identity $args[0] -IncludeSoftDeletedUserPermissions -IncludeUnresolvedPermissions -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                            }
                                                         }
                                                     }
                                                 }
