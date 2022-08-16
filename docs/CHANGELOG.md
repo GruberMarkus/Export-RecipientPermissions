@@ -24,6 +24,7 @@
 - The new parameter '`ExportDistributionGroupMembers`' exports distribution group members, including nested groups and dynamic groups. See '`README`' for details and comparison to '`ExpandGroups`'.
 - The new parameter '`ExportFileFilter`' allows filtering the final results before they are written to the export file. See '`README`' for details.
 - Special mailboxes are now added to the recipients list. This includes Arbitration, AuditLog, AuxAuditLog, inactive, Migration, Monitoring, RemoteArchive and softdeleted mailboxes (some of them are only available in on-prem or cloud environments)
+- Mailbox permissions exported from the cloud now include softdeleted and unresolved trustees, as well as permissions granted to group mailboxes
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.0.0</a> - 2022-07-19
  _**Breaking:** See '`Changed`' section for breaking changes_  
