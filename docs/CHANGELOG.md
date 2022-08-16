@@ -16,11 +16,14 @@
   ### Fixed
 -->
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.1.0</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.x.x" target="_blank">v2.x.x</a> - YYYY-MM-DD
+### Changed
+- Importing recipients is now a multi-thred Exchange operation. Recipients are queried by lots of small queries to avoid problems with missing data in big environments.
 ### Added
 - The new parameter '`ExpandGroups`' expands groups (including nested and dynamic groups) and exports the granted permission for each individual member. See '`README`' for details and comparison to '`ExportDistributionGroupMembers`'.
 - The new parameter '`ExportDistributionGroupMembers`' exports distribution group members, including nested groups and dynamic groups. See '`README`' for details and comparison to '`ExpandGroups`'.
 - The new parameter '`ExportFileFilter`' allows filtering the final results before they are written to the export file. See '`README`' for details.
+- Special mailboxes are now added to the recipients list. This includes Arbitration, AuditLog, AuxAuditLog, inactive, Migration, Monitoring, RemoteArchive and softdeleted mailboxes (some of them are only available in on-prem or cloud environments)
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.0.0" target="_blank">v2.0.0</a> - 2022-07-19
  _**Breaking:** See '`Changed`' section for breaking changes_  

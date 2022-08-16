@@ -657,7 +657,7 @@ try {
 
 
     $tempConnectionUriQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new(10000))
-    while ($tempConnectionUriQueue.count -le 10000) {
+    while ($tempConnectionUriQueue.count -le 100000) {
         foreach ($ExchangeConnectionUri in $ExchangeConnectionUriList) {
             $tempConnectionUriQueue.Enqueue($ExchangeConnectionUri.AbsoluteUri)
         }
@@ -768,7 +768,6 @@ try {
         $ExchangeCredential = $null
     }
 
-
     # Connect to Exchange
     Write-Host
     Write-Host "Connect to Exchange for single-thread operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -781,42 +780,293 @@ try {
     # Import recipients
     Write-Host
     Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host '  Single-thread Exchange operation'
-    Write-Host "  Queried properties: $('''' + ($RecipientProperties -join ''', ''') + '''')"
-
-    $RecipientTypeList = ('DynamicDistributionGroup', 'UserMailbox', 'MailContact', 'MailUniversalDistributionGroup', 'MailUniversalSecurityGroup', 'MailNonUniversalGroup', 'MailUser', 'PublicFolder')
-
-    Write-Host '  Query by RecipientType to avoid problems in environments with many recipients'
+    Write-Host "  Default recipients, filtered by RecipientTypeDetails and Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
-    $x = @()
 
-    foreach ($RecipientType in $RecipientTypeList) {
-        Write-Host "    RecipientType '$($RecipientType)'"
+    $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
 
+    try {
+        $null = @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails '!!!Fail!!!' -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue } -ErrorAction Stop))
+    } catch {
+        $null = $error[0].exception -match '(?!.*: )(.*)(")$'
+        $RecipientTypeDetailsListUnchecked = $matches[1].trim() -split ', ' | Where-Object { $_ } | Sort-Object -Unique
+    }
+    
+    $RecipientTypeDetailsList = @()
+    
+    foreach ($RecipientTypeDetail in $RecipientTypeDetailsListUnchecked) {
         try {
-            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientType $args[0] -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
+            $null = @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails $args[0] -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue } -ArgumentList $RecipientTypeDetail -ErrorAction Stop))
+            $RecipientTypeDetailsList += $RecipientTypeDetail
         } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientType $args[0] -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
+        }
+    }
+    
+    $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
+    $Filters = @()
+    
+    foreach ($tempChar in $tempChars) {
+        $Filters += "(name -like '$($tempChar)*')"
+    }
+    
+    $tempChars = $null
+    
+    $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
+    
+    foreach ($RecipientTypeDetail in $RecipientTypeDetailsList) {
+        foreach ($Filter in $Filters) {
+            $tempQueue.enqueue((, $RecipientTypeDetail, $Filter))
         }
     }
 
-    if ($ExportPublicFolderPermissions) {
-        Write-Host "    RecipientTypeDetails 'PublicFolderMailbox'"
+    $RecipientTypeDetailsList = $null
+    $Filters = $null
 
-        try {
-            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails PublicFolderMailbox -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $x += @((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails PublicFolderMailbox -Properties $args[1] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[2] } -ArgumentList $RecipientType, $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop))
+    $tempQueueCount = $tempQueue.count
+
+    $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
+
+    Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+
+    if ($ParallelJobsNeeded -ge 1) {
+        $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+        $RunspacePool.Open()
+
+        $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+        1..$ParallelJobsNeeded | ForEach-Object {
+            $Powershell = [powershell]::Create()
+            $Powershell.RunspacePool = $RunspacePool
+
+            [void]$Powershell.AddScript(
+                {
+                    param(
+                        $AllRecipients,
+                        $tempConnectionUriQueue,
+                        $tempQueue,
+                        $ErrorFile,
+                        $DebugFile,
+                        $ExportFromOnPrem,
+                        $ConnectExchange,
+                        $ExchangeOnlineConnectionParameters,
+                        $ExchangeCredential,
+                        $UseDefaultCredential,
+                        $ScriptPath,
+                        $VerbosePreference,
+                        $DebugPreference,
+                        $UTF8Encoding
+                    )
+
+                    try {
+                        $DebugPreference = 'Continue'
+
+                        Set-Location $ScriptPath
+
+                        if ($DebugFile) {
+                            $null = Start-Transcript -Path $DebugFile -Force
+                        }
+
+                        Write-Host "Import Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                        . ([scriptblock]::Create($ConnectExchange))
+
+                        while ($tempQueue.count -gt 0) {
+                            try {
+                                $QueueArray = $tempQueue.dequeue()
+                            } catch {
+                                continue
+                            }
+
+                            Write-Host "RecipientTypeDetails '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            try {
+                                try {
+                                    $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails $args[0] -Filter $args[1] -Properties $args[2] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[3] } -ArgumentList $QueueArray[0], $QueueArray[1], $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop)))
+                                } catch {
+                                    . ([scriptblock]::Create($ConnectExchange))
+                                    $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Recipient -RecipientTypeDetails $args[0] -Filter $args[1] -Properties $args[2] -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[3] } -ArgumentList $QueueArray[0], $QueueArray[1], $RecipientProperties, $RecipientPropertiesExtended -ErrorAction Stop)))
+                                }
+                            } catch {
+                                """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import Recipients"";""RecipientTypeDetails '$($QueueArray[0])', Filter '$($QueueArray[1])'"";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                            }
+                        }
+                    } catch {
+                        """$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')"";""Import Recipients"";"""";""$($_ | Out-String)""" -replace '(?<!;|^)"(?!;|$)', '""' | Add-Content -Path $ErrorFile -Encoding $UTF8Encoding -Force
+                    } finally {
+                        if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                            Disconnect-ExchangeOnline -Confirm:$false
+                            Remove-Module ExchangeOnlineManagement
+                        }
+
+                        if ($ExchangeSession) {
+                            Remove-PSSession -Session $ExchangeSession
+                        }
+
+                        if ($DebugFile) {
+                            $null = Stop-Transcript
+                            Start-Sleep -Seconds 1
+                        }
+                    }
+                }
+            ).AddParameters(
+                @{
+                    DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                    ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                    AllRecipients                      = $AllRecipients
+                    tempConnectionUriQueue             = $tempConnectionUriQueue
+                    tempQueue                          = $tempQueue
+                    ExportFromOnPrem                   = $ExportFromOnPrem
+                    ConnectExchange                    = $ConnectExchange
+                    ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                    ExchangeCredential                 = $ExchangeCredential
+                    UseDefaultCredential               = $UseDefaultCredential
+                    ScriptPath                         = $PSScriptRoot
+                    VerbosePreference                  = $VerbosePreference
+                    DebugPreference                    = $DebugPreference
+                    UTF8Encoding                       = $UTF8Encoding
+                }
+            )
+
+            $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+            $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+            $temp = '' | Select-Object PowerShell, Handle, Object
+            $temp.PowerShell = $PowerShell
+            $temp.Handle = $Handle
+            $temp.Object = $Object
+            [void]$runspaces.Add($Temp)
         }
+
+        Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+
+        $lastCount = -1
+        while (($runspaces.Handle.IsCompleted -contains $False)) {
+            Start-Sleep -Seconds 1
+            $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+            for ($x = $lastCount; $x -le $done; $x++) {
+                if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    if ($x -eq 0) { Write-Host }
+                    $lastCount = $x
+                }
+            }
+        }
+
+        if ($tempQueue.count -eq 0) {
+            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+            Write-Host
+        } else {
+            Write-Host
+            Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+        }
+
+        foreach ($runspace in $runspaces) {
+            $runspace.PowerShell.Dispose()
+        }
+
+        $RunspacePool.dispose()
+        'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+        if ($DebugFile) {
+            $null = Stop-Transcript
+            Start-Sleep -Seconds 1
+            foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                Get-Content $JobDebugFile | Add-Content $DebugFile -Encoding $UTF8Encoding -Force
+                Remove-Item $JobDebugFile -Force
+            }
+            $null = Start-Transcript -Path $DebugFile -Append -Force
+        }
+
+        if ($ErrorFile) {
+            foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                Get-Content $JobErrorFile -Encoding $UTF8Encoding | Add-Content $ErrorFile -Encoding $UTF8Encoding -Force
+                Remove-Item $JobErrorFile -Force
+            }
+        }
+
+        [GC]::Collect(); Start-Sleep 1
     }
 
-    $AllRecipients.AddRange(@($x | Sort-Object @{Expression = { $_.PrimarySmtpAddress.Address } }))
+    Write-Host ('    {0:0000000} recipients found' -f $($AllRecipients.count))
+
+    Write-Host "  Additional recipients of specific types @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    Single-thread Exchange operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+ 
+    Write-Host '      Migration mailboxes'
+    try {
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+    } catch {
+        . ([scriptblock]::Create($ConnectExchange))
+        $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+    }
+
+    if ($ExportFromOnPrem) {
+        Write-Host '      Arbitration mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+
+        Write-Host '      AuditLog mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+
+        Write-Host '      AuxAuditLog mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+
+        Write-Host '      Monitoring mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+
+        Write-Host '      RemoteArchive mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+    } else {
+        Write-Host '      Inactive mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -InactiveMailboxOnly -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -InactiveMailboxOnly -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+
+        Write-Host '      Softdeleted mailboxes'
+        try {
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -SoftDeletedMailbox -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        } catch {
+            . ([scriptblock]::Create($ConnectExchange))
+            $AllRecipients.AddRange(@((Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-Mailbox -SoftDeletedMailbox -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $args[0] } -ArgumentList $RecipientPropertiesExtended -ErrorAction Stop)))
+        }
+    
+    }
+
+    $x = @($AllRecipients | Sort-Object -Property @{Expression = { $_.PrimarySmtpAddress.Address } })
+    $AllRecipients.clear()
+    $AllRecipients.AddRange(@($x))
+    $x = $null
     $AllRecipients.TrimToSize()
-
-    Write-Host ('  {0:0000000} recipients found' -f $($AllRecipients.count))
+    
+    Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
 
 
     # Import recipient permissions (SendAs)
