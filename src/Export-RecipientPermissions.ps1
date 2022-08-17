@@ -2269,11 +2269,20 @@ try {
 
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-                                try {
-                                    $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
-                                } catch {
-                                    . ([scriptblock]::Create($ConnectExchange))
-                                    $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                if ($Grantor.WhenSoftDeleted) {
+                                    try {
+                                        $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -IncludeSoftDeletedRecipients -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                    } catch {
+                                        . ([scriptblock]::Create($ConnectExchange))
+                                        $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -IncludeSoftDeletedRecipients -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                    }
+                                } else {
+                                    try {
+                                        $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                    } catch {
+                                        . ([scriptblock]::Create($ConnectExchange))
+                                        $Folders = Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-MailboxFolderStatistics -identity $args[0] -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype } -ArgumentList $GrantorPrimarySMTP -ErrorAction Stop
+                                    }
                                 }
 
                                 foreach ($Folder in $Folders) {
