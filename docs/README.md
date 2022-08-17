@@ -357,13 +357,13 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 
 Default: $true
 ### 1.2.31. ExportDistributionGroupMembers
-Export distribution group members, including nested groups and dynamic groups
+Export recursive distribution group members, including nested groups and dynamic groups
+
+This is useful to document overall distributiong group membership
 
 This may drastically increase script run time and file size
 
-This only works for mail-enabled groups and members
-
-The virtual Right 'MemberRecure' is used in the export file
+The virtual Right 'MemberRecurse' is used in the export file
 
 The parameter ExpandGroups can be used independently: ExpandGroups lists all members of a group every time a group is used as a trustee, ExportDistributionGroupMembers only lists the members of each group only once
 
@@ -374,11 +374,12 @@ Valid values: 'None', 'All', 'OnlyTrustees'
 
 Default: 'OnlyTrustees'
 ### 1.2.32. ExpandGroups
-Expand groups to their members, including nested groups and dynamic groups
+Expand groups to their recursive members, including nested groups and dynamic groups
+
+This is useful in cases where users are sent permission reports, as not only permission changes but also changes in the underlying trustee groups are documented and directly associated with a grantor-permission-trustee triplet.  
+For example: User A has granted Group B permission X a long time ago. The permission itself does not change, but the recursive members of Group B change over time. With ExpandGroups enabled, the members and therefore the changes of Group B are documented with every run of Export-RecipientPermissions.
 
 This may drastically increase script run time and file size
-
-This only works for mail-enabled groups
 
 The original permission is still documented, with one additional line for each member of the group
 - For each member of the group, 'Trustee Original Identity' is preserved but suffixed with

@@ -824,7 +824,7 @@ try {
     $RecipientTypeDetailsList = $null
     $Filters = $null
 
-    Write-Host "  Default recipients, filtered by RecipientTypeDetails and Name groups (A-Z, 0-9, rest) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Default recipients, filtered by RecipientTypeDetails and Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     $AllRecipients = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
@@ -1332,6 +1332,9 @@ try {
     if ($ExchangeSession) {
         Remove-PSSession -Session $ExchangeSession
     }
+
+    [GC]::Collect(); Start-Sleep 1
+
 
     # Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress
     Write-Host
@@ -2895,7 +2898,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -3470,7 +3472,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -3734,7 +3735,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -4173,7 +4173,9 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Import-Csv $JobErrorFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ErrorFile -Encoding $UTF8Encoding -Force -Append -NoTypeInformation -Delimiter ';'
+                    #Import-Csv $JobErrorFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ErrorFile -Encoding $UTF8Encoding -Force -Append -NoTypeInformation -Delimiter ';'
+                    Get-Content $JobErrorFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Sort-Object -Unique | Add-Content $ErrorFile -Encoding $UTF8Encoding -Force
+
                     Remove-Item $JobErrorFile -Force
                 }
             }
@@ -4446,7 +4448,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -4936,7 +4937,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -5205,7 +5205,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -5438,7 +5437,6 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep 1
-
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -5471,7 +5469,7 @@ try {
     }
 
     if ($ExportFile) {
-        Write-Host "  Sort and combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         $JobResultFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
 
         if ($JobResultFiles.count -gt 0) {
@@ -5482,7 +5480,8 @@ try {
 
             foreach ($JobResultFile in $JobResultFiles) {
                 if ($JobResultFile.length -gt 0) {
-                    Import-Csv $JobResultFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ExportFile -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                    #Import-Csv $JobResultFile -Encoding $UTF8Encoding -Delimiter ';' | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv $ExportFile -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
+                    Get-Content $JobResultFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Add-Content $ExportFile -Encoding $UTF8Encoding -Force
                 }
 
                 Remove-Item $JobResultFile -Force
@@ -5537,7 +5536,7 @@ try {
     }
 
     if ($DebugFile) {
-        Write-Host "  Sort and combine temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Combine temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         $JobDebugFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))
 
         Write-Host ('    {0:0000000} files to check.' -f $JobResultFiles.count)
@@ -5567,6 +5566,5 @@ try {
     }
 
     Remove-Variable * -ErrorAction SilentlyContinue
-    [System.GC]::Collect() # garbage collection
-    Start-Sleep 1
+    [GC]::Collect(); Start-Sleep 1
 }
