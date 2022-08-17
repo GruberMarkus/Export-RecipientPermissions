@@ -16,7 +16,7 @@
   ### Fixed
 -->
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.1.0" target="_blank">v2.1.0</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.1.0-alpha1" target="_blank">v2.1.0-alpha1</a> - 2022-08-17
 ### Changed
 - Importing recipients is now a multi-thred Exchange operation. Recipients are queried by lots of small queries to avoid problems with missing data in big environments.
 ### Added
