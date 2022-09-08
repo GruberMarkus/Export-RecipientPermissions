@@ -19,6 +19,8 @@
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
 ### Changed
 - Updated '`README`' to correctly document value names (.RecipientType.Value, .RecipientTypeDetails.Value) (<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues/14" target="_blank">#14</a>) (Thanks <a href="https://github.com/snurbnacnud" target="_blank">@snurbnacnud</a>!)
+### Added
+- New FAQ in '`README`': Is there a GUI available?
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.1.0" target="_blank">v2.1.0</a> - 2022-09-05
 ### Changed

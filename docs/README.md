@@ -71,6 +71,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.6. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#26-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
   - [2.7. Isn't a plural noun in the script name against PowerShell best practices?](#27-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
   - [2.8. Is there a roadmap for future versions?](#28-is-there-a-roadmap-for-future-versions)
+  - [2.9. Is there a GUI available?](#29-is-there-a-gui-available)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -575,6 +576,13 @@ I intentionally decided not to follow the singular noun convention, as another l
 There is no binding roadmap for future versions, although I maintain a list of ideas in the 'Contribution opportunities' chapter of '.\docs\CONTRIBUTING.html'.
 
 Fixing issues has priority over new features, of course.
+## 2.9. Is there a GUI available?
+There is no dedicated graphical user interface.
+
+A basic GUI for configuring the script is accessible via the following built-in PowerShell command:
+```
+Show-Command .\Export-RecipientPermissions.ps1
+```
 # 3. Sample code
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
