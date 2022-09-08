@@ -163,31 +163,28 @@ Properties that are always included: 'Identity', 'DistinguishedName', 'Recipient
 ### 1.2.7. GrantorFilter
 Only check grantors where the filter criteria matches $true.
 
-The variable $Grantor has all attributes defined by '`RecipientProperties`. For example:
+The variable $Grantor has all attributes defined by '`RecipientProperties`'. For example:
 - .DistinguishedName
-- .RecipientType, .RecipientTypeDetails
+- .RecipientType.Value, .RecipientTypeDetails.Value
 - .DisplayName
 - .PrimarySmtpAddress: .Local, .Domain, .Address
-- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
-  - This attribute is an array. Code example:
+- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString  
+  This attribute is an array. Code example:
     ```
-    $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
-                      'addressA@example.com’,
-                      'addressB@example.com’
-      )) { `$true; break } }"
+    $GrantorFilter = "if ((`$Grantor.EmailAddresses.SmtpAddress -ilike 'AddressA@example.com') -or (`$Grantor.EmailAddresses.SmtpAddress -ilike 'Test*@example.com')) { `$true } else { `$false }"
     ```
-- .UserFriendlyName: User account holding the mailbox in the `"<NetBIOS domain name>\<sAMAccountName>"` format
+- .UserFriendlyName: User account holding the mailbox in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 - .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
-  - This attribute is an array. Code example:
+    This attribute is an array. Code example:
     ```
     $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
-                          'example.com/OU1/OU2/ObjectA’,
-                          'example.com/OU3/OU4/ObjectB’,
-      )) { `$true; break } }"
+                        'example.com/OU1/OU2/ObjectA',
+                        'example.com/OU3/OU4/ObjectB',
+    )) { `$true; break } }"
     ```
-- On-prem only:
-  - .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
-  - .LinkedMasterAccount: Linked Master Account in the "<NetBIOS domain name>\<sAMAccountName>" format
+  On-prem only:
+    .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
+    .LinkedMasterAccount: Linked Master Account in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 
 Set to \$null or '' to define all recipients as grantors to consider
 
@@ -200,7 +197,7 @@ Default: $null
 ### 1.2.8. TrusteeFilter
 Only report trustees where the filter criteria matches $true.
 
-If the trustee matches a recipient, the available attributes are the same as für GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
+If the trustee matches a recipient, the available attributes are the same as for GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
 
 If the trustee does not match a recipient (because it no longer exists, for exampe), $Trustee is just a string. In this case, the export shows the following:
 - Column "Trustee Original Identity" contains the trustee description string as reported by Exchange

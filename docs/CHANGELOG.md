@@ -16,6 +16,10 @@
   ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Changed
+- Updated '`README`' to correctly document value names (.RecipientType.Value, .RecipientTypeDetails.Value) (<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues/14" target="_blank">#14</a>) (Thanks <a href="https://github.com/snurbnacnud" target="_blank">@snurbnacnud</a>!)
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.1.0" target="_blank">v2.1.0</a> - 2022-09-05
 ### Changed
 - Importing recipients is now a multi-thred Exchange operation. Recipients are queried by lots of small queries to avoid problems with missing data in big environments.
