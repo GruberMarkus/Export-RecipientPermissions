@@ -55,11 +55,12 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.30. ExportForwarders](#1230-exportforwarders)
     - [1.2.31. ExportDistributionGroupMembers](#1231-exportdistributiongroupmembers)
     - [1.2.32. ExpandGroups](#1232-expandgroups)
-    - [1.2.33. ExportTrustees](#1233-exporttrustees)
-    - [1.2.34. ExportFile](#1234-exportfile)
-    - [1.2.35. ErrorFile](#1235-errorfile)
-    - [1.2.36. DebugFile](#1236-debugfile)
-    - [1.2.37. UpdateInverval](#1237-updateinverval)
+    - [1.2.33. ExportGrantorsWithNoPermissions](#1233-exportgrantorswithnopermissions)
+    - [1.2.34. ExportTrustees](#1234-exporttrustees)
+    - [1.2.35. ExportFile](#1235-exportfile)
+    - [1.2.36. ErrorFile](#1236-errorfile)
+    - [1.2.37. DebugFile](#1237-debugfile)
+    - [1.2.38. UpdateInverval](#1238-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -391,7 +392,14 @@ TrusteeFilter is applied to trustee groups as well as to their finally expanded 
 - Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
 
 Default value: $false
-### 1.2.33. ExportTrustees
+### 1.2.33. ExportGrantorsWithNoPermissions
+Per default, Export-RecipientPermissions only exports grantors which have set at least one permission for at least one trustee.
+If all grantors should be exported, set this parameter to $true.
+
+If enabled, a grantor that that not grant any permission is included in the list with the following columns: "Grantor Primary SMTP", "Grantor Display Name", "Grantor Recipient Type", "Grantor Environment". The other columns for this recipient are empty.
+
+Default value: $false
+### 1.2.34. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -399,23 +407,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.34. ExportFile
+### 1.2.35. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.35. ErrorFile
+### 1.2.36. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.36. DebugFile
+### 1.2.37. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.37. UpdateInverval
+### 1.2.38. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
