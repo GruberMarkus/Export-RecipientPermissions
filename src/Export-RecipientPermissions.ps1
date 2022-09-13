@@ -5456,11 +5456,14 @@ try {
     Write-Host "Export grantors with no permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportGrantorsWithNoPermissions) {
+        $JobResultFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
+
         # Recipients
+        Write-Host "  Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
         foreach ($AllRecipientsIndex in $GrantorsToConsider) {
             $JobResultFile = ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $AllRecipientsIndex)))
 
-            if (((Test-Path -LiteralPath $JobResultFile) -eq $false) -or ((Get-Item -LiteralPath $JobResultFile).Length -eq 0)) {
+            if (($JobResultFiles.Name -inotcontains $JobResultFile) -or (($JobResultFiles | Where-Object { $_.name -ieq $JobResultFile }).Length -eq 0)) {
                 $Grantor = $AllRecipients[$AllRecipientsIndex]
 
                 $GrantorDisplayName = $Grantor.DisplayName
@@ -5480,6 +5483,8 @@ try {
 
         # Public folders
         if ($ExportPublicFolderPermissions) {
+            Write-Host "  Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
             for ($x = 0; $x -lt $AllPublicFolders.count; $x++) {
                 $folder = $AllPublicFolders[$x]
 
@@ -5492,7 +5497,7 @@ try {
                 if ($index -ge 0) {
                     $JobResultFile = ([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $index, $x)))
 
-                    if (((Test-Path -LiteralPath $JobResultFile) -eq $false) -or ((Get-Item -LiteralPath $JobResultFile).Length -eq 0)) {
+                    if (($JobResultFiles.Name -inotcontains $JobResultFile) -or (($JobResultFiles | Where-Object { $_.name -ieq $JobResultFile }).Length -eq 0)) {
                         $Grantor = $AllRecipients[$index]
 
                         if ($GrantorFilter) {
@@ -5520,11 +5525,13 @@ try {
 
         # Management Role Groups
         if ($ExportManagementRoleGroupMembers) {
+            Write-Host "  Management Role Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
             for ($AllGroupsId = 0; $AllGroupsId -lt $AllGroups.count; $AllGroupsId++) {
                 if ($AllGroups[$AllGroupsId].RecipientTypeDetails.Value -ieq 'RoleGroup') {
                     $JobResultFile = ([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $AllGroupsId)))
-                    if (((Test-Path -LiteralPath $JobResultFile) -eq $false) -or ((Get-Item -LiteralPath $JobResultFile).Length -eq 0)) {
-
+                            
+                    if (($JobResultFiles.Name -inotcontains $JobResultFile) -or (($JobResultFiles | Where-Object { $_.name -ieq $JobResultFile }).Length -eq 0)) {
                         $RoleGroup = $AllGroups[$AllGroupsId]
 
                         $GrantorPrimarySMTP = 'Management Role Group'
