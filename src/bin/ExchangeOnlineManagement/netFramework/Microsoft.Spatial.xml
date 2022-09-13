@@ -14,13 +14,13 @@
         </member>
         <member name="M:Microsoft.Spatial.ActionOnDispose.#ctor(System.Action)">
             <summary>
-            Constructs an instance of the ActonOnDispose object
+            Initializes a new instance of the <see cref="T:Microsoft.Spatial.ActionOnDispose" /> class.
             </summary>
             <param name="action">the action to be execute on dispose</param>
         </member>
         <member name="M:Microsoft.Spatial.ActionOnDispose.Dispose">
             <summary>
-            The dipose method of the IDisposable insterface
+            The dispose method of the IDisposable interface
             </summary>
         </member>
         <member name="T:Microsoft.Spatial.CompositeKey`2">
@@ -226,7 +226,7 @@
         <member name="T:Microsoft.Spatial.DataServicesSpatialImplementation">
             <summary>
             Class responsible for knowing how to create the Geography and Geometry builders for
-            the data services implemenation of Spatial types
+            the data services implementation of Spatial types
             </summary>
         </member>
         <member name="P:Microsoft.Spatial.DataServicesSpatialImplementation.Operations">
@@ -236,7 +236,7 @@
         </member>
         <member name="M:Microsoft.Spatial.DataServicesSpatialImplementation.CreateBuilder">
             <summary>
-            Creates a SpatialBuilder for this implemenation
+            Creates a SpatialBuilder for this implementation
             </summary>
             <returns>
             The SpatialBuilder created.
@@ -500,14 +500,14 @@
         </member>
         <member name="M:Microsoft.Spatial.ExtensionMethods.WriteRoundtrippable(System.IO.TextWriter,System.Double)">
             <summary>
-              Write a double to a TextWriter ensuring that the value will be roundtrippable thorugh double.parse
+              Write a double to a TextWriter ensuring that the value will be roundtrippable through double.parse
             </summary>
             <param name = "writer">the writer</param>
             <param name = "d">the double value to be written</param>
         </member>
         <member name="M:Microsoft.Spatial.ExtensionMethods.IfValidReturningNullable``2(``0,System.Func{``0,``1})">
             <summary>
-            If the arg is non-null, evaluate the op. Otherwise, propogate the null.
+            If the arg is non-null, evaluate the op. Otherwise, propagate the null.
             </summary>
             <typeparam name="TArg">The type of the arg.</typeparam>
             <typeparam name="TResult">The type of the result.</typeparam>
@@ -517,7 +517,7 @@
         </member>
         <member name="M:Microsoft.Spatial.ExtensionMethods.IfValid``2(``0,System.Func{``0,``1})">
             <summary>
-            If the arg is non-null, evaluate the op. Otherwise, propogate the null.
+            If the arg is non-null, evaluate the op. Otherwise, propagate the null.
             </summary>
             <typeparam name="TArg">The type of the arg.</typeparam>
             <typeparam name="TResult">The type of the result.</typeparam>
@@ -608,7 +608,7 @@
             <summary>
             Add the next pipeline
             </summary>
-            <param name="destination">the next pipleine</param>
+            <param name="destination">the next pipeline</param>
             <returns>The last pipesegment in the chain, usually the one just created</returns>
         </member>
         <member name="M:Microsoft.Spatial.ForwardingSegment.DoAction(System.Action,System.Action,System.Action,System.Action)">
@@ -694,7 +694,7 @@
         </member>
         <member name="M:Microsoft.Spatial.ForwardingSegment.GeographyForwarder.Reset">
             <summary>
-            Reset the piprline
+            Reset the pipeline
             </summary>
         </member>
         <member name="M:Microsoft.Spatial.ForwardingSegment.GeographyForwarder.DoAction``1(System.Action{``0},System.Action{``0},``0)">
@@ -776,7 +776,7 @@
         </member>
         <member name="M:Microsoft.Spatial.ForwardingSegment.GeometryForwarder.Reset">
             <summary>
-            Reset the piprline
+            Reset the pipeline
             </summary>
         </member>
         <member name="M:Microsoft.Spatial.ForwardingSegment.GeometryForwarder.DoAction``1(System.Action{``0},System.Action{``0},``0)">
@@ -929,7 +929,7 @@
         </member>
         <member name="M:Microsoft.Spatial.Geography.BaseEquals(Microsoft.Spatial.Geography)">
             <summary>
-            Check for basic equality due to emptyness, nullness, referential equality and difference in coordinate system
+            Check for basic equality due to emptiness, nullness, referential equality and difference in coordinate system
             </summary>
             <param name="other">The other geography</param>
             <returns>Boolean value indicating equality, or null to indicate inconclusion</returns>
@@ -1119,6 +1119,362 @@
             <summary>Initializes a new instance of the <see cref="T:Microsoft.Spatial.GeographyCurve" /> class.</summary>
             <param name="coordinateSystem">The coordinate system of this geography curve.</param>
             <param name="creator">The implementation that created this instance.</param>
+        </member>
+        <member name="T:Microsoft.Spatial.GeographyFactory">
+            <summary>
+            Geography Factory
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geography Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geography Point
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double)">
+            <summary>
+            Create a Geography Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point(System.Double,System.Double)">
+            <summary>
+            Create a Geography Point
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a factory with an empty Geography Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Point">
+            <summary>
+            Create a factory with an empty Geography Point
+            </summary>
+            <returns>A Geography Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiPoint(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geography MultiPoint
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography MultiPoint Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiPoint">
+            <summary>
+            Create a Geography MultiPoint
+            </summary>
+            <returns>A Geography MultiPoint Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geography LineString with a starting position
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geography LineString with a starting position
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double)">
+            <summary>
+            Create a Geography LineString with a starting position
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString(System.Double,System.Double)">
+            <summary>
+            Create a Geography LineString with a starting position
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create an empty Geography LineString
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.LineString">
+            <summary>
+            Create an empty Geography LineString
+            </summary>
+            <returns>A Geography LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiLineString(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geography MultiLineString
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography MultiLineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiLineString">
+            <summary>
+            Create a Geography MultiLineString
+            </summary>
+            <returns>A Geography MultiLineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Polygon(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geography Polygon
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography Polygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Polygon">
+            <summary>
+            Create a Geography Polygon
+            </summary>
+            <returns>A Geography Polygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiPolygon(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geography MultiPolygon
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography MultiPolygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.MultiPolygon">
+            <summary>
+            Create a Geography MultiPolygon
+            </summary>
+            <returns>A Geography MultiPolygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Collection(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geography Collection
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geography Collection Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory.Collection">
+            <summary>
+            Create a Geography Collection
+            </summary>
+            <returns>A Geography Collection Factory</returns>
+        </member>
+        <member name="T:Microsoft.Spatial.GeographyFactory`1">
+            <summary>
+            Geography Spatial Factory
+            </summary>
+            <typeparam name="T">The target type</typeparam>
+        </member>
+        <member name="F:Microsoft.Spatial.GeographyFactory`1.provider">
+            <summary>
+            The provider of the built type
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.GeographyFactory`1.buildChain">
+            <summary>
+            The chain to build through
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.#ctor(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Initializes a new instance of the GeographyFactory class
+            </summary>
+            <param name="coordinateSystem">The coordinate system</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.op_Implicit(Microsoft.Spatial.GeographyFactory{`0})~`0">
+            <summary>
+            Using implicit cast to trigger the Finalize call
+            </summary>
+            <param name="factory">The factory</param>
+            <returns>The built instance of the target type</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Point(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new Point
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M Value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Point(System.Double,System.Double)">
+            <summary>
+            Start a new Point
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Point">
+            <summary>
+            Start a new empty Point
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.LineString(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new LineString
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M Value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.LineString(System.Double,System.Double)">
+            <summary>
+            Start a new LineString
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.LineString">
+            <summary>
+            Start a new empty LineString
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Polygon">
+            <summary>
+            Start a new Polygon
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.MultiPoint">
+            <summary>
+            Start a new MultiPoint
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.MultiLineString">
+            <summary>
+            Start a new MultiLineString
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.MultiPolygon">
+            <summary>
+            Start a new MultiPolygon
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Collection">
+            <summary>
+            Start a new Collection
+            </summary>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Ring(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new Polygon Ring
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M Value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Ring(System.Double,System.Double)">
+            <summary>
+            Start a new Polygon Ring
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.LineTo(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Add a new point in the current line figure
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M Value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.LineTo(System.Double,System.Double)">
+            <summary>
+            Add a new point in the current line figure
+            </summary>
+            <param name="latitude">The latitude value</param>
+            <param name="longitude">The longitude value</param>
+            <returns>The current instance of GeographyFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.Build">
+            <summary>
+            Finish the current geography
+            </summary>
+            <returns>The constructed instance</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.BeginGeo(Microsoft.Spatial.SpatialType)">
+            <summary>
+            Begin a new geography
+            </summary>
+            <param name="type">The spatial type</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.BeginFigure(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Begin drawing a figure
+            TODO: longitude and latitude should be swapped !!! per ABNF.
+            </summary>
+            <param name="latitude">X or Latitude Coordinate</param>
+            <param name="longitude">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.AddLine(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Draw a point in the specified coordinate
+            </summary>
+            <param name="latitude">X or Latitude Coordinate</param>
+            <param name="longitude">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.EndFigure">
+            <summary>
+            Ends the figure set on the current node
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeographyFactory`1.EndGeo">
+            <summary>
+            Ends the current spatial object
+            </summary>
         </member>
         <member name="T:Microsoft.Spatial.GeographyFullGlobe">
             <summary>Represents the full globe of geography.</summary>
@@ -1749,7 +2105,7 @@
             </summary>
         </member>
         <member name="F:Microsoft.Spatial.GeographyPosition.latitude">
-            <summary>lattitude portion of position</summary>
+            <summary>latitude portion of position</summary>
         </member>
         <member name="F:Microsoft.Spatial.GeographyPosition.longitude">
             <summary>longitude portion of position</summary>
@@ -2064,7 +2420,7 @@
         </member>
         <member name="M:Microsoft.Spatial.GeoJsonObjectReader.SendToTypeWashedPipeline.SendArrayOfArray(System.Collections.IEnumerable,System.Action{System.Collections.IEnumerable})">
             <summary>
-            Iterates over an object array, verifies that each element in the array is another array, and calls a delgate on the contained array.
+            Iterates over an object array, verifies that each element in the array is another array, and calls a delegate on the contained array.
             </summary>
             <param name="array">Array to iterate over.</param>
             <param name="send">Delegate to invoke for each element once it has been validated to be an array.</param>
@@ -2567,7 +2923,7 @@
         </member>
         <member name="M:Microsoft.Spatial.Geometry.BaseEquals(Microsoft.Spatial.Geometry)">
             <summary>
-            Check for basic equality due to emptyness, nullness, referential equality and difference in coordinate system
+            Check for basic equality due to emptiness, nullness, referential equality and difference in coordinate system
             </summary>
             <param name="other">The other geography</param>
             <returns>Boolean value indicating equality, or null to indicate inconclusion</returns>
@@ -2757,6 +3113,361 @@
             <summary>Initializes a new instance of the <see cref="T:Microsoft.Spatial.GeometryCurve" /> class.</summary>
             <param name="coordinateSystem">The coordinate system of this instance.</param>
             <param name="creator">The implementation that created this instance.</param>
+        </member>
+        <member name="T:Microsoft.Spatial.GeometryFactory">
+            <summary>
+            Geometry Factory
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geometry Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geometry Point
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double)">
+            <summary>
+            Create a Geometry Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point(System.Double,System.Double)">
+            <summary>
+            Create a Geometry Point
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a factory with an empty Geometry Point
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Point">
+            <summary>
+            Create a factory with an empty Geometry Point
+            </summary>
+            <returns>A Geometry Point Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiPoint(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geometry MultiPoint
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry MultiPoint Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiPoint">
+            <summary>
+            Create a Geometry MultiPoint
+            </summary>
+            <returns>A Geometry MultiPoint Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geometry LineString with a starting position
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Create a Geometry LineString with a starting position
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString(Microsoft.Spatial.CoordinateSystem,System.Double,System.Double)">
+            <summary>
+            Create a Geometry LineString with a starting position
+            </summary>
+            <param name="coordinateSystem">The coordinate system</param>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString(System.Double,System.Double)">
+            <summary>
+            Create a Geometry LineString with a starting position
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create an empty Geometry LineString
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.LineString">
+            <summary>
+            Create an empty Geometry LineString
+            </summary>
+            <returns>A Geometry LineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiLineString(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geometry MultiLineString
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry MultiLineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiLineString">
+            <summary>
+            Create a Geometry MultiLineString
+            </summary>
+            <returns>A Geometry MultiLineString Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Polygon(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geometry Polygon
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry Polygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Polygon">
+            <summary>
+            Create a Geometry Polygon
+            </summary>
+            <returns>A Geometry Polygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiPolygon(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geometry MultiPolygon
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry MultiPolygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.MultiPolygon">
+            <summary>
+            Create a Geometry MultiPolygon
+            </summary>
+            <returns>A Geometry MultiPolygon Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Collection(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Create a Geometry Collection
+            </summary>
+            <param name="coordinateSystem">The CoordinateSystem</param>
+            <returns>A Geometry Collection Factory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory.Collection">
+            <summary>
+            Create a Geometry Collection
+            </summary>
+            <returns>A Geometry Collection Factory</returns>
+        </member>
+        <member name="T:Microsoft.Spatial.GeometryFactory`1">
+            <summary>
+            Geometry Spatial Factory
+            </summary>
+            <typeparam name="T">The target type</typeparam>
+        </member>
+        <member name="F:Microsoft.Spatial.GeometryFactory`1.provider">
+            <summary>
+            The provider of the built type
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.GeometryFactory`1.buildChain">
+            <summary>
+            The chain to build through
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.#ctor(Microsoft.Spatial.CoordinateSystem)">
+            <summary>
+            Initializes a new instance of the GeometryFactory class
+            </summary>
+            <param name="coordinateSystem">The coordinate system</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.op_Implicit(Microsoft.Spatial.GeometryFactory{`0})~`0">
+            <summary>
+            Cast a factory to the target type
+            </summary>
+            <param name="factory">The factory</param>
+            <returns>The built instance of the target type</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Point(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new Point
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Point(System.Double,System.Double)">
+            <summary>
+            Start a new Point
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Point">
+            <summary>
+            Start a new empty Point
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.LineString(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new LineString
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.LineString(System.Double,System.Double)">
+            <summary>
+            Start a new LineString
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.LineString">
+            <summary>
+            Start a new empty LineString
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Polygon">
+            <summary>
+            Start a new Polygon
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.MultiPoint">
+            <summary>
+            Start a new MultiPoint
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.MultiLineString">
+            <summary>
+            Start a new MultiLineString
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.MultiPolygon">
+            <summary>
+            Start a new MultiPolygon
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Collection">
+            <summary>
+            Start a new Collection
+            </summary>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Ring(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new Polygon Ring
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Ring(System.Double,System.Double)">
+            <summary>
+            Start a new Polygon Ring
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.LineTo(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Add a new point in the current line figure
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.LineTo(System.Double,System.Double)">
+            <summary>
+            Add a new point in the current line figure
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <returns>The current instance of GeometryFactory</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.Build">
+            <summary>
+            Finish the current Geometry
+            </summary>
+            <returns>The constructed instance</returns>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.BeginGeo(Microsoft.Spatial.SpatialType)">
+            <summary>
+            Begin a new geometry
+            </summary>
+            <param name="type">The spatial type</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.BeginFigure(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Begin drawing a figure
+            </summary>
+            <param name="x">X or Latitude Coordinate</param>
+            <param name="y">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.AddLine(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Draw a point in the specified coordinate
+            </summary>
+            <param name="x">X or Latitude Coordinate</param>
+            <param name="y">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.EndFigure">
+            <summary>
+            Ends the figure set on the current node
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.GeometryFactory`1.EndGeo">
+            <summary>
+            Ends the current spatial object
+            </summary>
         </member>
         <member name="T:Microsoft.Spatial.GeometryHelperMethods">
             <summary>
@@ -3498,6 +4209,11 @@
             Gml representation of a point array
             </summary>
         </member>
+        <member name="F:Microsoft.Spatial.GmlConstants.SrsDimension">
+            <summary>
+            Gml representation of srsDimension
+            </summary>
+        </member>
         <member name="F:Microsoft.Spatial.GmlConstants.Point">
             <summary>
             Gml Point
@@ -3732,7 +4448,7 @@
             <summary>
             Parses the top level element in the document
             </summary>
-            <param name="readCoordinateSystem">Whether coordinte system is expected</param>
+            <param name="readCoordinateSystem">Whether coordinate system is expected</param>
         </member>
         <member name="M:Microsoft.Spatial.GmlReader.Parser.ReadAttributes(System.Boolean)">
             <summary>
@@ -3744,7 +4460,7 @@
             <summary>
             creates a shape and parses the element.
             This is used to parse a top level Point element, as opposed to
-            a point which is embeded in a linestring or a polygon.
+            a point which is embedded in a linestring or a polygon.
             </summary>
         </member>
         <member name="M:Microsoft.Spatial.GmlReader.Parser.ParseGmlLineStringShape">
@@ -3836,7 +4552,13 @@
             <summary>
             parses a GmlPosListElement.
             </summary>
-            <param name="allowEmpty">Alow empty posList</param>
+            <param name="allowEmpty">Allow empty posList</param>
+        </member>
+        <member name="M:Microsoft.Spatial.GmlReader.Parser.ReadSrsDimension">
+            <summary>
+            Read SrsDimension integer value from SrsDimension attribute if presented.
+            </summary>
+            <returns>The SrsDimension value.</returns>
         </member>
         <member name="M:Microsoft.Spatial.GmlReader.Parser.ReadContentAsDoubleArray">
             <summary>
@@ -3856,8 +4578,8 @@
                 1- current element is not a start element named "element" - throw
                 2- current element is named "element" but is an empty element - return false
                 3- current element is named "element" and is not empty - return true
-            If the funciton returns true, it means that a non-empty element of the given name
-            was read, so the caller takes responsability to read the corresponding end element.
+            If the function returns true, it means that a non-empty element of the given name
+            was read, so the caller takes responsibility to read the corresponding end element.
             </summary>
             <param name="element">The element name</param>
             <returns>Returns true if it read a non-empty start element of the given name.</returns>
@@ -4127,17 +4849,6 @@
         <member name="T:Microsoft.Spatial.IShapeProvider">
             <summary>Provides access to the constructed geography or geometry.</summary>
         </member>
-        <member name="T:Microsoft.Spatial.ISpatial">
-            <summary>Represents the spatial interface.</summary>
-        </member>
-        <member name="P:Microsoft.Spatial.ISpatial.CoordinateSystem">
-            <summary>Gets the coordinate system.</summary>
-            <returns>The coordinate system.</returns>
-        </member>
-        <member name="P:Microsoft.Spatial.ISpatial.IsEmpty">
-            <summary>Gets a value that indicates whether the spatial type is empty.</summary>
-            <returns>true if the spatial type is empty; otherwise, false.</returns>
-        </member>
         <member name="T:Microsoft.Spatial.LexerToken">
             <summary>
             Text Lexer Token
@@ -4168,6 +4879,13 @@
             </summary>
             <returns>String representation of this token</returns>
         </member>
+        <member name="T:Microsoft.Spatial.TextRes">
+             <summary>
+                AutoGenerated resource class. Usage:
+            
+                    string s = TextRes.GetString(TextRes.MyIdentifier);
+             </summary>
+        </member>
         <member name="T:Microsoft.Spatial.OrcasExtensions">
             <summary>
             This class holds extension methods for objects that have new capabilities
@@ -4180,6 +4898,246 @@
             </summary>
             <param name="builder">The StringBuilder instance to clear.</param>
         </member>
+        <member name="T:Microsoft.Spatial.Strings">
+            <summary>
+               Strongly-typed and parameterized string resources.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.SpatialImplementation_NoRegisteredOperations">
+            <summary>
+            A string like "No operations are registered. Please provide operations using SpatialImplementation.CurrentImplementation.Operations property."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.InvalidPointCoordinate(System.Object,System.Object)">
+            <summary>
+            A string like "The value '{0}' is not valid for the coordinate '{1}'."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Point_AccessCoordinateWhenEmpty">
+            <summary>
+            A string like "Access to the coordinate properties of an empty point is not supported."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.SpatialBuilder_CannotCreateBeforeDrawn">
+            <summary>
+            A string like "The builder cannot create an instance until all pipeline calls are completed."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GmlReader_UnexpectedElement(System.Object)">
+            <summary>
+            A string like "Incorrect GML Format: The XmlReader instance encountered an unexpected element "{0}"."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GmlReader_ExpectReaderAtElement">
+            <summary>
+            A string like "Incorrect GML Format: the XmlReader instance is expected to be at the start of a GML element."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidSpatialType(System.Object)">
+            <summary>
+            A string like "Incorrect GML Format: unknown spatial type tag "{0}"."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GmlReader_EmptyRingsNotAllowed">
+            <summary>
+            A string like "Incorrect GML Format: a LinearRing element must not be empty."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GmlReader_PosNeedTwoNumbers">
+            <summary>
+            A string like "Incorrect GML Format: a pos element must contain at least two coordinates."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GmlReader_PosListNeedsEvenCount">
+            <summary>
+            A string like "Incorrect GML Format: a posList element must contain an even number of coordinates."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidSrsName(System.Object)">
+            <summary>
+            A string like "Incorrect GML Format: a srsName attribute must begin with the namespace "{0}"."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidAttribute(System.Object,System.Object)">
+            <summary>
+            A string like "The attribute '{0}' on element '{1}' is not supported."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GmlReader_InvalidSrsDimension">
+            <summary>
+            A string like "Incorrect GML Format: a srsDimension attribute must be either "2" or "3"."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnexpectedToken(System.Object,System.Object,System.Object)">
+            <summary>
+            A string like "Expecting token type "{0}" with text "{1}" but found "{2}"."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnexpectedCharacter(System.Object)">
+            <summary>
+            A string like "Unexpected character '{0}' found in text."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnknownTaggedText(System.Object)">
+            <summary>
+            A string like "Unknown Tagged Text "{0}"."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.WellKnownText_TooManyDimensions">
+            <summary>
+            A string like "The WellKnownTextReader is configured to allow only two dimensions, and a third dimension was encountered."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_SridMismatch">
+            <summary>
+            A string like "Invalid spatial data: An instance of spatial type can have only one unique CoordinateSystem for all of its coordinates."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidType(System.Object)">
+            <summary>
+            A string like "Invalid spatial data: Invalid spatial type "{0}"."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_FullGlobeInCollection">
+            <summary>
+            A string like "Invalid spatial data: the spatial type "FullGlobe" cannot be part of a collection type."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_LineStringNeedsTwoPoints">
+            <summary>
+            A string like "Invalid spatial data: the spatial type "LineString" must contain at least two points."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_FullGlobeCannotHaveElements">
+            <summary>
+            A string like "Invalid spatial data: the spatial type "FullGlobe" cannot contain figures."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_NestingOverflow(System.Object)">
+            <summary>
+            A string like "Invalid spatial data: only {0} levels of nesting are supported in collection types."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidPointCoordinate(System.Object,System.Object,System.Object,System.Object)">
+            <summary>
+            A string like "Invalid spatial data: the coordinates ({0} {1} {2} {3}) are not valid."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_UnexpectedCall(System.Object,System.Object)">
+            <summary>
+            A string like "Invalid spatial data: expected call to "{0}" but got call to "{1}"."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_UnexpectedCall2(System.Object,System.Object,System.Object)">
+            <summary>
+            A string like "Invalid spatial data: expected call to "{0}" or "{1}" but got call to "{2}"."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_InvalidPolygonPoints">
+            <summary>
+            A string like "Invalid spatial data: A polygon ring must contain at least four points, and the last point must be equal to the first point."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidLatitudeCoordinate(System.Object)">
+            <summary>
+            A string like "Invalid latitude coordinate {0}. A latitude coordinate must be a value between -90.0 and +90.0 degrees."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidLongitudeCoordinate(System.Object)">
+            <summary>
+            A string like "Invalid longitude coordinate {0}. A longitude coordinate must be a value between -15069.0 and +15069.0 degrees"
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_UnexpectedGeography">
+            <summary>
+            A string like "A geography operation was called while processing a geometric shape."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.Validator_UnexpectedGeometry">
+            <summary>
+            A string like "A geometry operation was called while processing a geographic shape."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_MissingRequiredMember(System.Object)">
+            <summary>
+            A string like "Invalid GeoJSON. The '{0}' member is required, but was not found."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_InvalidPosition">
+            <summary>
+            A string like "Invalid GeoJSON. A position must contain at least two and no more than four elements."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidTypeName(System.Object)">
+            <summary>
+            A string like "Invalid GeoJSON. The value '{0}' is not a valid value for the 'type' member."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_InvalidNullElement">
+            <summary>
+            A string like "Invalid GeoJSON. A null value was found in an array element where nulls are not allowed."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_ExpectedNumeric">
+            <summary>
+            A string like "Invalid GeoJSON. A non-numeric value was found in an array element where a numeric value was expected."
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_ExpectedArray">
+            <summary>
+            A string like "Invalid GeoJSON. A primitive value was found in an array element where an array was expected."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidCrsType(System.Object)">
+            <summary>
+            A string like "Invalid GeoJSON. The value '{0}' is not a recognized CRS type."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidCrsName(System.Object)">
+            <summary>
+            A string like "Invalid GeoJSON. The value '{0}' is not a recognized CRS name."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.JsonReaderExtensions_CannotReadPropertyValueAsString(System.Object,System.Object)">
+            <summary>
+            A string like "Cannot read the value '{0}' for the property '{1}' as a quoted JSON string value."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.JsonReaderExtensions_CannotReadValueAsJsonObject(System.Object)">
+            <summary>
+            A string like "Cannot read the value '{0}' as a JSON object."
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Strings.PlatformHelper_DateTimeOffsetMustContainTimeZone(System.Object)">
+            <summary>
+            A string like "The time zone information is missing on the DateTimeOffset value '{0}'. A DateTimeOffset value must contain the time zone information."
+            </summary>
+        </member>
+        <member name="T:Microsoft.Spatial.Error">
+            <summary>
+               Strongly-typed and parameterized exception factory.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Error.ArgumentNull(System.String)">
+            <summary>
+            The exception that is thrown when a null reference (Nothing in Visual Basic) is passed to a method that does not accept it as a valid argument.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Error.ArgumentOutOfRange(System.String)">
+            <summary>
+            The exception that is thrown when the value of an argument is outside the allowable range of values as defined by the invoked method.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Error.NotImplemented">
+            <summary>
+            The exception that is thrown when the author has not yet implemented the logic at this point in the program. This can act as an exception based TODO tag.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.Error.NotSupported">
+            <summary>
+            The exception that is thrown when an invoked method is not supported, or when there is an attempt to read, seek, or write to a stream that does not support the invoked functionality.
+            </summary>
+        </member>
         <member name="T:Microsoft.Spatial.ParseErrorException">
             <summary>The exception that is thrown on an unsuccessful parsing of the serialized format.</summary>
         </member>
@@ -4189,11 +5147,22 @@
         <member name="M:Microsoft.Spatial.ParseErrorException.#ctor(System.String,System.Exception)">
             <summary>Creates a new instance of the <see cref="T:Microsoft.Spatial.ParseErrorException" /> class from a message and previous exception.</summary>
             <param name="message">The message about the exception.</param>
-            <param name="innerException">The exception that preceeded this one.</param>
+            <param name="innerException">The exception that preceded this one.</param>
         </member>
         <member name="M:Microsoft.Spatial.ParseErrorException.#ctor(System.String)">
             <summary>Creates a new instance of the <see cref="T:Microsoft.Spatial.ParseErrorException" /> class from a message.</summary>
             <param name="message">The message about the exception.</param>
+        </member>
+        <member name="T:Microsoft.Spatial.ISpatial">
+            <summary>Represents the spatial interface.</summary>
+        </member>
+        <member name="P:Microsoft.Spatial.ISpatial.CoordinateSystem">
+            <summary>Gets the coordinate system.</summary>
+            <returns>The coordinate system.</returns>
+        </member>
+        <member name="P:Microsoft.Spatial.ISpatial.IsEmpty">
+            <summary>Gets a value that indicates whether the spatial type is empty.</summary>
+            <returns>true if the spatial type is empty; otherwise, false.</returns>
         </member>
         <member name="T:Microsoft.Spatial.SpatialBuilder">
             <summary>Creates a geometry or geography instances from spatial data pipelines.</summary>
@@ -4233,6 +5202,125 @@
             <summary>Creates an implementation of the builder.</summary>
             <returns>The created SpatialBuilder implementation.</returns>
         </member>
+        <member name="T:Microsoft.Spatial.SpatialFactory">
+            <summary>
+            Base Spatial Factory
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.containers">
+            <summary>
+            Stack of Containers
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.figureDrawn">
+            <summary>
+            Whether a figure has been started
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.inRing">
+            <summary>
+            Inside a Polygon Ring
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.ringClosed">
+            <summary>
+            Current polygon ring has been closed
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.ringStartX">
+            <summary>
+            X coordinate of the current ring's starting position
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.ringStartY">
+            <summary>
+            Y coordinate of the current ring's starting position
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.ringStartZ">
+            <summary>
+            Z coordinate of the current ring's starting position
+            </summary>
+        </member>
+        <member name="F:Microsoft.Spatial.SpatialFactory.ringStartM">
+            <summary>
+            M coordinate of the current ring's starting position
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.#ctor">
+            <summary>
+            Initializes a new instance of the BaseSpatialFactory class
+            </summary>
+        </member>
+        <member name="P:Microsoft.Spatial.SpatialFactory.CurrentType">
+            <summary>
+            Gets the current container Definition
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.BeginGeo(Microsoft.Spatial.SpatialType)">
+            <summary>
+            Begin Geo
+            </summary>
+            <param name="type">The spatial type</param>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.BeginFigure(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Begin drawing a figure
+            </summary>
+            <param name="x">X or Latitude Coordinate</param>
+            <param name="y">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.AddLine(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Draw a point in the specified coordinate
+            </summary>
+            <param name="x">X or Latitude Coordinate</param>
+            <param name="y">Y or Longitude Coordinate</param>
+            <param name="z">Z Coordinate</param>
+            <param name="m">M Coordinate</param>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.EndFigure">
+            <summary>
+            Ends the figure set on the current node
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.EndGeo">
+            <summary>
+            Ends the current spatial object
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.Finish">
+            <summary>
+            Finish the current instance
+            </summary>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.AddPos(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Add a new position to the current line figure
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.StartRing(System.Double,System.Double,System.Nullable{System.Double},System.Nullable{System.Double})">
+            <summary>
+            Start a new polygon ring
+            </summary>
+            <param name="x">The X value</param>
+            <param name="y">The Y value</param>
+            <param name="z">The Z value</param>
+            <param name="m">The M value</param>
+        </member>
+        <member name="M:Microsoft.Spatial.SpatialFactory.CanContain(Microsoft.Spatial.SpatialType)">
+            <summary>
+            Can the current container contain the spatial type
+            </summary>
+            <param name="type">The spatial type to test</param>
+            <returns>A boolean value indicating whether the current container can contain the spatial type</returns>
+        </member>
         <member name="T:Microsoft.Spatial.SpatialFormatter`2">
             <summary>Represents the base class for all Spatial Formats.</summary>
             <typeparam name="TReaderStream">The type of reader to be read from.</typeparam>
@@ -4244,7 +5332,7 @@
             </summary>
         </member>
         <member name="M:Microsoft.Spatial.SpatialFormatter`2.#ctor(Microsoft.Spatial.SpatialImplementation)">
-            <summary>Initializes a new instance of the &lt;see cref="T:Microsoft.Spatial.SpatialFormatter`2" /&gt; class. </summary>
+            <summary>Initializes a new instance of the &lt;see cref="Microsoft.Spatial.SpatialFormatter`2" /&gt; class. </summary>
             <param name="creator">The implementation that created this instance.</param>
         </member>
         <member name="M:Microsoft.Spatial.SpatialFormatter`2.Read``1(`0)">
@@ -4286,7 +5374,7 @@
         <member name="T:Microsoft.Spatial.SpatialImplementation">
             <summary>
             Class responsible for knowing how to create the Geography and Geometry builders for
-            a particular implemenation of Spatial types
+            a particular implementation of Spatial types
             </summary>
         </member>
         <member name="F:Microsoft.Spatial.SpatialImplementation.spatialImplementation">
@@ -4331,7 +5419,7 @@
         </member>
         <member name="T:Microsoft.Spatial.SpatialOperations">
             <summary>
-            Class responsible for knowing how to perform operations for a particular implemenation of Spatial types
+            Class responsible for knowing how to perform operations for a particular implementation of Spatial types
             </summary>
         </member>
         <member name="M:Microsoft.Spatial.SpatialOperations.Distance(Microsoft.Spatial.Geometry,Microsoft.Spatial.Geometry)">
@@ -4385,7 +5473,7 @@
         </member>
         <member name="F:Microsoft.Spatial.SpatialPipeline.startingLink">
             <summary>
-            A reference to the begining link of the chain
+            A reference to the beginning link of the chain
             useful for getting the startingLink when creating the chain fluently
             e.g.  new ForwardingSegment(new Node()).ChainTo(new Node()).ChainTo(new Node).StartingLink
             </summary>
@@ -4761,7 +5849,7 @@
             this is the actual validator, and derived from DrawBoth
             while the real SpatialValidator derives from DrawSpatial.
             We simple create an instance of this nested class and pass back
-            the DrawGeometry, and DrawGeography when the outter classes DataSpatial
+            the DrawGeometry, and DrawGeography when the outer classes DataSpatial
             properties are accessed.
             </summary>
         </member>
@@ -5110,7 +6198,7 @@
             </summary>
             <param name="numOfPoints">The number of points in the ring</param>
             <param name="initialFirstCoordinate">its first latitude</param>
-            <param name="initialSecondCoordinate">it first longitued</param>
+            <param name="initialSecondCoordinate">it first longitude</param>
             <param name="mostRecentFirstCoordinate">its last latitude</param>
             <param name="mostRecentSecondCoordinate">its last longitude</param>
         </member>
@@ -5478,7 +6566,7 @@
         </member>
         <member name="T:Microsoft.Spatial.TypeWashedPipeline">
             <summary>
-            Internal pipeline Inteface that washes the distinction between Geography and Geometry
+            Internal pipeline Interface that washes the distinction between Geography and Geometry
             </summary>
         </member>
         <member name="P:Microsoft.Spatial.TypeWashedPipeline.IsGeography">
@@ -6658,6 +7746,7 @@
             <param name="type">The type.</param>
             <param name="name">The name.</param>
             <param name="parameterTypes">The parameter types.</param>
+            <param name="foundMethod">The method output.</param>
             <returns>Returns True if found.</returns>
         </member>
         <member name="M:Microsoft.Spatial.PlatformHelper.GetMethods(System.Type)">
@@ -6900,248 +7989,6 @@
             <returns>Regex expression to match supplied patter</returns>
             <remarks>Is marked as compiled option only in platforms otherwise RegexOption.None is used</remarks>
         </member>
-        <member name="T:Microsoft.Spatial.TextRes">
-             <summary>
-                AutoGenerated resource class. Usage:
-            
-                    string s = TextRes.GetString(TextRes.MyIdenfitier);
-             </summary>
-        </member>
-        <member name="T:Microsoft.Spatial.Strings">
-            <summary>
-               Strongly-typed and parameterized string resources.
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.SpatialImplementation_NoRegisteredOperations">
-            <summary>
-            A string like "No operations are registered. Please provide operations using SpatialImplementation.CurrentImplementation.Operations property."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.InvalidPointCoordinate(System.Object,System.Object)">
-            <summary>
-            A string like "The value '{0}' is not valid for the coordinate '{1}'."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Point_AccessCoordinateWhenEmpty">
-            <summary>
-            A string like "Access to the coordinate properties of an empty point is not supported."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.SpatialBuilder_CannotCreateBeforeDrawn">
-            <summary>
-            A string like "The builder cannot create an instance until all pipeline calls are completed."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GmlReader_UnexpectedElement(System.Object)">
-            <summary>
-            A string like "Incorrect GML Format: The XmlReader instance encountered an unexpected element "{0}"."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GmlReader_ExpectReaderAtElement">
-            <summary>
-            A string like "Incorrect GML Format: the XmlReader instance is expected to be at the start of a GML element."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidSpatialType(System.Object)">
-            <summary>
-            A string like "Incorrect GML Format: unknown spatial type tag "{0}"."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GmlReader_EmptyRingsNotAllowed">
-            <summary>
-            A string like "Incorrect GML Format: a LinearRing element must not be empty."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GmlReader_PosNeedTwoNumbers">
-            <summary>
-            A string like "Incorrect GML Format: a pos element must contain at least two coordinates."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GmlReader_PosListNeedsEvenCount">
-            <summary>
-            A string like "Incorrect GML Format: a posList element must contain an even number of coordinates."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidSrsName(System.Object)">
-            <summary>
-            A string like "Incorrect GML Format: a srsName attribute must begin with the namespace "{0}"."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GmlReader_InvalidAttribute(System.Object,System.Object)">
-            <summary>
-            A string like "The attribute '{0}' on element '{1}' is not supported."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnexpectedToken(System.Object,System.Object,System.Object)">
-            <summary>
-            A string like "Expecting token type "{0}" with text "{1}" but found "{2}"."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnexpectedCharacter(System.Object)">
-            <summary>
-            A string like "Unexpected character '{0}' found in text."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.WellKnownText_UnknownTaggedText(System.Object)">
-            <summary>
-            A string like "Unknown Tagged Text "{0}"."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.WellKnownText_TooManyDimensions">
-            <summary>
-            A string like "The WellKnownTextReader is configured to allow only two dimensions, and a third dimension was encountered."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_SridMismatch">
-            <summary>
-            A string like "Invalid spatial data: An instance of spatial type can have only one unique CoordinateSystem for all of its coordinates."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidType(System.Object)">
-            <summary>
-            A string like "Invalid spatial data: Invalid spatial type "{0}"."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_FullGlobeInCollection">
-            <summary>
-            A string like "Invalid spatial data: the spatial type "FullGlobe" cannot be part of a collection type."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_LineStringNeedsTwoPoints">
-            <summary>
-            A string like "Invalid spatial data: the spatial type "LineString" must contain at least two points."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_FullGlobeCannotHaveElements">
-            <summary>
-            A string like "Invalid spatial data: the spatial type "FullGlobe" cannot contain figures."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_NestingOverflow(System.Object)">
-            <summary>
-            A string like "Invalid spatial data: only {0} levels of nesting are supported in collection types."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidPointCoordinate(System.Object,System.Object,System.Object,System.Object)">
-            <summary>
-            A string like "Invalid spatial data: the coordinates ({0} {1} {2} {3}) are not valid."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_UnexpectedCall(System.Object,System.Object)">
-            <summary>
-            A string like "Invalid spatial data: expected call to "{0}" but got call to "{1}"."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_UnexpectedCall2(System.Object,System.Object,System.Object)">
-            <summary>
-            A string like "Invalid spatial data: expected call to "{0}" or "{1}" but got call to "{2}"."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_InvalidPolygonPoints">
-            <summary>
-            A string like "Invalid spatial data: A polygon ring must contain at least four points, and the last point must be equal to the first point."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidLatitudeCoordinate(System.Object)">
-            <summary>
-            A string like "Invalid latitude coordinate {0}. A latitude coordinate must be a value between -90.0 and +90.0 degrees."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.Validator_InvalidLongitudeCoordinate(System.Object)">
-            <summary>
-            A string like "Invalid longitude coordinate {0}. A longitude coordinate must be a value between -15069.0 and +15069.0 degrees"
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_UnexpectedGeography">
-            <summary>
-            A string like "A geography operation was called while processing a geometric shape."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.Validator_UnexpectedGeometry">
-            <summary>
-            A string like "A geometry operation was called while processing a geographic shape."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_MissingRequiredMember(System.Object)">
-            <summary>
-            A string like "Invalid GeoJSON. The '{0}' member is required, but was not found."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_InvalidPosition">
-            <summary>
-            A string like "Invalid GeoJSON. A position must contain at least two and no more than four elements."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidTypeName(System.Object)">
-            <summary>
-            A string like "Invalid GeoJSON. The value '{0}' is not a valid value for the 'type' member."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_InvalidNullElement">
-            <summary>
-            A string like "Invalid GeoJSON. A null value was found in an array element where nulls are not allowed."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_ExpectedNumeric">
-            <summary>
-            A string like "Invalid GeoJSON. A non-numeric value was found in an array element where a numeric value was expected."
-            </summary>
-        </member>
-        <member name="P:Microsoft.Spatial.Strings.GeoJsonReader_ExpectedArray">
-            <summary>
-            A string like "Invalid GeoJSON. A primitive value was found in an array element where an array was expected."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidCrsType(System.Object)">
-            <summary>
-            A string like "Invalid GeoJSON. The value '{0}' is not a recognized CRS type."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.GeoJsonReader_InvalidCrsName(System.Object)">
-            <summary>
-            A string like "Invalid GeoJSON. The value '{0}' is not a recognized CRS name."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.JsonReaderExtensions_CannotReadPropertyValueAsString(System.Object,System.Object)">
-            <summary>
-            A string like "Cannot read the value '{0}' for the property '{1}' as a quoted JSON string value."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.JsonReaderExtensions_CannotReadValueAsJsonObject(System.Object)">
-            <summary>
-            A string like "Cannot read the value '{0}' as a JSON object."
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Strings.PlatformHelper_DateTimeOffsetMustContainTimeZone(System.Object)">
-            <summary>
-            A string like "The time zone information is missing on the DateTimeOffset value '{0}'. A DateTimeOffset value must contain the time zone information."
-            </summary>
-        </member>
-        <member name="T:Microsoft.Spatial.Error">
-            <summary>
-               Strongly-typed and parameterized exception factory.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Error.ArgumentNull(System.String)">
-            <summary>
-            The exception that is thrown when a null reference (Nothing in Visual Basic) is passed to a method that does not accept it as a valid argument.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Error.ArgumentOutOfRange(System.String)">
-            <summary>
-            The exception that is thrown when the value of an argument is outside the allowable range of values as defined by the invoked method.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Error.NotImplemented">
-            <summary>
-            The exception that is thrown when the author has not yet implemented the logic at this point in the program. This can act as an exception based TODO tag.
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.Error.NotSupported">
-            <summary>
-            The exception that is thrown when an invoked method is not supported, or when there is an attempt to read, seek, or write to a stream that does not support the invoked functionality.
-            </summary>
-        </member>
         <member name="T:AssemblyRef">
             <summary>
             Sets public key string for friend assemblies.
@@ -7154,7 +8001,7 @@
             <summary>TestPublicKey is an unsupported strong key for testing purpose only.</summary>
         </member>
         <member name="F:AssemblyRef.ProductPublicKeyToken">
-            <summary>Dont know what this is</summary>
+            <summary>Don't know what this is</summary>
         </member>
     </members>
 </doc>

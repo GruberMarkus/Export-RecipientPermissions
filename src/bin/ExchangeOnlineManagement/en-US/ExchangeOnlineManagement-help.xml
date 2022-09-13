@@ -8,7 +8,7 @@
       <maml:description>
         <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
         <maml:para>Use the Connect-ExchangeOnline cmdlet in the Exchange Online PowerShell V2 module to connect to Exchange Online PowerShell using modern authentication. This cmdlet works for MFA or non-MFA enabled accounts.</maml:para>
-        <maml:para>To connect to other PowerShell environments (for example, Security &amp; Compliance Center PowerShell or standalone Exchange Online Protection PowerShell), use the Connect-IPPSSession (https://docs.microsoft.com/powershell/module/exchange/connect-ippssession)cmdlet.</maml:para>
+        <maml:para>To connect to other PowerShell environments (for example, Security &amp; Compliance PowerShell or standalone Exchange Online Protection PowerShell), use the Connect-IPPSSession (https://docs.microsoft.com/powershell/module/exchange/connect-ippssession)cmdlet.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
     </command:details>
@@ -21,7 +21,7 @@
         <maml:name>Connect-ExchangeOnline</maml:name>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
           <maml:name>ConnectionUri</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>Note : If you use the ExchangeEnvironmentName parameter, you don't need to use the AzureADAuthorizationEndpointUri or ConnectionUri parameters.</maml:para>
             <maml:para>The ConnectionUri parameter specifies the connection endpoint for the remote Exchange Online PowerShell session. The following Exchange Online PowerShell environments and related values are supported:</maml:para>
             <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://outlook.office365.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
@@ -29,7 +29,7 @@
             <maml:para>- Office 365 operated by 21Vianet: `https://partner.outlook.cn/PowerShell`</maml:para>
             <maml:para>- Microsoft 365 GCC High: `https://outlook.office365.us/powershell-liveid`</maml:para>
             <maml:para>- Microsoft 365 DoD: `https://webmail.apps.mil/powershell-liveid` Note : If your organization is on-premises Exchange, and you have Exchange Enterprise CAL with Services licenses for Exchange Online Protection, use the this cmdlet without the ConnectionUri parameter to connect to EOP PowerShell (the same connection instructions as Exchange Online PowerShell in Microsoft 365 or Microsoft GCC).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -39,7 +39,7 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
           <maml:name>AzureADAuthorizationEndpointUri</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>Note : If you use the ExchangeEnvironmentName parameter, you don't need to use the AzureADAuthorizationEndpointUri or ConnectionUri parameters.</maml:para>
             <maml:para>The AzureADAuthorizationEndpointUri parameter specifies the Azure AD Authorization endpoint that can issue OAuth2 access tokens. The following Exchange Online PowerShell environments and related values are supported:</maml:para>
             <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
@@ -47,7 +47,7 @@
             <maml:para>- Microsoft 365 GCC High or Microsoft 365 DoD: `https://login.microsoftonline.us/common`</maml:para>
             <maml:para></maml:para>
             <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both). Note : MFA authentication or federated authentication isn't available in Office 365 operated by 21Vianet.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -57,14 +57,14 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
           <maml:name>ExchangeEnvironmentName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The ExchangeEnvironmentName specifies the Exchange Online environment and eliminates the need to use the AzureADAuthorizationEndpointUri and ConnectionUri parameters. The following Exchange Online PowerShell environments are supported:</maml:para>
             <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `O365Default`, but that's also the default value, so you don't need to use this parameter.</maml:para>
             <maml:para>- Office 365 Germany: `O365GermanyCloud`</maml:para>
             <maml:para>- Office 365 operated by 21Vianet: `O365China`</maml:para>
             <maml:para>- Microsoft 365 GCC High: `O365USGovGCCHigh`</maml:para>
             <maml:para>- Microsoft 365 DoD: `O365USGovDoD`</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">ExchangeEnvironment</command:parameterValue>
           <dev:type>
             <maml:name>ExchangeEnvironment</maml:name>
@@ -74,11 +74,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
           <maml:name>PSSessionOption</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The PSSessionOption parameter specifies the PowerShell session options to use in your connection to Exchange Online. You store the output of the New-PSSessionOption (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/new-pssessionoption)command in a variable, for example:</maml:para>
             <maml:para>`$Options = New-PSSessionOption &lt;Settings&gt;`</maml:para>
             <maml:para>And you use the variable name as the value for this parameter (for example, `$Options`).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">PSSessionOption</command:parameterValue>
           <dev:type>
             <maml:name>PSSessionOption</maml:name>
@@ -88,10 +88,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
           <maml:name>DelegatedOrganization</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The DelegatedOrganization parameter specifies the customer organization that you want to manage (for example, contosoelectronics.onmicrosoft.com). This parameter only works if the customer organization has agreed to your delegated management via the CSP program.</maml:para>
             <maml:para>After you successfully authenticate, the cmdlets in this session are mapped to the customer organization, and all operations in this session are done on the customer organization.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -101,9 +101,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
           <maml:name>Prefix</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Prefix parameter specifies an alias to add to nouns in the names of older remote PowerShell cmdlets (cmdlet with nouns that don't already start with EXO). A valid value is a text string without spaces or special characters like underscrores, asterisks etc, and you can't use the value EXO (this prefix is reserved for PowerShell V2 module cmdlets).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -113,9 +113,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
           <maml:name>CommandName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CommandName parameter specifies the comma separated list of commands to import into the session. Use this parameter for applications or scripts that use a specific set of cmdlets. Reducing the number of cmdlets in the session helps improve performance and reduces the memory footprint of the application or script.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -125,9 +125,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="7" aliases="none">
           <maml:name>FormatTypeName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The FormatTypeName parameter specifies the output format of the cmdlet.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -137,10 +137,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AppId</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The AppId parameter specifies the application ID of the service principal that's used in certificate based authentication (CBA). A valid value is the GUID of the application ID (service principal). For example, `36ee4c6c-0812-40a2-b820-b22ebd02bce3`.</maml:para>
             <maml:para>For more information, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -150,9 +150,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>BypassMailboxAnchoring</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The BypassMailboxAnchoring switch bypasses the use of the mailbox anchoring hint. You don't need to specify a value with this switch.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -161,11 +161,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Certificate</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Certificate parameter specifies the certificate that's used for certificate-based authentication (CBA). A valid value is the X509Certificate2 object value of the certificate.</maml:para>
             <maml:para>Don't use this parameter with the CertificateFilePath or CertificateThumbprint parameters.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">X509Certificate2</command:parameterValue>
           <dev:type>
             <maml:name>X509Certificate2</maml:name>
@@ -175,11 +175,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificateFilePath</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificateFilePath parameter specifies the certificate that's used for CBA. A valid value is the complete public path to the certificate file.</maml:para>
             <maml:para>Don't use this parameter with the Certificate or CertificateThumbprint parameters.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -189,11 +189,15 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificatePassword</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificatePassword parameter specifies the password that's required to open the certificate file when you use the CertificateFilePath parameter to identify the certificate that's used for CBA.</maml:para>
-            <maml:para>This parameter uses the syntax `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`. Or, before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable name (`$password`) for this parameter.</maml:para>
+            <maml:para>You can use the following methods as a value for this parameter:</maml:para>
+            <maml:para>- `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`.</maml:para>
+            <maml:para>- Before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable (`$password`) for the value.</maml:para>
+            <maml:para>- `(Get-Credential).password` to be prompted to enter the password securely when you run this command.</maml:para>
+            <maml:para></maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">SecureString</command:parameterValue>
           <dev:type>
             <maml:name>SecureString</maml:name>
@@ -203,11 +207,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificateThumbprint</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificateThumbprint parameter specifies the certificate that's used for CBA. A valid value is the thumbprint value of the certificate. For example, `83213AEAC56D61C97AEE5C1528F4AC5EBA7321C1`.</maml:para>
             <maml:para>Don't use this parameter with the Certificate or CertificateFilePath parameters. Note : The CertificateThumbprint parameter is supported only in Microsoft Windows.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -217,12 +221,12 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Credential</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Credential parameter specifies the username and password that's used to connect to Exchange Online PowerShell. Typically, you use this parameter in scripts or when you need to provide different credentials that have the required permissions. Don't use this parameter for accounts that use multi-factor authentication (MFA).</maml:para>
             <maml:para>Before you run the Connect-ExchangeOnline command, store the username and password in a variable (for example, `$UserCredential = Get-Credential`). Then, use the variable name (`$UserCredential`) for this parameter.</maml:para>
             <maml:para>After the Connect-ExchangeOnline command is complete, the password key in the variable is emptied.</maml:para>
             <maml:para>To specify the password for a certificate file, don't use this parameter; use the CertificatePassword parameter instead.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
           <dev:type>
             <maml:name>PSCredential</maml:name>
@@ -232,11 +236,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Device</maml:name>
-          <maml:description>
-            <maml:para>Note : This parameter is available only in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
             <maml:para>The Device switch specifies whether to authenticate interactively computers that don't have web browsers to support single sign-on (SSO). You don't need to specify a value with this switch.</maml:para>
             <maml:para>The command returns a URL and unique code that's tied to the session. You need to open the URL in a browser on any computer, and then enter the unique code. After you complete the login in the web browser, the session in the Powershell 7 window is authenticated via the regular Azure AD authentication flow, and the Exchange Online cmdlets are imported after few seconds.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -245,9 +249,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>EnableErrorReporting</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The EnableErrorReporting switch specifies whether to enable error reporting. You don't need to specify a value with this switch.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -256,12 +260,12 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>InlineCredential</maml:name>
-          <maml:description>
-            <maml:para>Note : This parameter is available only in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
             <maml:para>The InlineCredential switch specifies whether to pass credentials directly in the Windows PowerShell window. You don't need to specify a value with this switch.</maml:para>
             <maml:para>This switch is similar to the Credential parameter, but with added security. The InlineCredential switch doesn't require you to store the credentials locally in the script, and you can enter credentials directly in an interactive PowerShell session.</maml:para>
             <maml:para>This switch does not work with accounts that use MFA.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -270,10 +274,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>LogDirectoryPath</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The LogDirectoryPath parameter specifies the location of the log files. The default location is `%TMP%\EXOCmdletTelemetry\EXOCmdletTelemetry-yyyymmdd-hhmmss.csv`.</maml:para>
             <maml:para>If you specify a custom location and filename that contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -283,9 +287,36 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>LogLevel</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The LogLevel parameter specifies the logging level. Valid values are Default and All.</maml:para>
-          </maml:description>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ManagedIdentity</maml:name>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 2.0.6-Preview7 or later.</maml:para>
+            <maml:para>The ManagedIdentity switch connects to Exchange Online using a system-assigned or user-assigned managed identity. You don't need to specify a value with this switch.</maml:para>
+            <maml:para>Managed identity is currently supported for Azure Virtual Machines, Virtual Machine Scale Sets and Azure Functions.</maml:para>
+            <maml:para>You must use this switch with the Organization parameter.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>ManagedIdentityAccountId</maml:name>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 2.0.6-Preview7 or later.</maml:para>
+            <maml:para>The ManagedIdentityAccountId parameter specifies the application ID of the service principal that corresponds to the user-assigned managed identity that's used for authentication.</maml:para>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -295,10 +326,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Organization</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Organization parameter specifies the organization that's used in CBA. Be sure to use an .onmicrosoft.com domain for the parameter value. Otherwise, you might encounter cryptic permission issues when you run commands in the app context.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -308,9 +339,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PageSize</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The PageSize parameter specifies the maximum number of entries per page. Valid input for this parameter is an integer between 1 and 1000. The default value is 1000.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">UInt32</command:parameterValue>
           <dev:type>
             <maml:name>UInt32</maml:name>
@@ -320,11 +351,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ShowBanner</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The ShowBanner switch shows or hides the banner message that's displayed when you run Connect-ExchangeOnline. You don't need to specify a value with this switch.</maml:para>
             <maml:para>- To show the banner, you don't need to use this switch (the banner is displayed by default).</maml:para>
             <maml:para>- To hide the banner, use this exact syntax: `-ShowBanner:$false`.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -333,11 +364,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ShowProgress</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The ShowProgress parameter specifies whether to show or hide the progress bar of imported cmdlets when you connect. Valid values are:</maml:para>
             <maml:para>- $true: The progress bar is displayed. This is the default value.</maml:para>
             <maml:para>- $false: Currently, this value has no effect.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
           <dev:type>
             <maml:name>Boolean</maml:name>
@@ -345,15 +376,29 @@
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
+		<command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>SkipLoadingFormatData</maml:name>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 2.0.6-Preview8 or later.</maml:para>
+            <maml:para>The SkipLoadingFormatData switch avoids downloading the format data. You don't need to specify a value with this switch.</maml:para>
+            <maml:para>When this switch is specified, output of any Exchange cmdlet will be unformatted.</maml:para>
+            <maml:para>This switch will not work with the UseRPSSession switch parameter.</maml:para>
+          </maml:Description>
+          <dev:type>
+            <maml:name>SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>TrackPerformance</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The TrackPerformance parameter measures additional events (for example, CPU load and memory consumed). Valid values are:</maml:para>
             <maml:para>- $true: Performance tracking is enabled.</maml:para>
             <maml:para>- $false: Performance tracking is disabled. This is the default value.</maml:para>
             <maml:para></maml:para>
             <maml:para>This parameter only when works when logging is enabled.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
           <dev:type>
             <maml:name>Boolean</maml:name>
@@ -363,11 +408,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>UseMultithreading</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The UseMultithreading parameter specifies whether to disable or enable multi-threading in the EXO V2 module. Valid values are:</maml:para>
             <maml:para>- $true: Enable multi-threading. This is the default value.</maml:para>
             <maml:para>- $false: Disable multi-threading. Note this value will degrade performance of V2 cmdlets.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
           <dev:type>
             <maml:name>Boolean</maml:name>
@@ -377,10 +422,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>UserPrincipalName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The UserPrincipalName parameter specifies the account that you want to use to connect (for example, navin@contoso.onmicrosoft.com). Using this parameter allows you to skip the username dialog in the modern authentication prompt for credentials (you only need to enter your password).</maml:para>
             <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -390,12 +435,12 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>UseRPSSession</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>This parameter is available in version 2.0.6-Preview3 or later of the Exchange Online V2 module.</maml:para>
             <maml:para>The UseRPSSession switch allows you to connect to Exchange Online PowerShell using traditional remote PowerShell access to all cmdlets. You don't need to specify a value with this switch.</maml:para>
             <maml:para>This switch requires that Basic authentication is enabled in WinRM on the local computer. For more information, see Prerequisites in the EXO V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2#prerequisites-for-the-exo-v2-module).</maml:para>
             <maml:para>If you don't use this switch, Basic authentication in WinRM is not required, but only the subset of frequently used REST API cmdlets are available.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -407,7 +452,7 @@
     <command:parameters>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
         <maml:name>ConnectionUri</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>Note : If you use the ExchangeEnvironmentName parameter, you don't need to use the AzureADAuthorizationEndpointUri or ConnectionUri parameters.</maml:para>
           <maml:para>The ConnectionUri parameter specifies the connection endpoint for the remote Exchange Online PowerShell session. The following Exchange Online PowerShell environments and related values are supported:</maml:para>
           <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://outlook.office365.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
@@ -415,7 +460,7 @@
           <maml:para>- Office 365 operated by 21Vianet: `https://partner.outlook.cn/PowerShell`</maml:para>
           <maml:para>- Microsoft 365 GCC High: `https://outlook.office365.us/powershell-liveid`</maml:para>
           <maml:para>- Microsoft 365 DoD: `https://webmail.apps.mil/powershell-liveid` Note : If your organization is on-premises Exchange, and you have Exchange Enterprise CAL with Services licenses for Exchange Online Protection, use the this cmdlet without the ConnectionUri parameter to connect to EOP PowerShell (the same connection instructions as Exchange Online PowerShell in Microsoft 365 or Microsoft GCC).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -425,7 +470,7 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
         <maml:name>AzureADAuthorizationEndpointUri</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>Note : If you use the ExchangeEnvironmentName parameter, you don't need to use the AzureADAuthorizationEndpointUri or ConnectionUri parameters.</maml:para>
           <maml:para>The AzureADAuthorizationEndpointUri parameter specifies the Azure AD Authorization endpoint that can issue OAuth2 access tokens. The following Exchange Online PowerShell environments and related values are supported:</maml:para>
           <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
@@ -433,7 +478,7 @@
           <maml:para>- Microsoft 365 GCC High or Microsoft 365 DoD: `https://login.microsoftonline.us/common`</maml:para>
           <maml:para></maml:para>
           <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both). Note : MFA authentication or federated authentication isn't available in Office 365 operated by 21Vianet.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -443,14 +488,14 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
         <maml:name>ExchangeEnvironmentName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The ExchangeEnvironmentName specifies the Exchange Online environment and eliminates the need to use the AzureADAuthorizationEndpointUri and ConnectionUri parameters. The following Exchange Online PowerShell environments are supported:</maml:para>
           <maml:para>- Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `O365Default`, but that's also the default value, so you don't need to use this parameter.</maml:para>
           <maml:para>- Office 365 Germany: `O365GermanyCloud`</maml:para>
           <maml:para>- Office 365 operated by 21Vianet: `O365China`</maml:para>
           <maml:para>- Microsoft 365 GCC High: `O365USGovGCCHigh`</maml:para>
           <maml:para>- Microsoft 365 DoD: `O365USGovDoD`</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">ExchangeEnvironment</command:parameterValue>
         <dev:type>
           <maml:name>ExchangeEnvironment</maml:name>
@@ -460,11 +505,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
         <maml:name>PSSessionOption</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The PSSessionOption parameter specifies the PowerShell session options to use in your connection to Exchange Online. You store the output of the New-PSSessionOption (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/new-pssessionoption)command in a variable, for example:</maml:para>
           <maml:para>`$Options = New-PSSessionOption &lt;Settings&gt;`</maml:para>
           <maml:para>And you use the variable name as the value for this parameter (for example, `$Options`).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">PSSessionOption</command:parameterValue>
         <dev:type>
           <maml:name>PSSessionOption</maml:name>
@@ -474,10 +519,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
         <maml:name>DelegatedOrganization</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The DelegatedOrganization parameter specifies the customer organization that you want to manage (for example, contosoelectronics.onmicrosoft.com). This parameter only works if the customer organization has agreed to your delegated management via the CSP program.</maml:para>
           <maml:para>After you successfully authenticate, the cmdlets in this session are mapped to the customer organization, and all operations in this session are done on the customer organization.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -487,9 +532,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
         <maml:name>Prefix</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Prefix parameter specifies an alias to add to nouns in the names of older remote PowerShell cmdlets (cmdlet with nouns that don't already start with EXO). A valid value is a text string without spaces or special characters like underscrores, asterisks etc, and you can't use the value EXO (this prefix is reserved for PowerShell V2 module cmdlets).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -499,9 +544,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
         <maml:name>CommandName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CommandName parameter specifies the comma separated list of commands to import into the session. Use this parameter for applications or scripts that use a specific set of cmdlets. Reducing the number of cmdlets in the session helps improve performance and reduces the memory footprint of the application or script.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
@@ -511,9 +556,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="7" aliases="none">
         <maml:name>FormatTypeName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The FormatTypeName parameter specifies the output format of the cmdlet.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
@@ -523,10 +568,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AppId</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The AppId parameter specifies the application ID of the service principal that's used in certificate based authentication (CBA). A valid value is the GUID of the application ID (service principal). For example, `36ee4c6c-0812-40a2-b820-b22ebd02bce3`.</maml:para>
           <maml:para>For more information, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -536,9 +581,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>BypassMailboxAnchoring</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The BypassMailboxAnchoring switch bypasses the use of the mailbox anchoring hint. You don't need to specify a value with this switch.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -548,11 +593,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Certificate</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Certificate parameter specifies the certificate that's used for certificate-based authentication (CBA). A valid value is the X509Certificate2 object value of the certificate.</maml:para>
           <maml:para>Don't use this parameter with the CertificateFilePath or CertificateThumbprint parameters.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">X509Certificate2</command:parameterValue>
         <dev:type>
           <maml:name>X509Certificate2</maml:name>
@@ -562,11 +607,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificateFilePath</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificateFilePath parameter specifies the certificate that's used for CBA. A valid value is the complete public path to the certificate file.</maml:para>
           <maml:para>Don't use this parameter with the Certificate or CertificateThumbprint parameters.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -576,11 +621,15 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificatePassword</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificatePassword parameter specifies the password that's required to open the certificate file when you use the CertificateFilePath parameter to identify the certificate that's used for CBA.</maml:para>
-          <maml:para>This parameter uses the syntax `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`. Or, before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable name (`$password`) for this parameter.</maml:para>
+          <maml:para>You can use the following methods as a value for this parameter:</maml:para>
+          <maml:para>- `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`.</maml:para>
+          <maml:para>- Before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable (`$password`) for the value.</maml:para>
+          <maml:para>- `(Get-Credential).password` to be prompted to enter the password securely when you run this command.</maml:para>
+          <maml:para></maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">SecureString</command:parameterValue>
         <dev:type>
           <maml:name>SecureString</maml:name>
@@ -590,11 +639,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificateThumbprint</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificateThumbprint parameter specifies the certificate that's used for CBA. A valid value is the thumbprint value of the certificate. For example, `83213AEAC56D61C97AEE5C1528F4AC5EBA7321C1`.</maml:para>
           <maml:para>Don't use this parameter with the Certificate or CertificateFilePath parameters. Note : The CertificateThumbprint parameter is supported only in Microsoft Windows.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -604,12 +653,12 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Credential</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Credential parameter specifies the username and password that's used to connect to Exchange Online PowerShell. Typically, you use this parameter in scripts or when you need to provide different credentials that have the required permissions. Don't use this parameter for accounts that use multi-factor authentication (MFA).</maml:para>
           <maml:para>Before you run the Connect-ExchangeOnline command, store the username and password in a variable (for example, `$UserCredential = Get-Credential`). Then, use the variable name (`$UserCredential`) for this parameter.</maml:para>
           <maml:para>After the Connect-ExchangeOnline command is complete, the password key in the variable is emptied.</maml:para>
           <maml:para>To specify the password for a certificate file, don't use this parameter; use the CertificatePassword parameter instead.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
         <dev:type>
           <maml:name>PSCredential</maml:name>
@@ -619,11 +668,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Device</maml:name>
-        <maml:description>
-          <maml:para>Note : This parameter is available only in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
           <maml:para>The Device switch specifies whether to authenticate interactively computers that don't have web browsers to support single sign-on (SSO). You don't need to specify a value with this switch.</maml:para>
           <maml:para>The command returns a URL and unique code that's tied to the session. You need to open the URL in a browser on any computer, and then enter the unique code. After you complete the login in the web browser, the session in the Powershell 7 window is authenticated via the regular Azure AD authentication flow, and the Exchange Online cmdlets are imported after few seconds.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -633,9 +682,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>EnableErrorReporting</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The EnableErrorReporting switch specifies whether to enable error reporting. You don't need to specify a value with this switch.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -645,12 +694,12 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>InlineCredential</maml:name>
-        <maml:description>
-          <maml:para>Note : This parameter is available only in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 2.0.4 or later, and only in PowerShell 7.</maml:para>
           <maml:para>The InlineCredential switch specifies whether to pass credentials directly in the Windows PowerShell window. You don't need to specify a value with this switch.</maml:para>
           <maml:para>This switch is similar to the Credential parameter, but with added security. The InlineCredential switch doesn't require you to store the credentials locally in the script, and you can enter credentials directly in an interactive PowerShell session.</maml:para>
           <maml:para>This switch does not work with accounts that use MFA.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -660,10 +709,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>LogDirectoryPath</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The LogDirectoryPath parameter specifies the location of the log files. The default location is `%TMP%\EXOCmdletTelemetry\EXOCmdletTelemetry-yyyymmdd-hhmmss.csv`.</maml:para>
           <maml:para>If you specify a custom location and filename that contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -673,9 +722,37 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>LogLevel</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The LogLevel parameter specifies the logging level. Valid values are Default and All.</maml:para>
-        </maml:description>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ManagedIdentity</maml:name>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 2.0.6-Preview7 or later.</maml:para>
+          <maml:para>The ManagedIdentity switch connects to Exchange Online using a system-assigned or user-assigned managed identity. You don't need to specify a value with this switch.</maml:para>
+          <maml:para>Managed identity is currently supported for Azure Virtual Machines, Virtual Machine Scale Sets and Azure Functions</maml:para>
+          <maml:para>You must use this switch with the Organization parameter.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>ManagedIdentityAccountId</maml:name>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 2.0.6-Preview7 or later.</maml:para>
+          <maml:para>The ManagedIdentityAccountId parameter specifies the application ID of the service principal that corresponds to the user-assigned managed identity that's used for authentication.</maml:para>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -685,10 +762,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Organization</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Organization parameter specifies the organization that's used in CBA. Be sure to use an .onmicrosoft.com domain for the parameter value. Otherwise, you might encounter cryptic permission issues when you run commands in the app context.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -698,9 +775,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>PageSize</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The PageSize parameter specifies the maximum number of entries per page. Valid input for this parameter is an integer between 1 and 1000. The default value is 1000.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">UInt32</command:parameterValue>
         <dev:type>
           <maml:name>UInt32</maml:name>
@@ -710,11 +787,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ShowBanner</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The ShowBanner switch shows or hides the banner message that's displayed when you run Connect-ExchangeOnline. You don't need to specify a value with this switch.</maml:para>
           <maml:para>- To show the banner, you don't need to use this switch (the banner is displayed by default).</maml:para>
           <maml:para>- To hide the banner, use this exact syntax: `-ShowBanner:$false`.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -724,11 +801,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ShowProgress</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The ShowProgress parameter specifies whether to show or hide the progress bar of imported cmdlets when you connect. Valid values are:</maml:para>
           <maml:para>- $true: The progress bar is displayed. This is the default value.</maml:para>
           <maml:para>- $false: Currently, this value has no effect.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
         <dev:type>
           <maml:name>Boolean</maml:name>
@@ -736,15 +813,30 @@
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
+	  <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>SkipLoadingFormatData</maml:name>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 2.0.6-Preview8 or later.</maml:para>
+          <maml:para>The SkipLoadingFormatData switch avoids downloading the format data. You don't need to specify a value with this switch.</maml:para>
+          <maml:para>When this switch is specified, output of any Exchange cmdlet will be unformatted.</maml:para>
+          <maml:para>This switch will not work with the UseRPSSession switch parameter.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>TrackPerformance</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The TrackPerformance parameter measures additional events (for example, CPU load and memory consumed). Valid values are:</maml:para>
           <maml:para>- $true: Performance tracking is enabled.</maml:para>
           <maml:para>- $false: Performance tracking is disabled. This is the default value.</maml:para>
           <maml:para></maml:para>
           <maml:para>This parameter only when works when logging is enabled.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
         <dev:type>
           <maml:name>Boolean</maml:name>
@@ -754,11 +846,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>UseMultithreading</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The UseMultithreading parameter specifies whether to disable or enable multi-threading in the EXO V2 module. Valid values are:</maml:para>
           <maml:para>- $true: Enable multi-threading. This is the default value.</maml:para>
           <maml:para>- $false: Disable multi-threading. Note this value will degrade performance of V2 cmdlets.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
         <dev:type>
           <maml:name>Boolean</maml:name>
@@ -768,10 +860,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>UserPrincipalName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The UserPrincipalName parameter specifies the account that you want to use to connect (for example, navin@contoso.onmicrosoft.com). Using this parameter allows you to skip the username dialog in the modern authentication prompt for credentials (you only need to enter your password).</maml:para>
           <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -781,12 +873,12 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>UseRPSSession</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>This parameter is available in version 2.0.6-Preview3 or later of the Exchange Online V2 module.</maml:para>
           <maml:para>The UseRPSSession switch allows you to connect to Exchange Online PowerShell using traditional remote PowerShell access to all cmdlets. You don't need to specify a value with this switch.</maml:para>
           <maml:para>This switch requires that Basic authentication is enabled in WinRM on the local computer. For more information, see Prerequisites in the EXO V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2#prerequisites-for-the-exo-v2-module).</maml:para>
           <maml:para>If you don't use this switch, Basic authentication in WinRM is not required, but only the subset of frequently used REST API cmdlets are available.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -795,26 +887,8 @@
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -886,12 +960,12 @@
       <command:noun>IPPSSession</command:noun>
       <maml:description>
         <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
-        <maml:para>Use the Connect-IPPSSession cmdlet in the Exchange Online PowerShell V2 module to connect to Security &amp; Compliance Center PowerShell or standalone Exchange Online Protection PowerShell using modern authentication. The cmdlet works for MFA or non-MFA enabled accounts. Note : If your organization is on-premises Exchange, and you have Exchange Enterprise CAL with Services licenses for Exchange Online Protection (EOP), use the Connect-ExchangeOnline (https://docs.microsoft.com/powershell/module/exchange/connect-exchangeonline) cmdlet in the [Exchange Online PowerShell connection instructions](https://docs.microsoft.com/powershell/exchange/connect-to-exchange-online-powershell)to connect to your EOP PowerShell environment.</maml:para>
+        <maml:para>Use the Connect-IPPSSession cmdlet in the Exchange Online PowerShell V2 module to connect to Security &amp; Compliance PowerShell or standalone Exchange Online Protection PowerShell using modern authentication. The cmdlet works for MFA or non-MFA enabled accounts. Note : If your organization is on-premises Exchange, and you have Exchange Enterprise CAL with Services licenses for Exchange Online Protection (EOP), use the Connect-ExchangeOnline (https://docs.microsoft.com/powershell/module/exchange/connect-exchangeonline) cmdlet in the [Exchange Online PowerShell connection instructions](https://docs.microsoft.com/powershell/exchange/connect-to-exchange-online-powershell)to connect to your EOP PowerShell environment.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>This cmdlet allows you to create a remote PowerShell session to Exchange-related PowerShell environments other than Exchange Online PowerShell. For example, Security &amp; Compliance Center PowerShell or standalone Exchange Online Protection PowerShell (for organizations without Exchange Online mailboxes).</maml:para>
+      <maml:para>This cmdlet allows you to create a remote PowerShell session to Exchange-related PowerShell environments other than Exchange Online PowerShell. For example, Security &amp; Compliance PowerShell or standalone Exchange Online Protection PowerShell (for organizations without Exchange Online mailboxes).</maml:para>
       <maml:para>For details about the current and past public versions of the EXO V2 module, see Release notes (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2#release-notes). This topic is written for the current public version. Features or parameters that are only available in a Preview version of the module are specifically noted.</maml:para>
     </maml:description>
     <command:syntax>
@@ -899,14 +973,14 @@
         <maml:name>Connect-IPPSSession</maml:name>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
           <maml:name>ConnectionUri</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The ConnectionUri parameter specifies the connection endpoint for the remote PowerShell session. The following PowerShell environments and related values are supported:</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://ps.compliance.protection.outlook.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Office 365 operated by 21Vianet: `https://ps.compliance.protection.partner.outlook.cn/powershell-liveid`</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft GCC High: `https://ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft DoD: `https://l5.ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://ps.compliance.protection.outlook.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Office 365 operated by 21Vianet: `https://ps.compliance.protection.partner.outlook.cn/powershell-liveid`</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Microsoft GCC High: `https://ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Microsoft DoD: `https://l5.ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
             <maml:para>- Exchange Online Protection PowerShell in standalone EOP organizations without Exchange Online mailboxes: `https://ps.protection.outlook.com/powershell-liveid/`</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -916,14 +990,14 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
           <maml:name>AzureADAuthorizationEndpointUri</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The AzureADAuthorizationEndpointUri parameter specifies the Azure AD Authorization endpoint that can issue OAuth2 access tokens. The following PowerShell environments and related values are supported:</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Office 365 operated by 21Vianet: `https://login.chinacloudapi.cn/common`</maml:para>
-            <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft GCC High or Microsoft DoD: `https://login.microsoftonline.us/common`</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Office 365 operated by 21Vianet: `https://login.chinacloudapi.cn/common`</maml:para>
+            <maml:para>- Security &amp; Compliance PowerShell in Microsoft GCC High or Microsoft DoD: `https://login.microsoftonline.us/common`</maml:para>
             <maml:para></maml:para>
             <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -933,9 +1007,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
           <maml:name>DelegatedOrganization</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -945,11 +1019,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
           <maml:name>PSSessionOption</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The PSSessionOption parameter specifies the PowerShell session options to use in your connection to Exchange Online. You store the output of the New-PSSessionOption (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/new-pssessionoption)command in a variable, for example:</maml:para>
             <maml:para>`$Options = New-PSSessionOption &lt;Settings&gt;`</maml:para>
             <maml:para>And you use the variable name as the value for this parameter (for example, `$Options`).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">PSSessionOption</command:parameterValue>
           <dev:type>
             <maml:name>PSSessionOption</maml:name>
@@ -959,9 +1033,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
           <maml:name>Prefix</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Prefix parameter specifies an alias to add to nouns in the names of older remote PowerShell cmdlets (cmdlet with nouns that don't already start with EXO). A valid value is a text string without spaces, and you can't use the value EXO (this prefix is reserved for PowerShell V2 module cmdlets).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -971,9 +1045,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
           <maml:name>CommandName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CommandName parameter specifies the comma separated list of commands to import into the session. Use this parameter for applications or scripts that use a specific set of cmdlets. Reducing the number of cmdlets in the session helps improve performance and reduces the memory footprint of the application or script.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -983,9 +1057,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
           <maml:name>FormatTypeName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The FormatTypeName parameter specifies the output format of the cmdlet.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -995,10 +1069,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AppId</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The AppId parameter specifies the application ID of the service principal that's used in certificate based authentication (CBA). A valid value is the GUID of the application ID (service principal). For example, `36ee4c6c-0812-40a2-b820-b22ebd02bce3`.</maml:para>
             <maml:para>For more information, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -1008,9 +1082,9 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>BypassMailboxAnchoring</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The BypassMailboxAnchoring switch bypasses the use of the mailbox anchoring hint. You don't need to specify a value with this switch.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -1019,11 +1093,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Certificate</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Certificate parameter specifies the certificate that's used for certificate-based authentication (CBA). A valid value is the X509Certificate2 object value of the certificate.</maml:para>
             <maml:para>Don't use this parameter with the CertificateFilePath or CertificateThumbprint parameters.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">X509Certificate2</command:parameterValue>
           <dev:type>
             <maml:name>X509Certificate2</maml:name>
@@ -1033,11 +1107,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificateFilePath</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificateFilePath parameter specifies the certificate that's used for CBA. A valid value is the complete public path to the certificate file.</maml:para>
             <maml:para>Don't use this parameter with the Certificate or CertificateThumbprint parameters.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -1047,11 +1121,15 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificatePassword</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificatePassword parameter specifies the password that's required to open the certificate file when you use the CertificateFilePath parameter to identify the certificate that's used for CBA.</maml:para>
-            <maml:para>This parameter uses the syntax `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`. Or, before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable name (`$password`) for this parameter.</maml:para>
+            <maml:para>You can use the following methods as a value for this parameter:</maml:para>
+            <maml:para>- `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`.</maml:para>
+            <maml:para>- Before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable (`$password`) for the value.</maml:para>
+            <maml:para>- `(Get-Credential).password` to be prompted to enter the password securely when you run this command.</maml:para>
+            <maml:para></maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">SecureString</command:parameterValue>
           <dev:type>
             <maml:name>SecureString</maml:name>
@@ -1061,11 +1139,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertificateThumbprint</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The CertificateThumbprint parameter specifies the certificate that's used for CBA. A valid value is the thumbprint value of the certificate. For example, `83213AEAC56D61C97AEE5C1528F4AC5EBA7321C1`.</maml:para>
             <maml:para>Don't use this parameter with the Certificate or CertificateFilePath parameters. Note : The CertificateThumbprint parameter is supported only in Microsoft Windows.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -1075,11 +1153,11 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Credential</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Credential parameter specifies the username and password that's used to connect to Exchange Online PowerShell. Typically, you use this parameter in scripts or when you need to provide different credentials that have the required permissions. Don't use this parameter for accounts that use multi-factor authentication (MFA).</maml:para>
             <maml:para>Before you run the Connect-IPPSSession command, store the username and password in a variable (for example, `$UserCredential = Get-Credential`). Then, use the variable name (`$UserCredential`) for this parameter.</maml:para>
             <maml:para>After the Connect-IPPSSession command is complete, the password key in the variable is emptied.</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
           <dev:type>
             <maml:name>PSCredential</maml:name>
@@ -1089,10 +1167,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Organization</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Organization parameter specifies the organization that's used in CBA. Be sure to use an .onmicrosoft.com domain for the parameter value. Otherwise, you might encounter cryptic permission issues when you run commands in the app context.</maml:para>
             <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -1102,10 +1180,10 @@
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>UserPrincipalName</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The UserPrincipalName parameter specifies the account that you want to use to connect (for example, navin@contoso.onmicrosoft.com). Using this parameter allows you to skip the username dialog in the modern authentication prompt for credentials (you only need to enter your password).</maml:para>
             <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-          </maml:description>
+          </maml:Description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
@@ -1118,14 +1196,14 @@
     <command:parameters>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="none">
         <maml:name>ConnectionUri</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The ConnectionUri parameter specifies the connection endpoint for the remote PowerShell session. The following PowerShell environments and related values are supported:</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://ps.compliance.protection.outlook.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Office 365 operated by 21Vianet: `https://ps.compliance.protection.partner.outlook.cn/powershell-liveid`</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft GCC High: `https://ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft DoD: `https://l5.ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://ps.compliance.protection.outlook.com/powershell-liveid/`, but that's also the default value, so you don't need to use this parameter.</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Office 365 operated by 21Vianet: `https://ps.compliance.protection.partner.outlook.cn/powershell-liveid`</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Microsoft GCC High: `https://ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Microsoft DoD: `https://l5.ps.compliance.protection.office365.us/powershell-liveid/`</maml:para>
           <maml:para>- Exchange Online Protection PowerShell in standalone EOP organizations without Exchange Online mailboxes: `https://ps.protection.outlook.com/powershell-liveid/`</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1135,14 +1213,14 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
         <maml:name>AzureADAuthorizationEndpointUri</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The AzureADAuthorizationEndpointUri parameter specifies the Azure AD Authorization endpoint that can issue OAuth2 access tokens. The following PowerShell environments and related values are supported:</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Office 365 operated by 21Vianet: `https://login.chinacloudapi.cn/common`</maml:para>
-          <maml:para>- Security &amp; Compliance Center PowerShell in Microsoft GCC High or Microsoft DoD: `https://login.microsoftonline.us/common`</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Microsoft 365 or Microsoft 365 GCC: Don't use this parameter. The required value is `https://login.microsoftonline.com/common`, but that's also the default value, so you don't need to use this parameter.</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Office 365 operated by 21Vianet: `https://login.chinacloudapi.cn/common`</maml:para>
+          <maml:para>- Security &amp; Compliance PowerShell in Microsoft GCC High or Microsoft DoD: `https://login.microsoftonline.us/common`</maml:para>
           <maml:para></maml:para>
           <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1152,9 +1230,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="2" aliases="none">
         <maml:name>DelegatedOrganization</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1164,11 +1242,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="3" aliases="none">
         <maml:name>PSSessionOption</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The PSSessionOption parameter specifies the PowerShell session options to use in your connection to Exchange Online. You store the output of the New-PSSessionOption (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/new-pssessionoption)command in a variable, for example:</maml:para>
           <maml:para>`$Options = New-PSSessionOption &lt;Settings&gt;`</maml:para>
           <maml:para>And you use the variable name as the value for this parameter (for example, `$Options`).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">PSSessionOption</command:parameterValue>
         <dev:type>
           <maml:name>PSSessionOption</maml:name>
@@ -1178,9 +1256,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="4" aliases="none">
         <maml:name>Prefix</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Prefix parameter specifies an alias to add to nouns in the names of older remote PowerShell cmdlets (cmdlet with nouns that don't already start with EXO). A valid value is a text string without spaces, and you can't use the value EXO (this prefix is reserved for PowerShell V2 module cmdlets).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1190,9 +1268,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="5" aliases="none">
         <maml:name>CommandName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CommandName parameter specifies the comma separated list of commands to import into the session. Use this parameter for applications or scripts that use a specific set of cmdlets. Reducing the number of cmdlets in the session helps improve performance and reduces the memory footprint of the application or script.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
@@ -1202,9 +1280,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="6" aliases="none">
         <maml:name>FormatTypeName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The FormatTypeName parameter specifies the output format of the cmdlet.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
@@ -1214,10 +1292,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AppId</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The AppId parameter specifies the application ID of the service principal that's used in certificate based authentication (CBA). A valid value is the GUID of the application ID (service principal). For example, `36ee4c6c-0812-40a2-b820-b22ebd02bce3`.</maml:para>
           <maml:para>For more information, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1227,9 +1305,9 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>BypassMailboxAnchoring</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The BypassMailboxAnchoring switch bypasses the use of the mailbox anchoring hint. You don't need to specify a value with this switch.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -1239,11 +1317,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Certificate</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Certificate parameter specifies the certificate that's used for certificate-based authentication (CBA). A valid value is the X509Certificate2 object value of the certificate.</maml:para>
           <maml:para>Don't use this parameter with the CertificateFilePath or CertificateThumbprint parameters.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">X509Certificate2</command:parameterValue>
         <dev:type>
           <maml:name>X509Certificate2</maml:name>
@@ -1253,11 +1331,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificateFilePath</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificateFilePath parameter specifies the certificate that's used for CBA. A valid value is the complete public path to the certificate file.</maml:para>
           <maml:para>Don't use this parameter with the Certificate or CertificateThumbprint parameters.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1267,11 +1345,15 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificatePassword</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificatePassword parameter specifies the password that's required to open the certificate file when you use the CertificateFilePath parameter to identify the certificate that's used for CBA.</maml:para>
-          <maml:para>This parameter uses the syntax `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`. Or, before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable name (`$password`) for this parameter.</maml:para>
+          <maml:para>You can use the following methods as a value for this parameter:</maml:para>
+          <maml:para>- `(ConvertTo-SecureString -String '&lt;password&gt;' -AsPlainText -Force)`.</maml:para>
+          <maml:para>- Before you run this command, store the password as a variable (for example, `$password = Read-Host "Enter password" -AsSecureString`), and then use the variable (`$password`) for the value.</maml:para>
+          <maml:para>- `(Get-Credential).password` to be prompted to enter the password securely when you run this command.</maml:para>
+          <maml:para></maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">SecureString</command:parameterValue>
         <dev:type>
           <maml:name>SecureString</maml:name>
@@ -1281,11 +1363,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertificateThumbprint</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The CertificateThumbprint parameter specifies the certificate that's used for CBA. A valid value is the thumbprint value of the certificate. For example, `83213AEAC56D61C97AEE5C1528F4AC5EBA7321C1`.</maml:para>
           <maml:para>Don't use this parameter with the Certificate or CertificateFilePath parameters. Note : The CertificateThumbprint parameter is supported only in Microsoft Windows.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1295,11 +1377,11 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Credential</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Credential parameter specifies the username and password that's used to connect to Exchange Online PowerShell. Typically, you use this parameter in scripts or when you need to provide different credentials that have the required permissions. Don't use this parameter for accounts that use multi-factor authentication (MFA).</maml:para>
           <maml:para>Before you run the Connect-IPPSSession command, store the username and password in a variable (for example, `$UserCredential = Get-Credential`). Then, use the variable name (`$UserCredential`) for this parameter.</maml:para>
           <maml:para>After the Connect-IPPSSession command is complete, the password key in the variable is emptied.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">PSCredential</command:parameterValue>
         <dev:type>
           <maml:name>PSCredential</maml:name>
@@ -1309,10 +1391,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Organization</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Organization parameter specifies the organization that's used in CBA. Be sure to use an .onmicrosoft.com domain for the parameter value. Otherwise, you might encounter cryptic permission issues when you run commands in the app context.</maml:para>
           <maml:para>For more information about CBA, see App-only authentication for unattended scripts in the EXO V2 module (https://aka.ms/exov2-cba).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1322,10 +1404,10 @@
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>UserPrincipalName</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The UserPrincipalName parameter specifies the account that you want to use to connect (for example, navin@contoso.onmicrosoft.com). Using this parameter allows you to skip the username dialog in the modern authentication prompt for credentials (you only need to enter your password).</maml:para>
           <maml:para>If you use the UserPrincipalName parameter, you don't need to use the AzureADAuthorizationEndpointUri parameter for MFA or federated users in environments that normally require it (UserPrincipalName or AzureADAuthorizationEndpointUri is required; OK to use both).</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
@@ -1334,26 +1416,8 @@
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -1365,10 +1429,10 @@
         <dev:code>$UserCredential = Get-Credential
 Connect-IPPSSession -Credential $UserCredential</dev:code>
         <dev:remarks>
-          <maml:para>This example connects to Security &amp; Compliance Center PowerShell in a Microsoft 365 organization.</maml:para>
+          <maml:para>This example connects to Security &amp; Compliance PowerShell in a Microsoft 365 organization.</maml:para>
           <maml:para>The first command gets the user credentials and stores them in the $UserCredential variable.</maml:para>
           <maml:para>The second command connects the current PowerShell session using the credentials in the $UserCredential, which isn't MFA enabled.</maml:para>
-          <maml:para>After the Connect-IPPSSession command is complete, the password key in the $UserCredential variable is emptied, and you can run Security &amp; Compliance Center PowerShell cmdlets.</maml:para>
+          <maml:para>After the Connect-IPPSSession command is complete, the password key in the $UserCredential variable is emptied, and you can run Security &amp; Compliance PowerShell cmdlets.</maml:para>
         </dev:remarks>
       </command:example>
       <command:example>
@@ -1382,21 +1446,21 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
         <maml:title>-------------------------- Example 3 --------------------------</maml:title>
         <dev:code>Connect-IPPSSession -AppId &lt;%App_id%&gt; -CertificateFilePath "C:\users\navin\Documents\TestCert.pfx" -Organization "contoso.onmicrosoft.com"</dev:code>
         <dev:remarks>
-          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance Center PowerShell in an unattended scripting scenario using the public key of a certificate.</maml:para>
+          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance PowerShell in an unattended scripting scenario using the public key of a certificate.</maml:para>
         </dev:remarks>
       </command:example>
       <command:example>
         <maml:title>-------------------------- Example 4 --------------------------</maml:title>
         <dev:code>Connect-IPPSSession -AppId &lt;%App_id%&gt; -CertificateThumbprint &lt;%Thumbprint string of certificate%&gt; -Organization "contoso.onmicrosoft.com"</dev:code>
         <dev:remarks>
-          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance Center PowerShell in an unattended scripting scenario using a certificate thumbprint.</maml:para>
+          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance PowerShell in an unattended scripting scenario using a certificate thumbprint.</maml:para>
         </dev:remarks>
       </command:example>
       <command:example>
         <maml:title>-------------------------- Example 5 --------------------------</maml:title>
         <dev:code>Connect-IPPSSession -AppId &lt;%App_id%&gt; -Certificate &lt;%X509Certificate2 object%&gt; -Organization "contoso.onmicrosoft.com"</dev:code>
         <dev:remarks>
-          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance Center PowerShell in an unattended scripting scenario using a certificate file. This method is best suited for scenarios where the certificate is stored in remote machines and fetched at runtime. For example, the certificate is stored in the Azure Key Vault.</maml:para>
+          <maml:para>Using the EXO V2 module version 2.0.6-Preview5 or later, this example connects to Security &amp; Compliance PowerShell in an unattended scripting scenario using a certificate file. This method is best suited for scenarios where the certificate is stored in remote machines and fetched at runtime. For example, the certificate is stored in the Azure Key Vault.</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -1427,11 +1491,11 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
         <maml:name>Disconnect-ExchangeOnline</maml:name>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="cf">
           <maml:name>Confirm</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The Confirm switch specifies whether to show or hide the confirmation prompt. How this switch affects the cmdlet depends on if the cmdlet requires confirmation before proceeding.</maml:para>
             <maml:para>- Destructive cmdlets (for example, Remove-* cmdlets) have a built-in pause that forces you to acknowledge the command before proceeding. For these cmdlets, you can skip the confirmation prompt by using this exact syntax: `-Confirm:$false`.</maml:para>
             <maml:para>- Most other cmdlets (for example, New-\ and Set-\ cmdlets) don't have a built-in pause. For these cmdlets, specifying the Confirm switch without a value introduces a pause that forces you acknowledge the command before proceeding.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -1440,9 +1504,9 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="wi">
           <maml:name>WhatIf</maml:name>
-          <maml:description>
+          <maml:Description>
             <maml:para>The WhatIf switch simulates the actions of the command. You can use this switch to view the changes that would occur without actually applying those changes. You don't need to specify a value with this switch.</maml:para>
-          </maml:description>
+          </maml:Description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
             <maml:uri />
@@ -1454,11 +1518,11 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
     <command:parameters>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="cf">
         <maml:name>Confirm</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The Confirm switch specifies whether to show or hide the confirmation prompt. How this switch affects the cmdlet depends on if the cmdlet requires confirmation before proceeding.</maml:para>
           <maml:para>- Destructive cmdlets (for example, Remove-* cmdlets) have a built-in pause that forces you to acknowledge the command before proceeding. For these cmdlets, you can skip the confirmation prompt by using this exact syntax: `-Confirm:$false`.</maml:para>
           <maml:para>- Most other cmdlets (for example, New-\ and Set-\ cmdlets) don't have a built-in pause. For these cmdlets, specifying the Confirm switch without a value introduces a pause that forces you acknowledge the command before proceeding.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -1468,9 +1532,9 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="wi">
         <maml:name>WhatIf</maml:name>
-        <maml:description>
+        <maml:Description>
           <maml:para>The WhatIf switch simulates the actions of the command. You can use this switch to view the changes that would occur without actually applying those changes. You don't need to specify a value with this switch.</maml:para>
-        </maml:description>
+        </maml:Description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
           <maml:name>SwitchParameter</maml:name>
@@ -1479,26 +1543,8 @@ Connect-IPPSSession -Credential $UserCredential</dev:code>
         <dev:defaultValue>False</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>

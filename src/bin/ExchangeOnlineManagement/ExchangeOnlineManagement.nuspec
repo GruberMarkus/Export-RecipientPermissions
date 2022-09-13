@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
   <metadata>
     <id>ExchangeOnlineManagement</id>
-    <version>2.0.6-Preview6</version>
+    <version>2.0.6-Preview8</version>
     <authors>Microsoft Corporation</authors>
     <owners>Microsoft Corporation</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -13,13 +13,28 @@ For issues related to the module, contact Microsoft support.</description>
     <releaseNotes>---------------------------------------------------------------------------------------------
 Whats new in this release:
 
+v2.0.6-Preview8 :
+    1. Support for system-assigned and user-assigned Managed Identity from Azure Functions.
+        - The -ManagedIdentity switch parameter, and the -Organization parameters need to be provided to indicate that a managed identity should be used. This will by default attempt to use a system-assigned managed identity.
+        - For specifying a user-assigned managed identity, in addition to the parameters specified above, the AppID of the service principal corresponding to the user-assigned identity needs to be passed to the -ManagedIdentityAccountId.
+    2. Support for formatted output data added.
+	    - By default, the output now will be formatted similar to version 2.0.5. The -SkipLoadingFormatData switch parameter can be specified with Connect-ExchangeOnline to avoid loading the format data and execute Connect-ExchangeOnline faster. 
+    3. Bug fixes in Connect-ExchangeOnline and Get-ConnectionInformation.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
+
+v2.0.6-Preview7 :
+    1. Support for system-assigned and user-assigned Managed Identity from Azure VMs and Virtual Machine Scale Sets.
+        - The -ManagedIdentity switch parameter, and the -Organization parameters need to be provided to indicate that a managed identity should be used. This will by default attempt to use a system-assigned managed identity.
+        - For specifying a user-assigned managed identity, in addition to the parameters specified above, the AppID of the service principal corresponding to the user-assigned identity needs to be passed to the -ManagedIdentityAccountId.
+    2. Get-ConnectionInformation cmdlet introduced to get the information regarding all REST-based active connections to ExchangeOnline. This is similar to the Get-PSSession cmdlet which returns information on all the remote powershell sessions in the runspace.
+    3. Bug fixes in Connect-ExchangeOnline.
+
 v2.0.6-Preview6 :
     1. Compliance with Continuous Access Evaluation(CAE). If you have any Conditional Access policy enabled for your organization, you can now use RPS and the REST-based cmdlets in addition to the EXO cmdlets.
     2. Revamped error reporting framework for the REST-based cmdlets that maintains an individual log file per connection to EXO from the same powershell instance.
     3. Bug fixes in Connect-ExchangeOnline.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v2.0.6-Preview5 :
     1. General availability of Certificate Based Authentication feature which enables using Modern Authentication in Unattended Scripting or background automation scenarios for Connect-IPPSSession.
@@ -34,7 +49,7 @@ v2.0.6-Preview3 :
     1. This version contains all the * EXO * cmdlets along with 250 Remote PowerShell cmdlets which are REST API backed. These REST API backed cmdlets do not need PowerShell session and hence they do not need WinRM Basic Auth to be enabled and they work as-is without requiring any change in script.
     2. Use switch -RPSSession to use the default set of all ~900 RPS Cmdlets. Using RPSSession switch needs WinRM Basic Auth to be enabled on your client machine.
     3. For certain RPS Cmdlets, use switch -UseCustomRouting to route your requests directly to the required mailbox server and it may improve the performance of overall script execution. In case UseCustomRouting flag is passed, please pass the value of either of UserPrincipalName, SmtpAddress, MailboxGuid. Use this parameter as an experiment and share feedback to exocmdletpreview@service.microsoft.com.
-        - This parameter is initially available for these 20 cmdlets and can be updated - Get-MailboxStatistics,Get-MailboxAutoReplyConfiguration,Get-MailboxMessageConfiguration,Get-MailboxPermission,Get-MailboxFolderStatistics,Get-MobileDeviceStatistics,Get-InboxRule,Get-MailboxRegionalConfiguration,Set-MailboxRegionalConfiguration,Get-UserPhoto,Set-UserPhoto,Remove-CalendarEvents,Set-Clutter,Get-MailboxCalendarFolder,Get-Clutter,Get-MailboxFolderPermission,Get-FocusedInbox,Set-FocusedInbox. For more accurate information, please check online documentation of EXO PowerShell V2 Module. 
+        - This parameter is initially available for these 20 cmdlets and can be updated - Get-MailboxStatistics,Get-MailboxAutoReplyConfiguration,Get-MailboxMessageConfiguration,Get-MailboxPermission,Get-MailboxFolderStatistics,Get-MobileDeviceStatistics,Get-InboxRule,Get-MailboxRegionalConfiguration,Set-MailboxRegionalConfiguration,Get-UserPhoto,Set-UserPhoto,Remove-CalendarEvents,Set-Clutter,Get-MailboxCalendarFolder,Get-Clutter,Get-MailboxFolderPermission,Get-FocusedInbox,Set-FocusedInbox. For more accurate information, please check online documentation of EXO PowerShell V2 Module.
 
 v2.0.5 :
     1. Manage ownerless Microsoft 365 groups through newly added cmdlets Get-OwnerlessGroupPolicy and Set-OwnerlessGroupPolicy.
@@ -42,6 +57,6 @@ v2.0.5 :
  
 ---------------------------------------------------------------------------------------------</releaseNotes>
     <copyright>(c) 2021 Microsoft. All rights reserved.</copyright>
-    <tags>Exchange ExchangeOnline EXO EXOV2 Mailbox Management PSModule PSIncludes_Cmdlet PSCmdlet_Get-EXOCasMailbox PSCmdlet_Get-EXOMailbox PSCmdlet_Get-EXOMailboxFolderPermission PSCmdlet_Get-EXOMailboxFolderStatistics PSCmdlet_Get-EXOMailboxPermission PSCmdlet_Get-EXOMailboxStatistics PSCmdlet_Get-EXOMobileDeviceStatistics PSCmdlet_Get-EXORecipient PSCmdlet_Get-EXORecipientPermission PSCmdlet_Get-MyAnalyticsFeatureConfig PSCmdlet_Get-UserBriefingConfig PSCmdlet_Get-VivaInsightsSettings PSCmdlet_Set-MyAnalyticsFeatureConfig PSCmdlet_Set-UserBriefingConfig PSCmdlet_Set-VivaInsightsSettings PSCmdlet_New-CustomNudge PSCmdlet_Set-CustomNudge PSCmdlet_Get-CustomNudge PSCmdlet_Remove-CustomNudge PSCmdlet_New-CustomNudgeAssignment PSCmdlet_Set-CustomNudgeAssignment PSCmdlet_Get-CustomNudgeAssignment PSCmdlet_Remove-CustomNudgeAssignment PSCmdlet_Set-CustomNudgeSettings PSCmdlet_Get-CustomNudgeSettings PSIncludes_Function PSFunction_Connect-ExchangeOnline PSFunction_Connect-IPPSSession PSFunction_Disconnect-ExchangeOnline PSCommand_Get-EXOCasMailbox PSCommand_Get-EXOMailbox PSCommand_Get-EXOMailboxFolderPermission PSCommand_Get-EXOMailboxFolderStatistics PSCommand_Get-EXOMailboxPermission PSCommand_Get-EXOMailboxStatistics PSCommand_Get-EXOMobileDeviceStatistics PSCommand_Get-EXORecipient PSCommand_Get-EXORecipientPermission PSCommand_Get-MyAnalyticsFeatureConfig PSCommand_Get-UserBriefingConfig PSCommand_Get-VivaInsightsSettings PSCommand_Set-MyAnalyticsFeatureConfig PSCommand_Set-UserBriefingConfig PSCommand_Set-VivaInsightsSettings PSCommand_New-CustomNudge PSCommand_Set-CustomNudge PSCommand_Get-CustomNudge PSCommand_Remove-CustomNudge PSCommand_New-CustomNudgeAssignment PSCommand_Set-CustomNudgeAssignment PSCommand_Get-CustomNudgeAssignment PSCommand_Remove-CustomNudgeAssignment PSCommand_Set-CustomNudgeSettings PSCommand_Get-CustomNudgeSettings PSCommand_Connect-ExchangeOnline PSCommand_Connect-IPPSSession PSCommand_Disconnect-ExchangeOnline</tags>
+    <tags>Exchange ExchangeOnline EXO EXOV2 Mailbox Management PSModule PSIncludes_Cmdlet PSCmdlet_Get-ConnectionInformation PSCmdlet_Get-EXOCasMailbox PSCmdlet_Get-EXOMailbox PSCmdlet_Get-EXOMailboxFolderPermission PSCmdlet_Get-EXOMailboxFolderStatistics PSCmdlet_Get-EXOMailboxPermission PSCmdlet_Get-EXOMailboxStatistics PSCmdlet_Get-EXOMobileDeviceStatistics PSCmdlet_Get-EXORecipient PSCmdlet_Get-EXORecipientPermission PSCmdlet_Get-MyAnalyticsFeatureConfig PSCmdlet_Get-UserBriefingConfig PSCmdlet_Get-VivaInsightsSettings PSCmdlet_Set-MyAnalyticsFeatureConfig PSCmdlet_Set-UserBriefingConfig PSCmdlet_Set-VivaInsightsSettings PSIncludes_Function PSFunction_Connect-ExchangeOnline PSFunction_Connect-IPPSSession PSFunction_Disconnect-ExchangeOnline PSCommand_Get-ConnectionInformation PSCommand_Get-EXOCasMailbox PSCommand_Get-EXOMailbox PSCommand_Get-EXOMailboxFolderPermission PSCommand_Get-EXOMailboxFolderStatistics PSCommand_Get-EXOMailboxPermission PSCommand_Get-EXOMailboxStatistics PSCommand_Get-EXOMobileDeviceStatistics PSCommand_Get-EXORecipient PSCommand_Get-EXORecipientPermission PSCommand_Get-MyAnalyticsFeatureConfig PSCommand_Get-UserBriefingConfig PSCommand_Get-VivaInsightsSettings PSCommand_Set-MyAnalyticsFeatureConfig PSCommand_Set-UserBriefingConfig PSCommand_Set-VivaInsightsSettings PSCommand_Connect-ExchangeOnline PSCommand_Connect-IPPSSession PSCommand_Disconnect-ExchangeOnline</tags>
   </metadata>
 </package>
