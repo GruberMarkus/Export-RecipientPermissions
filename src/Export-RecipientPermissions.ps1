@@ -6181,7 +6181,7 @@ try {
                                 $DebugPreference,
                                 $UTF8Encoding,
                                 $ExportFileHeader,
-                                $ExportFileFilter.
+                                $ExportFileFilter,
                                 $ExportGuids
                             )
 
