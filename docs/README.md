@@ -221,7 +221,7 @@ The $ExportFileLine contains an object with the header names from $ExportFile as
 - 'Grantor Primary SMTP'
 - 'Grantor Display Name'
 - 'Grantor Exchange GUID' (only when '`ExportGuids`' is enabled)
-- 'Grantor Identity GUID' (only when '`ExportGuids`' is enabled)
+- 'Grantor AD ObjectGUID' (only when '`ExportGuids`' is enabled)
 - 'Grantor Recipient Type'
 - 'Grantor Environment'
 - 'Folder'
@@ -233,7 +233,7 @@ The $ExportFileLine contains an object with the header names from $ExportFile as
 - 'Trustee Primary SMTP'
 - 'Trustee Display Name'
 - 'Trustee Exchange GUID' (only when '`ExportGuids`' is enabled)
-- 'Trustee Identity GUID' (only when '`ExportGuids`' is enabled)
+- 'Trustee AD ObjectGUID' (only when '`ExportGuids`' is enabled)
 - 'Trustee Recipient Type'
 - 'Trustee Environment'
 
@@ -378,7 +378,7 @@ Valid values: 'None', 'All', 'OnlyTrustees'
 
 Default: 'OnlyTrustees'
 ### 1.2.32. ExportGuids
-When enabled, the export contains the Exchange and Identity GUIDs for each grantor and trustee
+When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 
 Default: $false
 ### 1.2.33. ExpandGroups

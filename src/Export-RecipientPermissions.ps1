@@ -227,7 +227,7 @@ Default: 'None'
 
 
 .PARAMETER ExportGuids
-When enabled, the export contains the Exchange and Identity GUIDs for each grantor and trustee
+When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 Default: $false
 
 
@@ -656,7 +656,7 @@ try {
                 'Grantor Primary SMTP',
                 'Grantor Display Name',
                 'Grantor Exchange GUID',
-                'Grantor Identity GUID',
+                'Grantor AD ObjectGUID',
                 'Grantor Recipient Type',
                 'Grantor Environment',
                 'Folder',
@@ -668,7 +668,7 @@ try {
                 'Trustee Primary SMTP',
                 'Trustee Display Name',
                 'Trustee Exchange GUID',
-                'Trustee Identity GUID',
+                'Trustee AD ObjectGUID',
                 'Trustee Recipient Type',
                 'Trustee Environment'
             )
@@ -5755,7 +5755,7 @@ try {
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
                                                         if ($ExportGuids) {
                                                             $ExportFileLineExpanded.'Trustee Exchange GUID' = $Trustee.ExchangeGuid.Guid
-                                                            $ExportFileLineExpanded.'Trustee Identity GUID' = $Trustee.Identity.ObjectGuid.Guid
+                                                            $ExportFileLineExpanded.'Trustee AD ObjectGUID' = $Trustee.Identity.ObjectGuid.Guid
                                                         }
                                                         $ExportFileLineExpanded.'Trustee Recipient Type' = "$($Trustee.RecipientType.Value)/$($Trustee.RecipientTypeDetails.Value)" -replace '^/$', ''
                                                         $ExportFileLineExpanded.'Trustee Environment' = $TrusteeEnvironment
