@@ -2065,7 +2065,7 @@ try {
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -2435,7 +2435,7 @@ try {
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
                                                                                 $Trustee.ExchangeGuid.Guid,
-                                                                                $Trustee.Identity.ObjectGuid.Guid,
+                                                                                $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                                 ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
                                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -2829,7 +2829,7 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.AllRecipientsExchangeGuidToIndex,
-                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -2895,7 +2895,7 @@ try {
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -3197,7 +3197,7 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -3270,7 +3270,7 @@ try {
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -3850,7 +3850,7 @@ try {
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
-                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
                                                                 ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -4197,7 +4197,7 @@ try {
                                                                 $($Trustee.primarysmtpaddress.address),
                                                                 $($Trustee.displayname),
                                                                 $Trustee.ExchangeGuid.Guid,
-                                                                $Trustee.Identity.ObjectGuid.Guid,
+                                                                $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                 $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                 $TrusteeEnvironment
                                                             ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -4287,7 +4287,7 @@ try {
                                                                             $($Trustee.primarysmtpaddress.address),
                                                                             $($Trustee.displayname),
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -4355,7 +4355,7 @@ try {
                                                                             $($Trustee.primarysmtpaddress.address),
                                                                             $($Trustee.displayname),
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -4676,7 +4676,7 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -5193,7 +5193,7 @@ try {
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
-                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
                                                                 ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -5489,7 +5489,7 @@ try {
                                                                     $Trustee.PrimarySmtpAddress.Address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
-                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
                                                                 ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
@@ -5755,7 +5755,7 @@ try {
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
                                                         if ($ExportGuids) {
                                                             $ExportFileLineExpanded.'Trustee Exchange GUID' = $Trustee.ExchangeGuid.Guid
-                                                            $ExportFileLineExpanded.'Trustee AD ObjectGUID' = $Trustee.Identity.ObjectGuid.Guid
+                                                            $ExportFileLineExpanded.'Trustee AD ObjectGUID' = $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1)
                                                         }
                                                         $ExportFileLineExpanded.'Trustee Recipient Type' = "$($Trustee.RecipientType.Value)/$($Trustee.RecipientTypeDetails.Value)" -replace '^/$', ''
                                                         $ExportFileLineExpanded.'Trustee Environment' = $TrusteeEnvironment
