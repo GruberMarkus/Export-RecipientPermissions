@@ -4890,7 +4890,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -5008,7 +5008,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('  {0:0000000} groups to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('    {0:0000000} groups to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle.IsCompleted -contains $False)) {
@@ -5016,7 +5016,7 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
@@ -5024,11 +5024,11 @@ try {
             }
 
             if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                 Write-Host
             } else {
                 Write-Host
-                Write-Host '  Not all groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+                Write-Host '    Not all groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
