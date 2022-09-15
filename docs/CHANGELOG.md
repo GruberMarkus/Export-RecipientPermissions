@@ -21,7 +21,8 @@
 - Updated '`README`' to correctly document value names (.RecipientType.Value, .RecipientTypeDetails.Value) (<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues/14" target="_blank">#14</a>) (Thanks <a href="https://github.com/snurbnacnud" target="_blank">@snurbnacnud</a>!)
 - Bump ExchangeOnlineMangement to v2.0.6-Preview8
 ### Added
-- New parameter '`ExportGrantorsWithNoPermissions`', see '`README`' fore details
+- New parameter '`ExportGrantorsWithNoPermissions`', see '`README`' for details
+- New parameter '`ExportGuids`', see '`README`' for details
 - New FAQ in '`README`': Is there a GUI available?
 - Parallelize combination of temporary result files to final result file 
 

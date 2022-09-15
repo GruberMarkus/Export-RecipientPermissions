@@ -226,6 +226,11 @@ Valid values: 'None', 'All', 'OnlyTrustees'
 Default: 'None'
 
 
+.PARAMETER ExportGuids
+When enabled, the export contains the Exchange and Identity GUIDs for each grantor and trustee
+Default: $false
+
+
 .PARAMETER ExpandGroups
 Expand trustee groups to their members, including nested groups and dynamic groups
 This may drastically increase script run time and file size
@@ -340,6 +345,7 @@ Param(
     [boolean]$ExportManagementRoleGroupMembers = $false,
     [boolean]$ExportForwarders = $true,
     [ValidateSet('None', 'All', 'OnlyTrustees')]$ExportDistributionGroupMembers = 'None',
+    [boolean]$ExportGuids = $false,
     [boolean]$ExpandGroups = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
@@ -642,23 +648,49 @@ try {
                 Remove-Item -LiteralPath $Recipientfile -Force
             }
         } catch {}
+
         $null = New-Item -Path $ExportFile -Force
-        $ExportFileHeader = @(
-            'Grantor Primary SMTP',
-            'Grantor Display Name',
-            'Grantor Recipient Type',
-            'Grantor Environment',
-            'Folder',
-            'Permission',
-            'Allow/Deny',
-            'Inherited',
-            'InheritanceType',
-            'Trustee Original Identity',
-            'Trustee Primary SMTP',
-            'Trustee Display Name',
-            'Trustee Recipient Type',
-            'Trustee Environment'
-        )
+
+        if ($ExportGuids) {
+            $ExportFileHeader = @(
+                'Grantor Primary SMTP',
+                'Grantor Display Name',
+                'Grantor Exchange GUID',
+                'Grantor Identity GUID',
+                'Grantor Recipient Type',
+                'Grantor Environment',
+                'Folder',
+                'Permission',
+                'Allow/Deny',
+                'Inherited',
+                'InheritanceType',
+                'Trustee Original Identity',
+                'Trustee Primary SMTP',
+                'Trustee Display Name',
+                'Trustee Exchange GUID',
+                'Trustee Identity GUID',
+                'Trustee Recipient Type',
+                'Trustee Environment'
+            )
+
+        } else {
+            $ExportFileHeader = @(
+                'Grantor Primary SMTP',
+                'Grantor Display Name',
+                'Grantor Recipient Type',
+                'Grantor Environment',
+                'Folder',
+                'Permission',
+                'Allow/Deny',
+                'Inherited',
+                'InheritanceType',
+                'Trustee Original Identity',
+                'Trustee Primary SMTP',
+                'Trustee Display Name',
+                'Trustee Recipient Type',
+                'Trustee Environment'
+            )
+        }
 
         ('"' + ($ExportFileHeader -join '";"') + '"') | Out-File $ExportFile -Encoding $UTF8Encoding -Force
     }
@@ -1914,7 +1946,8 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $AllRecipientsSmtpToIndex
+                            $AllRecipientsSmtpToIndex,
+                            $ExportGuids
                         )
 
                         try {
@@ -2014,7 +2047,32 @@ try {
 
                                                 foreach ($Accessright in ($TrusteeRight.Accessrights -split ', ')) {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                        $ExportFileLines.add((('"' + ((
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $Grantor.ExchangeGuid.Guid,
+                                                                            $Grantor.Identity.ObjectGuid.Guid,
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            '',
+                                                                            $Accessright,
+                                                                            $(if ($Trusteeright.deny) { 'Deny' } else { 'Allow' }),
+                                                                            $Trusteeright.IsInherited,
+                                                                            $Trusteeright.InheritanceType,
+                                                                            $TrusteeRight.trustee,
+                                                                            $Trustee.PrimarySmtpAddress.address,
+                                                                            $Trustee.DisplayName,
+                                                                            $Trustee.ExchangeGuid.Guid,
+                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        } else {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -2029,7 +2087,9 @@ try {
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
-                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -2114,6 +2174,7 @@ try {
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
+                        ExportGuids                             = $ExportGuids
                     }
                 )
 
@@ -2238,7 +2299,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -2355,7 +2417,32 @@ try {
 
                                                             if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
 
-                                                            $ExportFileLines.Add((('"' + ((
+                                                            if ($ExportGuids) {
+                                                                $ExportFileLines.Add(
+                                                                    (('"' + ((
+                                                                                $GrantorPrimarySMTP,
+                                                                                $GrantorDisplayName,
+                                                                                $Grantor.ExchangeGuid.Guid,
+                                                                                $Grantor.Identity.ObjectGuid.Guid,
+                                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                                $GrantorEnvironment,
+                                                                                $($Folder.Folderpath),
+                                                                                $($Accessright),
+                                                                                'Allow',
+                                                                                'False',
+                                                                                'None',
+                                                                                $($FolderPermission.user.displayname),
+                                                                                $($Trustee.primarysmtpaddress.address),
+                                                                                $($Trustee.displayname),
+                                                                                $Trustee.ExchangeGuid.Guid,
+                                                                                $Trustee.Identity.ObjectGuid.Guid,
+                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $TrusteeEnvironment
+                                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                                )
+                                                            } else {
+                                                                $ExportFileLines.Add(
+                                                                    (('"' + ((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,
                                                                                 ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -2370,7 +2457,9 @@ try {
                                                                                 $($Trustee.displayname),
                                                                                 ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
-                                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                                )
+                                                            }
                                                         }
                                                     } else {
                                                         if ($ExportMailboxFolderPermissionsOwnerAtLocal -eq $false) {
@@ -2507,6 +2596,7 @@ try {
                         UTF8Encoding                                    = $UTF8Encoding
                         ExportFileHeader                                = $ExportFileHeader
                         ExportFileFilter                                = $ExportFileFilter
+                        ExportGuids                                     = $ExportGuids
                     }
                 )
 
@@ -2625,7 +2715,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -2700,9 +2791,13 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                    $ExportFileLines.add((('"' + ((
+                                                    if ($ExportGuids) {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
                                                                         $GrantorPrimarySMTP,
                                                                         $GrantorDisplayName,
+                                                                        $Grantor.AllRecipientsExchangeGuidToIndex,
+                                                                        $Grantor.Identity.ObjectGuid.Guid,
                                                                         $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                         $GrantorEnvironment,
                                                                         '',
@@ -2715,7 +2810,31 @@ try {
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
-                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+
+                                                    } else {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        'SendAs',
+                                                                        $entry.AccessControlType,
+                                                                        $entry.IsInherited,
+                                                                        $entry.InheritanceType,
+                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $Trustee.PrimarySmtpAddress.address,
+                                                                        $Trustee.DisplayName,
+                                                                        $Trustee.AllRecipientsExchangeGuidToIndex,
+                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -2758,8 +2877,32 @@ try {
 
                                                 foreach ($AccessRight in $entry.AccessRights) {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-
-                                                        $ExportFileLines.add((('"' + ((
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $Grantor.ExchangeGuid.Guid,
+                                                                            $Grantor.Identity.ObjectGuid.Guid,
+                                                                            ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            '',
+                                                                            $AccessRight,
+                                                                            $entry.AccessControlType,
+                                                                            $entry.IsInherited,
+                                                                            $entry.InheritanceType,
+                                                                            $(($Trustee.displayname, $entry.trustee) | Select-Object -First 1),
+                                                                            $Trustee.PrimarySmtpAddress.address,
+                                                                            $Trustee.DisplayName,
+                                                                            $Trustee.ExchangeGuid.Guid,
+                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        } else {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -2774,7 +2917,9 @@ try {
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
-                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -2845,6 +2990,7 @@ try {
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
+                        ExportGuids                             = $ExportGuids
                     }
                 )
 
@@ -2963,7 +3109,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -3032,7 +3179,32 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                    $ExportFileLines.add((('"' + ((
+                                                    if ($ExportGuids) {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $Grantor.ExchangeGuid.Guid,
+                                                                        $Grantor.Identity.ObjectGuid.Guid,
+                                                                        ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        'SendOnBehalf',
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $Trustee.PrimarySmtpAddress.address,
+                                                                        $Trustee.DisplayName,
+                                                                        $Trustee.ExchangeGuid.Guid,
+                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+                                                    } else {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
                                                                         $GrantorPrimarySMTP,
                                                                         $GrantorDisplayName,
                                                                         ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3047,7 +3219,9 @@ try {
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
-                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -3078,7 +3252,32 @@ try {
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                        $ExportFileLines.add((('"' + ((
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $Grantor.ExchangeGuid.Guid,
+                                                                            $Grantor.Identity.ObjectGuid.Guid,
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            '',
+                                                                            'SendOnBehalf',
+                                                                            'Allow',
+                                                                            'False',
+                                                                            'None',
+                                                                            $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                            $Trustee.PrimarySmtpAddress.address,
+                                                                            $Trustee.DisplayName,
+                                                                            $Trustee.ExchangeGuid.Guid,
+                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        } else {
+                                                            $ExportFileLines.add(
+                                                                (('"' + ((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3093,7 +3292,9 @@ try {
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
-                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -3163,6 +3364,7 @@ try {
                         UTF8Encoding                     = $UTF8Encoding
                         ExportFileHeader                 = $ExportFileHeader
                         ExportFileFilter                 = $ExportFileFilter
+                        ExportGuids                      = $ExportGuids
                     }
                 )
 
@@ -3275,7 +3477,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -3338,7 +3541,32 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                $ExportFileLines.add((('"' + ((
+                                                if ($ExportGuids) {
+                                                    $ExportFileLines.add(
+                                                       (('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $Grantor.ExchangeGuid.Guid,
+                                                                    $Grantor.IdentityGuid.Guid,
+                                                                    ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'ManagedBy',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    $Trustee.ExchangeGuid.Guid,
+                                                                    $Trustee.IdentityGuid.Guid,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                } else {
+                                                    $ExportFileLines.add(
+                                                       (('"' + ((
                                                                     $GrantorPrimarySMTP,
                                                                     $GrantorDisplayName,
                                                                     ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3353,7 +3581,9 @@ try {
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
-                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -3419,6 +3649,7 @@ try {
                         UTF8Encoding                     = $UTF8Encoding
                         ExportFileHeader                 = $ExportFileHeader
                         ExportFileFilter                 = $ExportFileFilter
+                        ExportGuids                      = $ExportGuids
                     }
                 )
 
@@ -3534,7 +3765,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -3600,7 +3832,32 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                $ExportFileLines.add((('"' + ((
+                                                if ($ExportGuids) {
+                                                    $ExportFileLines.add(
+                                                        (('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $Grantor.ExchangeGuid.Guid,
+                                                                    $Grantor.Identity.ObjectGuid.Guid,
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'LinkedMasterAccount',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $Grantor.LinkedMasterAccount,
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    $Trustee.ExchangeGuid.Guid,
+                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                } else {
+                                                    $ExportFileLines.add(
+                                                        (('"' + ((
                                                                     $GrantorPrimarySMTP,
                                                                     $GrantorDisplayName,
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3615,7 +3872,9 @@ try {
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
-                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -3682,6 +3941,7 @@ try {
                         UTF8Encoding                            = $UTF8Encoding
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
+                        ExportGuids                             = $ExportGuids
                     }
                 )
 
@@ -3823,7 +4083,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
                         try {
                             $DebugPreference = 'Continue'
@@ -3918,7 +4179,32 @@ try {
                                                 if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                             }
 
-                                            $ExportFileLines.Add((('"' + ((
+                                            if ($ExportGuids) {
+                                                $ExportFileLines.Add(
+                                                    (('"' + ((
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $Grantor.ExchangeGuid.Guid,
+                                                                $Grantor.Identity.ObjectGuid.Guid,
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                $($Folder.Folderpath),
+                                                                'MailEnabled',
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $(($Trustee.primarysmtpaddress.address, $Trustee) | Select-Object -First 1),
+                                                                $($Trustee.primarysmtpaddress.address),
+                                                                $($Trustee.displayname),
+                                                                $Trustee.ExchangeGuid.Guid,
+                                                                $Trustee.Identity.ObjectGuid.Guid,
+                                                                $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            } else {
+                                                $ExportFileLines.Add(
+                                                    (('"' + ((
                                                                 $GrantorPrimarySMTP,
                                                                 $GrantorDisplayName,
                                                                 $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3933,7 +4219,9 @@ try {
                                                                 $($Trustee.displayname),
                                                                 $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                 $TrusteeEnvironment
-                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            }
                                         }
                                     }
 
@@ -3981,7 +4269,32 @@ try {
 
                                                         if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
 
-                                                        $ExportFileLines.Add((('"' + ((
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLines.Add(
+                                                                (('"' + ((
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $Grantor.ExchangeGuid.Guid,
+                                                                            $Grantor.Identity.ObjectGuid.Guid,
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            $($Folder.Folderpath),
+                                                                            $($Accessright),
+                                                                            'Allow',
+                                                                            'False',
+                                                                            'None',
+                                                                            $($FolderPermission.user.displayname),
+                                                                            $($Trustee.primarysmtpaddress.address),
+                                                                            $($Trustee.displayname),
+                                                                            $Trustee.ExchangeGuid.Guid,
+                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        } else {
+                                                            $ExportFileLines.Add(
+                                                                (('"' + ((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -3996,7 +4309,9 @@ try {
                                                                             $($Trustee.displayname),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
-                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        }
                                                     }
                                                 } else {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal.PrimarySmtpAddress))) {
@@ -4022,7 +4337,32 @@ try {
 
                                                         if ($Trustee.RecipientTypeDetails.Value -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
 
-                                                        $ExportFileLines.Add((('"' + ((
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLines.Add(
+                                                                (('"' + ((
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $Grantor.ExchangeGuid.Guid,
+                                                                            $Grantor.Identity.ObjectGuid.Guid,
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            $($Folder.Folderpath),
+                                                                            $($Accessright),
+                                                                            'Allow',
+                                                                            'False',
+                                                                            'None',
+                                                                            $($FolderPermission.user.displayname),
+                                                                            $($Trustee.primarysmtpaddress.address),
+                                                                            $($Trustee.displayname),
+                                                                            $Trustee.ExchangeGuid.Guid,
+                                                                            $Trustee.Identity.ObjectGuid.Guid,
+                                                                            $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        } else {
+                                                            $ExportFileLines.Add(
+                                                                (('"' + ((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -4037,7 +4377,9 @@ try {
                                                                             $($Trustee.displayname),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
-                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                        ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -4126,6 +4468,7 @@ try {
                         UTF8Encoding                                   = $UTF8Encoding
                         ExportFileHeader                               = $ExportFileHeader
                         ExportFileFilter                               = $ExportFileFilter
+                        ExportGuids                                    = $ExportGuids
                     }
                 )
 
@@ -4247,7 +4590,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -4314,7 +4658,32 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                    $ExportFileLines.add((('"' + ((
+                                                    if ($ExportGuids) {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $Grantor.ExchangeGuid.Guid,
+                                                                        $Grantor.Identity.ObjectGuid.Guid,
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $($Grantor.$ForwarderType),
+                                                                        $Trustee.PrimarySmtpAddress.address,
+                                                                        $Trustee.DisplayName,
+                                                                        $Trustee.ExchangeGuid.Guid,
+                                                                        $Trustee.Identity.ObjectGuid.Guid,
+                                                                        $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+                                                    } else {
+                                                        $ExportFileLines.add(
+                                                            (('"' + ((
                                                                         $GrantorPrimarySMTP,
                                                                         $GrantorDisplayName,
                                                                         $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -4329,7 +4698,9 @@ try {
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
-                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                    ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -4395,6 +4766,7 @@ try {
                         UTF8Encoding             = $UTF8Encoding
                         ExportFileHeader         = $ExportFileHeader
                         ExportFileFilter         = $ExportFileFilter
+                        ExportGuids              = $ExportGuids
                     }
                 )
 
@@ -4737,7 +5109,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -4802,7 +5175,32 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                $ExportFileLines.add((('"' + ((
+                                                if ($ExportGuids) {
+                                                    $ExportFileLines.add(
+                                                        (('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    '',
+                                                                    $RoleGroup.Guid.Guid,
+                                                                    $GrantorRecipientType,
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'MemberRecurse',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $Trustee.PrimarySmtpAddress.address,
+                                                                    $Trustee.DisplayName,
+                                                                    $Trustee.ExchangeGuid.Guid,
+                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                } else {
+                                                    $ExportFileLines.add(
+                                                        (('"' + ((
                                                                     $GrantorPrimarySMTP,
                                                                     $GrantorDisplayName,
                                                                     $GrantorRecipientType,
@@ -4817,7 +5215,9 @@ try {
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
-                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -4884,6 +5284,7 @@ try {
                         UTF8Encoding                     = $UTF8Encoding
                         ExportFileHeader                 = $ExportFileHeader
                         ExportFileFilter                 = $ExportFileFilter
+                        ExportGuids                      = $ExportGuids
                     }
                 )
 
@@ -5003,7 +5404,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -5069,7 +5471,32 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                $ExportFileLines.add((('"' + ((
+                                                if ($ExportGuids) {
+                                                    $ExportFileLines.add(
+                                                        (('"' + ((
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $Grantor.ExchangeGuid.Guid,
+                                                                    $Grantor.Identity.ObjectGuid.Guid,
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'MemberRecurse',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $Trustee.PrimarySmtpAddress.Address,
+                                                                    $Trustee.DisplayName,
+                                                                    $Trustee.ExchangeGuid.Guid,
+                                                                    $Trustee.Identity.ObjectGuid.Guid,
+                                                                    $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                } else {
+                                                    $ExportFileLines.add(
+                                                    (('"' + ((
                                                                     $GrantorPrimarySMTP,
                                                                     $GrantorDisplayName,
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -5084,7 +5511,9 @@ try {
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
-                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                                ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                    )
+                                                }
                                             }
                                         }
                                     } catch {
@@ -5152,6 +5581,7 @@ try {
                         AllGroups                        = $AllGroups
                         AllGroupsIdentityGuidToIndex     = $AllGroupsIdentityGuidToIndex
                         AllGroupMembers                  = $AllGroupMembers
+                        ExportGuids                      = $ExportGuids
                     }
                 )
 
@@ -5265,7 +5695,8 @@ try {
                             $TrusteeFilter,
                             $UTF8Encoding,
                             $ExportFileHeader,
-                            $ExportFileFilter
+                            $ExportFileFilter,
+                            $ExportGuids
                         )
 
                         try {
@@ -5322,6 +5753,10 @@ try {
                                                         $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Where-Object { $_ } | Select-Object -First 1)"
                                                         $ExportFileLineExpanded.'Trustee Primary SMTP' = $Trustee.PrimarySmtpAddress.Address
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
+                                                        if ($ExportGuids) {
+                                                            $ExportFileLineExpanded.'Trustee Exchange GUID' = $Trustee.ExchangeGuid.Guid
+                                                            $ExportFileLineExpanded.'Trustee Identity GUID' = $Trustee.Identity.ObjectGuid.Guid
+                                                        }
                                                         $ExportFileLineExpanded.'Trustee Recipient Type' = "$($Trustee.RecipientType.Value)/$($Trustee.RecipientTypeDetails.Value)" -replace '^/$', ''
                                                         $ExportFileLineExpanded.'Trustee Environment' = $TrusteeEnvironment
                                                     }
@@ -5384,6 +5819,7 @@ try {
                         AllGroups                    = $AllGroups
                         AllGroupsIdentityGuidToIndex = $AllGroupsIdentityGuidToIndex
                         AllGroupMembers              = $AllGroupMembers
+                        ExportGuids                  = $ExportGuids
                     }
                 )
 
@@ -5495,7 +5931,8 @@ try {
                                 $DebugPreference,
                                 $UTF8Encoding,
                                 $ExportFileHeader,
-                                $ExportFileFilter
+                                $ExportFileFilter,
+                                $ExportGuids
                             )
 
                             try {
@@ -5537,7 +5974,30 @@ try {
 
                                             Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-                                            $ExportFileLines.add((('"' + ((
+                                            if ($ExportGuids) {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $Grantor.ExchangeGuid.Guid,
+                                                                $Grantor.Identity.ObjectGuid.Guid,
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                ''
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            } else {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
                                                                 $GrantorPrimarySMTP,
                                                                 $GrantorDisplayName,
                                                                 $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -5552,7 +6012,9 @@ try {
                                                                 '',
                                                                 '',
                                                                 ''
-                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            }
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -5612,6 +6074,7 @@ try {
                             UTF8Encoding      = $UTF8Encoding
                             ExportFileHeader  = $ExportFileHeader
                             ExportFileFilter  = $ExportFileFilter
+                            ExportGuids       = $ExportGuids
                         }
                     )
 
@@ -5769,7 +6232,30 @@ try {
 
                                             Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-                                            $ExportFileLines.add((('"' + ((
+                                            if ($ExportGuids) {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $Grantor.ExchangeGuid.Guid,
+                                                                $Grantor.Identity.ObjectGuid.Guid,
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                $($folder.folderpath),
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                ''
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            } else {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
                                                                 $GrantorPrimarySMTP,
                                                                 $GrantorDisplayName,
                                                                 $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -5784,7 +6270,9 @@ try {
                                                                 '',
                                                                 '',
                                                                 ''
-                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            }
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -5846,6 +6334,7 @@ try {
                             UTF8Encoding                     = $UTF8Encoding
                             ExportFileHeader                 = $ExportFileHeader
                             ExportFileFilter                 = $ExportFileFilter
+                            ExportGuids                      = $ExportGuids
                         }
                     )
 
@@ -5960,7 +6449,8 @@ try {
                                 $DebugPreference,
                                 $UTF8Encoding,
                                 $ExportFileHeader,
-                                $ExportFileFilter
+                                $ExportFileFilter,
+                                $ExportGuids
                             )
 
                             try {
@@ -6002,7 +6492,30 @@ try {
 
                                             Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-                                            $ExportFileLines.add((('"' + ((
+                                            if ($ExportGuids) {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                '',
+                                                                $RoleGroup.Guid.Guid,
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                '',
+                                                                ''
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            } else {
+                                                $ExportFileLines.add(
+                                                    (('"' + ((
                                                                 $GrantorPrimarySMTP,
                                                                 $GrantorDisplayName,
                                                                 $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
@@ -6017,7 +6530,9 @@ try {
                                                                 '',
                                                                 '',
                                                                 ''
-                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""'))
+                                                            ) -join '";"') + '"') -replace '(?<!;|^)"(?!;|$)', '""')
+                                                )
+                                            }
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -6077,6 +6592,7 @@ try {
                             UTF8Encoding      = $UTF8Encoding
                             ExportFileHeader  = $ExportFileHeader
                             ExportFileFilter  = $ExportFileFilter
+                            ExportGuids       = $ExportGuids
                         }
                     )
 
