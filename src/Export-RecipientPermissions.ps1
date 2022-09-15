@@ -6181,7 +6181,8 @@ try {
                                 $DebugPreference,
                                 $UTF8Encoding,
                                 $ExportFileHeader,
-                                $ExportFileFilter
+                                $ExportFileFilter.
+                                $ExportGuids
                             )
 
                             try {
@@ -6203,6 +6204,8 @@ try {
                                     }
 
                                     $folder = $AllPublicFolders[$PublicFolderId]
+
+                                    $folder.folderpath = '/' + $($folder.folderpath -join '/')
 
                                     try {
                                         $RecipientID = $null
@@ -6482,7 +6485,6 @@ try {
                                             $GrantorPrimarySMTP = 'Management Role Group'
                                             $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name) | Where-Object { $_ } | Select-Object -First 1)
                                             $GrantorRecipientType = 'RoleGroup'
-                                            $GrantorRecipientTypeDetails = $null
 
                                             if ($ExportFromOnPrem) {
                                                 $GrantorEnvironment = 'On-Prem'
@@ -6499,7 +6501,7 @@ try {
                                                                 $GrantorDisplayName,
                                                                 '',
                                                                 $RoleGroup.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorRecipientType,
                                                                 $GrantorEnvironment,
                                                                 '',
                                                                 '',
