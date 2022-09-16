@@ -24,7 +24,9 @@
 - New parameter '`ExportGrantorsWithNoPermissions`', see '`README`' for details
 - New parameter '`ExportGuids`', see '`README`' for details
 - New FAQ in '`README`': Is there a GUI available?
-- Parallelize combination of temporary result files to final result file 
+- Parallelize combination of temporary result files to final result file
+### Fixed
+- Incorrect escape of double quotes in CSV files
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.1.0" target="_blank">v2.1.0</a> - 2022-09-05
 ### Changed
