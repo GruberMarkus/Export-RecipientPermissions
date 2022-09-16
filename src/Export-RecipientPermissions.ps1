@@ -2119,7 +2119,7 @@ try {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                                         if ($ExportGuids) {
                                                             $ExportFileLines.add(
-                                                                (('"' + (@(
+                                                                ('"' + (@((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
                                                                             $Grantor.ExchangeGuid.Guid,
@@ -2526,7 +2526,7 @@ try {
                                                                                 $GrantorDisplayName,
                                                                                 $Grantor.ExchangeGuid.Guid,
                                                                                 $Grantor.Identity.ObjectGuid.Guid,
-                                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                                 $GrantorEnvironment,
                                                                                 $($Folder.Folderpath),
                                                                                 $($Accessright),
@@ -2537,8 +2537,8 @@ try {
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
                                                                                 $Trustee.ExchangeGuid.Guid,
-                                                                                $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1),
-                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1),
+                                                                                $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
                                                                             ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                                 )
@@ -2547,7 +2547,7 @@ try {
                                                                     ('"' + (@((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,
-                                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                                 $GrantorEnvironment,
                                                                                 $($Folder.Folderpath),
                                                                                 $($Accessright),
@@ -2557,7 +2557,7 @@ try {
                                                                                 $($FolderPermission.user.displayname),
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
-                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
                                                                             ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                                 )
@@ -2602,7 +2602,7 @@ try {
                                                                                 $GrantorDisplayName,
                                                                                 $Grantor.ExchangeGuid.Guid,
                                                                                 $Grantor.Identity.ObjectGuid.Guid,
-                                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                                 $GrantorEnvironment,
                                                                                 $($Folder.Folderpath),
                                                                                 $($Accessright),
@@ -2613,8 +2613,8 @@ try {
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
                                                                                 $Trustee.ExchangeGuid.Guid,
-                                                                                $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1),
-                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1),
+                                                                                $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
                                                                             ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                                 )
@@ -2623,7 +2623,7 @@ try {
                                                                     ('"' + (@((
                                                                                 $GrantorPrimarySMTP,
                                                                                 $GrantorDisplayName,
-                                                                                ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                                 $GrantorEnvironment,
                                                                                 $($Folder.Folderpath),
                                                                                 $($Accessright),
@@ -2633,7 +2633,7 @@ try {
                                                                                 $($FolderPermission.user.displayname),
                                                                                 $($Trustee.primarysmtpaddress.address),
                                                                                 $($Trustee.displayname),
-                                                                                ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                                $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                                 $TrusteeEnvironment
                                                                             ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                                 )
@@ -2954,12 +2954,12 @@ try {
                                                                         $entry.AccessControlType,
                                                                         $entry.IsInherited,
                                                                         $entry.InheritanceType,
-                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1),
-                                                                        ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1),
+                                                                        $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                         )
@@ -2976,10 +2976,10 @@ try {
                                                                         $entry.AccessControlType,
                                                                         $entry.IsInherited,
                                                                         $entry.InheritanceType,
-                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
-                                                                        ("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
+                                                                        $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
                                                         )
@@ -3033,18 +3033,18 @@ try {
                                                                             $GrantorDisplayName,
                                                                             $Grantor.ExchangeGuid.Guid,
                                                                             $Grantor.Identity.ObjectGuid.Guid,
-                                                                            ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                             $GrantorEnvironment,
                                                                             '',
                                                                             $AccessRight,
                                                                             $entry.AccessControlType,
                                                                             $entry.IsInherited,
                                                                             $entry.InheritanceType,
-                                                                            $(($Trustee.displayname, $entry.trustee) | Select-Object -First 1),
+                                                                            $(($Trustee.displayname, $entry.trustee, '') | Select-Object -First 1),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | Select-Object -First 1),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -3054,14 +3054,14 @@ try {
                                                                 ('"' + (@((
                                                                             $GrantorPrimarySMTP,
                                                                             $GrantorDisplayName,
-                                                                            ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                             $GrantorEnvironment,
                                                                             '',
                                                                             $AccessRight,
                                                                             $entry.AccessControlType,
                                                                             $entry.IsInherited,
                                                                             $entry.InheritanceType,
-                                                                            $(($Trustee.displayname, $entry.trustee) | Select-Object -First 1),
+                                                                            $(($Trustee.displayname, $entry.trustee, '') | Select-Object -First 1),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3332,7 +3332,7 @@ try {
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
-                                                    $trustee = $delegateBindDN
+                                                    $trustee = $delegateBindDn
                                                 }
 
                                                 if ($TrusteeFilter) {
@@ -3355,14 +3355,14 @@ try {
                                                                         $GrantorDisplayName,
                                                                         $Grantor.ExchangeGuid.Guid,
                                                                         $Grantor.Identity.ObjectGuid.Guid,
-                                                                        ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                         $GrantorEnvironment,
                                                                         '',
                                                                         'SendOnBehalf',
                                                                         'Allow',
                                                                         'False',
                                                                         'None',
-                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
@@ -3371,7 +3371,11 @@ try {
                                                                                 $Trustee.Identity.ObjectGuid.Guid
                                                                             } else {
                                                                                 try {
-                                                                                    [guid]::new(([adsisearcher]([adsi]"LDAP://$($delegateBindDN)")).findone().properties.objectguid[0]).guid
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                 } catch {
                                                                                     ''
                                                                                 }
@@ -3386,14 +3390,14 @@ try {
                                                             ('"' + (@((
                                                                         $GrantorPrimarySMTP,
                                                                         $GrantorDisplayName,
-                                                                        ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                         $GrantorEnvironment,
                                                                         '',
                                                                         'SendOnBehalf',
                                                                         'Allow',
                                                                         'False',
                                                                         'None',
-                                                                        $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3445,11 +3449,11 @@ try {
                                                                             'Allow',
                                                                             'False',
                                                                             'None',
-                                                                            $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                            $(($Trustee.displayname, $Truste, '') | Select-Object -First 1),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $AccessRight.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $AccessRight.ObjectGuid.Guid, '') | Select-Object -First 1),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -3466,7 +3470,7 @@ try {
                                                                             'Allow',
                                                                             'False',
                                                                             'None',
-                                                                            $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                            $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -3747,18 +3751,18 @@ try {
                                                                     $GrantorDisplayName,
                                                                     $Grantor.ExchangeGuid.Guid,
                                                                     $Grantor.IdentityGuid.Guid,
-                                                                    ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
                                                                     'ManagedBy',
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                    $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
-                                                                    $(($Trustee.IdentityGuid.Guid, $TrusteeRight.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(($Trustee.IdentityGuid.Guid, $TrusteeRight.ObjectGuid.Guid, '') | Select-Object -First 1),
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                     $TrusteeEnvironment
                                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -3768,14 +3772,14 @@ try {
                                                        ('"' + (@((
                                                                     $GrantorPrimarySMTP,
                                                                     $GrantorDisplayName,
-                                                                    ("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
                                                                     'ManagedBy',
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.displayname, $Trustee) | Select-Object -First 1),
+                                                                    $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -4076,8 +4080,8 @@ try {
                                                                             try {
                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                 $objNT = $objTrans.GetType()
-                                                                                $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (3, $($Grantor.LinkedMasterAccount)))
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
                                                                                 $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                             } catch {
                                                                                 ''
@@ -4446,11 +4450,11 @@ try {
                                                                 'Allow',
                                                                 'False',
                                                                 'None',
-                                                                $(($Trustee.primarysmtpaddress.address, $Trustee) | Select-Object -First 1),
+                                                                $(($Trustee.primarysmtpaddress.address, $Trustee, '') | Select-Object -First 1),
                                                                 $($Trustee.primarysmtpaddress.address),
                                                                 $($Trustee.displayname),
                                                                 $Trustee.ExchangeGuid.Guid,
-                                                                $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | Select-Object -First 1),
                                                                 $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                 $TrusteeEnvironment
                                                             ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -4467,7 +4471,7 @@ try {
                                                                 'Allow',
                                                                 'False',
                                                                 'None',
-                                                                $(($Trustee.primarysmtpaddress.address, $Trustee) | Select-Object -First 1),
+                                                                $(($Trustee.primarysmtpaddress.address, $Trustee, '') | Select-Object -First 1),
                                                                 $($Trustee.primarysmtpaddress.address),
                                                                 $($Trustee.displayname),
                                                                 $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
@@ -4540,7 +4544,7 @@ try {
                                                                             $($Trustee.primarysmtpaddress.address),
                                                                             $($Trustee.displayname),
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -4608,7 +4612,7 @@ try {
                                                                             $($Trustee.primarysmtpaddress.address),
                                                                             $($Trustee.displayname),
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipal.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipal.Guid.Guid, '') | Select-Object -First 1),
                                                                             $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -4949,7 +4953,7 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1),
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | select-first 1),
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -5502,7 +5506,7 @@ try {
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
@@ -5513,8 +5517,8 @@ try {
                                                                             try {
                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                 $objNT = $objTrans.GetType()
-                                                                                $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, $($Trustee)))
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
                                                                                 $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                             } catch {
                                                                                 ''
@@ -5537,7 +5541,7 @@ try {
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.address,
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -5832,7 +5836,7 @@ try {
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.Address,
                                                                     $Trustee.DisplayName,
                                                                     $Trustee.ExchangeGuid.Guid,
@@ -5843,8 +5847,8 @@ try {
                                                                             try {
                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                 $objNT = $objTrans.GetType()
-                                                                                $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, $($Trustee)))
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
                                                                                 $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                             } catch {
                                                                                 ''
@@ -5867,7 +5871,7 @@ try {
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
-                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee) | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(($Trustee.PrimarySmtpAddress.Address, $Trustee, '') | Select-Object -First 1),
                                                                     $Trustee.PrimarySmtpAddress.Address,
                                                                     $Trustee.DisplayName,
                                                                     $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
@@ -6131,12 +6135,26 @@ try {
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                        $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Where-Object { $_ } | Select-Object -First 1)"
+                                                        $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
                                                         $ExportFileLineExpanded.'Trustee Primary SMTP' = $Trustee.PrimarySmtpAddress.Address
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
                                                         if ($ExportGuids) {
                                                             $ExportFileLineExpanded.'Trustee Exchange GUID' = $Trustee.ExchangeGuid.Guid
-                                                            $ExportFileLineExpanded.'Trustee AD ObjectGUID' = $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid) | Where-Object { $_ } | Select-Object -First 1)
+                                                            $ExportFileLineExpanded.'Trustee AD ObjectGUID' = $(
+                                                                if ($Trustee.Identity.ObjectGuid.Guid) {
+                                                                    $Trustee.Identity.ObjectGuid.Guid
+                                                                } else {
+                                                                    try {
+                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                        $objNT = $objTrans.GetType()
+                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
+                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                }
+                                                            )
                                                         }
                                                         $ExportFileLineExpanded.'Trustee Recipient Type' = "$($Trustee.RecipientType.Value)/$($Trustee.RecipientTypeDetails.Value)" -replace '^/$', ''
                                                         $ExportFileLineExpanded.'Trustee Environment' = $TrusteeEnvironment
@@ -6924,7 +6942,7 @@ try {
                                             $RoleGroup = $AllGroups[$AllGroupsId]
 
                                             $GrantorPrimarySMTP = 'Management Role Group'
-                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name) | Where-Object { $_ } | Select-Object -First 1)
+                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name) | Select-Object -First 1)
                                             $GrantorRecipientType = 'RoleGroup'
 
                                             if ($ExportFromOnPrem) {
