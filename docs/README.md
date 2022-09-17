@@ -54,14 +54,15 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.29. ExportManagementRoleGroupMembers](#1229-exportmanagementrolegroupmembers)
     - [1.2.30. ExportForwarders](#1230-exportforwarders)
     - [1.2.31. ExportDistributionGroupMembers](#1231-exportdistributiongroupmembers)
-    - [1.2.32. ExportGuids](#1232-exportguids)
-    - [1.2.33. ExpandGroups](#1233-expandgroups)
-    - [1.2.34. ExportGrantorsWithNoPermissions](#1234-exportgrantorswithnopermissions)
-    - [1.2.35. ExportTrustees](#1235-exporttrustees)
-    - [1.2.36. ExportFile](#1236-exportfile)
-    - [1.2.37. ErrorFile](#1237-errorfile)
-    - [1.2.38. DebugFile](#1238-debugfile)
-    - [1.2.39. UpdateInverval](#1239-updateinverval)
+    - [1.2.32. ExportGroupMembersRecurse](#1232-exportgroupmembersrecurse)
+    - [1.2.33. ExportGuids](#1233-exportguids)
+    - [1.2.34. ExpandGroups](#1234-expandgroups)
+    - [1.2.35. ExportGrantorsWithNoPermissions](#1235-exportgrantorswithnopermissions)
+    - [1.2.36. ExportTrustees](#1236-exporttrustees)
+    - [1.2.37. ExportFile](#1237-exportfile)
+    - [1.2.38. ErrorFile](#1238-errorfile)
+    - [1.2.39. DebugFile](#1239-debugfile)
+    - [1.2.40. UpdateInverval](#1240-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -105,7 +106,7 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
   - All folder names start with '/', '/' representing the root folder
 - Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
   - When public folder permissions are exported and a folder is mail-enabled, a "virtual" right 'MailEnabled' is exported
-  - When management role group members are exported, a "virtual" right 'MemberRecurse' is exported
+  - When management role group members are exported, a "virtual" right 'MemberRecurse' or 'MemberDirect' is exported
   - When forwarders are exported, one or more of the following "virtual" rights are exported:
     - Forward_ExternalEmailAddress_ForwardOnly
     - Forward_ForwardingAddress_DeliverAndForward
@@ -116,7 +117,7 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Inherited: Shows if the permission is inherited or not.
 - InheritanceType: Shows if the permission is also valid for child objects, and if yes, which child objects.
 - Trustee Original Identity: The original identity string of the trustee.
-  - When 'ExpandGroups' is enabled, this column contains the original identity string of the original trustee groups, extended with the string '     [MemberRecurse] ' and the original identity of the resolved group member
+  - When 'ExpandGroups' is enabled, this column contains the original identity string of the original trustee groups, extended with the string '     [MemberRecurse] ' or '     [MemberDirect] ' and the original identity of the resolved group member
 - Trustee Primary SMTP: The primary SMTP address of the object receiving a permission.
   - When 'ExpandGroups' is enabled, the primary SMTP address comes from the resolved group member
 - Trustee Display Name: The display name of the trustee.
@@ -328,7 +329,9 @@ Default: $true
 ### 1.2.29. ExportManagementRoleGroupMembers
 Export members of management role groups
 
-GrantorFilter does not apply to the export of management role groups, but TrusteeFilter does
+The virtual right 'MemberRecurse' or 'MemberDirect' is used in the export file
+
+GrantorFilter does not apply to the export of management role groups, but TrusteeFilter and ExportFileFilter do
 
 Default: $true
 ### 1.2.30. ExportForwarders
@@ -361,27 +364,29 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 
 Default: $true
 ### 1.2.31. ExportDistributionGroupMembers
-Export recursive distribution group members, including nested groups and dynamic groups
+Export distribution group members, including nested groups and dynamic groups
 
-This is useful to document overall distributiong group membership
-
-This may drastically increase script run time and file size
-
-The virtual Right 'MemberRecurse' is used in the export file
-
-The parameter ExpandGroups can be used independently: ExpandGroups lists all members of a group every time a group is used as a trustee, ExportDistributionGroupMembers only lists the members of each group only once
+The parameter ExpandGroups can be used independently:
+  ExpandGroups acts when a group is used as trustee: It adds every recurse member of the group as a separate trustee entry
+  ExportDistributionGroupMembers exports the distribution group as grantor, which the recurse members as trustees
 
 Valid values: 'None', 'All', 'OnlyTrustees'
   'None': Distribution group members are not exported Parameter ExpandGroups can still be used.
   'All': Members of all distribution groups are exported, parameter GrantorFilter is considerd
   'OnlyTrustees': Only export members of those distribution groups that are used as trustees, even when they are excluded via GrantorFilter
 
-Default: 'OnlyTrustees'
-### 1.2.32. ExportGuids
+Default: 'None'
+### 1.2.32. ExportGroupMembersRecurse
+When disabled, only direct members of groups are exported, and the virtual right 'MemberDirect' is used in the export file.
+
+When enabled, recursive members of groups are exported, and the virtual right 'MemberRecurse' is used in the export file.
+
+Default: $false
+### 1.2.33. ExportGuids
 When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 
 Default: $false
-### 1.2.33. ExpandGroups
+### 1.2.34. ExpandGroups
 Expand groups to their recursive members, including nested groups and dynamic groups
 
 This is useful in cases where users are sent permission reports, as not only permission changes but also changes in the underlying trustee groups are documented and directly associated with a grantor-permission-trustee triplet.  
@@ -394,21 +399,25 @@ The original permission is still documented, with one additional line for each m
   ```
        [MemberRecurse] 
   ```
-  The whitespace consists of five space characters in front of 'MemberRecurse' for sorting reasons, and one space at the end. Then the original identity string of the resolved group member is added.
+  or
+  ```
+       [MemberDirect] 
+  ```
+  The whitespace consists of five space characters in front of 'MemberRecurse'/'MemberDirect' for sorting reasons, and one space at the end. Then the original identity string of the resolved group member is added.
   The other trustee properties are the ones of the member
 
 TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
 - Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
 
 Default value: $false
-### 1.2.34. ExportGrantorsWithNoPermissions
+### 1.2.35. ExportGrantorsWithNoPermissions
 Per default, Export-RecipientPermissions only exports grantors which have set at least one permission for at least one trustee.
 If all grantors should be exported, set this parameter to $true.
 
 If enabled, a grantor that that not grant any permission is included in the list with the following columns: "Grantor Primary SMTP", "Grantor Display Name", "Grantor Recipient Type", "Grantor Environment". The other columns for this recipient are empty.
 
 Default value: $false
-### 1.2.35. ExportTrustees
+### 1.2.36. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -416,23 +425,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.36. ExportFile
+### 1.2.37. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.37. ErrorFile
+### 1.2.38. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.38. DebugFile
+### 1.2.39. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.39. UpdateInverval
+### 1.2.40. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration

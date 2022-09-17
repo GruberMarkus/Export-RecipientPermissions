@@ -23,6 +23,7 @@
 ### Added
 - New parameter '`ExportGrantorsWithNoPermissions`', see '`README`' for details
 - New parameter '`ExportGuids`', see '`README`' for details
+- New parameter '`ExportGroupMembersRecurse`', see '`README`' for details
 - New FAQ in '`README`': Is there a GUI available?
 - Parallelize combination of temporary result files to final result file
 ### Fixed

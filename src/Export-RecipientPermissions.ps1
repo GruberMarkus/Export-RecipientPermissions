@@ -202,8 +202,8 @@ Default: ''
 
 .PARAMETER ExportManagementRoleGroupMembers
 Export members of management role groups
-The virtual Right 'MemberRecurse' is used in the export file
-GrantorFilter does not apply to the export of management role groups, but TrusteeFilter does
+The virtual right 'MemberRecurse' or 'MemberDirect' is used in the export file
+GrantorFilter does not apply to the export of management role groups, but TrusteeFilter and ExportFileFilter do
 Default: $true
 
 
@@ -214,8 +214,6 @@ Default: $true
 
 .PARAMETER ExportDistributionGroupMembers
 Export distribution group members, including nested groups and dynamic groups
-This may drastically increase script run time and file size
-The virtual Right 'MemberRecurse' is used in the export file
 The parameter ExpandGroups can be used independently:
   ExpandGroups acts when a group is used as trustee: It adds every recurse member of the group as a separate trustee entry
   ExportDistributionGroupMembers exports the distribution group as grantor, which the recurse members as trustees
@@ -224,6 +222,13 @@ Valid values: 'None', 'All', 'OnlyTrustees'
   'All': Members of all distribution groups are exported, parameter GrantorFilter is considerd
   'OnlyTrustees': Only export members of those distribution groups that are used as trustees, even when they are excluded via GrantorFilter
 Default: 'None'
+
+
+.PARAMETER ExportGroupMembersRecurse
+When disabled, only direct members of groups are exported, and the virtual right 'MemberDirect' is used in the export file.
+When enabled, recursive members of groups are exported, and the virtual right 'MemberRecurse' is used in the export file.
+
+Default: $false
 
 
 .PARAMETER ExportGuids
@@ -236,7 +241,7 @@ Expand trustee groups to their members, including nested groups and dynamic grou
 This may drastically increase script run time and file size
 This works for all groups, mail-enabled or not
 The original permission is still documented, with one additional line for each member of the group used as trustee
-  For each member of the group, 'Trustee Original Identity' is preserved, but the string '     [MemberRecurse] ' (the leading whitespace consists of five spaces for sorting reasons) and the original identity of the recurse member
+  For each member of the group, 'Trustee Original Identity' is preserved, but the string '     [MemberRecurse] ' or '     [MemberDirect] ' (the leading whitespace consists of five spaces for sorting reasons) and the original identity of the recurse member
   The other trustee properties are the ones of the recurse member
 TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
   Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
@@ -345,7 +350,7 @@ Param(
     [boolean]$ExportManagementRoleGroupMembers = $false,
     [boolean]$ExportForwarders = $true,
     [ValidateSet('None', 'All', 'OnlyTrustees')]$ExportDistributionGroupMembers = 'None',
-    [boolean]$ExportDistributionGroupMembersRecurse = $true,
+    [boolean]$ExportGroupMembersRecurse = $false,
     [boolean]$ExportGuids = $false,
     [boolean]$ExpandGroups = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
@@ -457,11 +462,12 @@ $ConnectExchange = {
 }
 
 
-$FilterGetMemberRecurse = {
+$FilterGetMember = {
     filter GetMemberRecurse {
         param(
             [Parameter(Mandatory = $true, ValueFromPipeline = $true)]$GroupToCheck,
-            [switch]$DoNotResetGetMemberRecurseTempLoopProtection
+            [switch]$DoNotResetGetMemberRecurseTempLoopProtection,
+            [switch]$DirectMembersOnly
         )
 
         if (-not $DoNotResetGetMemberRecurseTempLoopProtection.IsPresent) {
@@ -503,14 +509,23 @@ $FilterGetMemberRecurse = {
             $AllRecipientsIndex
         } elseif (($GroupToCheckType -ieq 'Group') -or ($GroupToCheckType -ieq 'ManagementRoleGroup')) {
             foreach ($member in $AllGroups[$AllGroupsIndex].members) {
-                if (($member.ObjectGuid.Guid) -and ($AllGroupsIdentityGuidToIndex.ContainsKey($member.ObjectGuid.Guid) -or $AllRecipientsIdentityGuidToIndex.ContainsKey($member.ObjectGuid.Guid))) {
-                    if ($member.ObjectGuid.Guid -notin $script:GetMemberRecurseTempLoopProtection) {
-                        $script:GetMemberRecurseTempLoopProtection += $member.ObjectGuid.Guid
-                        $member.ObjectGuid.Guid | GetMemberRecurse -DoNotResetGetMemberRecurseTempLoopProtection
+                if ($DirectMembersOnly.IsPresent) {
+                    if ($member.ObjectGuid.Guid -and $AllRecipientsIdentityGuidToIndex.ContainsKey($member.ObjectGuid.Guid)) {
+                        $AllRecipientsIdentityGuidToIndex[$member.ObjectGuid.Guid]
+                    } else {
+                        # $member.ObjectGuid.Guid is not known in $AllRecipients
+                        "NotARecipient:$($member.ToString())"
                     }
                 } else {
-                    # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
-                    "NotARecipient:$($member.ToString())"
+                    if (($member.ObjectGuid.Guid) -and ($AllGroupsIdentityGuidToIndex.ContainsKey($member.ObjectGuid.Guid) -or $AllRecipientsIdentityGuidToIndex.ContainsKey($member.ObjectGuid.Guid))) {
+                        if ($member.ObjectGuid.Guid -notin $script:GetMemberRecurseTempLoopProtection) {
+                            $script:GetMemberRecurseTempLoopProtection += $member.ObjectGuid.Guid
+                            $member.ObjectGuid.Guid | GetMemberRecurse -DoNotResetGetMemberRecurseTempLoopProtection
+                        }
+                    } else {
+                        # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
+                        "NotARecipient:$($member.ToString())"
+                    }
                 }
             }
         } elseif ($GroupToCheckType -ieq 'DynamicDistributionGroup') {
@@ -533,19 +548,28 @@ $FilterGetMemberRecurse = {
             }
 
             foreach ($member in $members) {
-                if (($member.Guid.Guid) -and ($AllGroupsIdentityGuidToIndex.ContainsKey($member.Guid.Guid) -or $AllRecipientsIdentityGuidToIndex.ContainsKey($member.Guid.Guid))) {
-                    if ($member.Guid.Guid -notin $script:GetMemberRecurseTempLoopProtection) {
-                        $script:GetMemberRecurseTempLoopProtection += $member.Guid.Guid
-                        $member.Guid.Guid | GetMemberRecurse -DoNotResetGetMemberRecurseTempLoopProtection
+                if ($DirectMembersOnly.IsPresent) {
+                    if ($member.Guid.Guid -and $AllRecipientsIdentityGuidToIndex.ContainsKey($member.Guid.Guid)) {
+                        $AllRecipientsIdentityGuidToIndex[$member.Guid.Guid]
+                    } else {
+                        # $member.ObjectGuid.Guid is not known in $AllRecipients
+                        "NotARecipient:$($member.ToString())"
                     }
                 } else {
-                    # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
-                    "NotARecipient:$($member.ToString())"
+                    if (($member.Guid.Guid) -and ($AllGroupsIdentityGuidToIndex.ContainsKey($member.Guid.Guid) -or $AllRecipientsIdentityGuidToIndex.ContainsKey($member.Guid.Guid))) {
+                        if ($member.Guid.Guid -notin $script:GetMemberRecurseTempLoopProtection) {
+                            $script:GetMemberRecurseTempLoopProtection += $member.Guid.Guid
+                            $member.Guid.Guid | GetMemberRecurse -DoNotResetGetMemberRecurseTempLoopProtection
+                        }
+                    } else {
+                        # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
+                        "NotARecipient:$($member.ToString())"
+                    }
                 }
             }
         } else {
-            if (($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].UserFriendlName)) {
-                "NotARecipient:$($AllRecipients[$AllRecipientsIndex].UserFriendlName)"
+            if (($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].UserFriendlyName)) {
+                "NotARecipient:$($AllRecipients[$AllRecipientsIndex].UserFriendlyName)"
             } elseif (($AllGroupsIndex -ge 0) -and (($AllGroups[$AllGroupsIndex].DisplayName) -or ($AllGroups[$AllGroupsIndex].Name) -or ($AllGroups[$AllGroupsIndex].DistinguishedName))) {
                 "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName)) | Where-Object { $_ } | Select-Object -First 1)"
             } else {
@@ -1906,7 +1930,7 @@ try {
         $Recipient = $AllRecipients[$x]
         if ($Recipient.userfriendlyname) {
             if ($AllRecipientsUfnToIndex.ContainsKey($($Recipient.userfriendlyname))) {
-                # Same UserFriendlName defined multiple time - set index to $null
+                # Same UserFriendlyName defined multiple time - set index to $null
                 if ($AllRecipientsUfnToIndex[$($Recipient.userfriendlyname)]) {
                     Write-Verbose "    '$($Recipient.userfriendlyname)' used not only once: '$($AllRecipients[$($AllRecipientsUfnToIndex[$($Recipient.userfriendlyname)])].primarysmtpaddress.address)'"
                 }
@@ -5132,9 +5156,9 @@ try {
     }
 
 
-    # Calculate recursive group membership
+    # Calculate group membership
     Write-Host
-    Write-Host "Calculate recursive group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ine 'None')) {
         Write-Host '  Create lookup hashtable: GroupIdentityGuid to group index'
@@ -5188,6 +5212,12 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
+        if ($ExportGroupMembersRecurse) {
+            Write-Host '  Calculate recursive group membership'
+        } else {
+            Write-Host '  Calculate direct group membership'
+        }
+
         Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
@@ -5221,7 +5251,8 @@ try {
                             $VerbosePreference,
                             $DebugPreference,
                             $UTF8Encoding,
-                            $FilterGetMemberRecurse
+                            $FilterGetMember,
+                            $ExportGroupMembersRecurse
                         )
 
                         try {
@@ -5233,11 +5264,11 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Calculate recursive group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
-                            . ([scriptblock]::Create($FilterGetMemberRecurse))
+                            . ([scriptblock]::Create($FilterGetMember))
 
                             while ($tempQueue.count -gt 0) {
                                 try {
@@ -5249,7 +5280,12 @@ try {
                                 Write-Host "Group $($GroupIdentityGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                                 try {
-                                    $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse | Sort-Object -Unique)
+                                    if ($ExportGroupMembersRecurse) {
+                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse | Sort-Object -Unique)
+                                    } else {
+                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse -DirectMembersOnly | Sort-Object -Unique)
+                                    }
+
                                 } catch {
                                     (
                                         '"' + (
@@ -5270,7 +5306,7 @@ try {
                                     @(
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                            'Calculate recursive group membership',
+                                            'Calculate group membership',
                                             '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
@@ -5312,7 +5348,8 @@ try {
                         VerbosePreference                  = $VerbosePreference
                         DebugPreference                    = $DebugPreference
                         UTF8Encoding                       = $UTF8Encoding
-                        FilterGetMemberRecurse             = $FilterGetMemberRecurse
+                        FilterGetMember                    = $FilterGetMember
+                        ExportGroupMembersRecurse          = $ExportGroupMembersRecurse
                     }
                 )
 
@@ -5503,7 +5540,7 @@ try {
                                                                     $GrantorRecipientType,
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    'MemberRecurse',
+                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -5538,7 +5575,7 @@ try {
                                                                     $GrantorRecipientType,
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    'MemberRecurse',
+                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -5802,10 +5839,10 @@ try {
                                 }
 
                                 foreach ($index in $GrantorMembers) {
-                                    if ($index -imatch '^\d+$') {
-                                        $Trustee = $AllRecipients[$index]
+                                    if ($index.tostring().startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
+                                        $Trustee = $index -replace '^NotARecipient:', ''
                                     } else {
-                                        $Trustee = $index
+                                        $Trustee = $AllRecipients[$index]
                                     }
 
                                     try {
@@ -5833,7 +5870,7 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    'MemberRecurse',
+                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -5868,7 +5905,7 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    'MemberRecurse',
+                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -6123,10 +6160,10 @@ try {
                                                 foreach ($Member in $Members) {
                                                     $ExportFileLineExpanded = $ExportFileLineOriginal.PSObject.Copy()
 
-                                                    if ($Member -imatch '^\d+$') {
-                                                        $Trustee = $AllRecipients[$Member]
+                                                    if ($Member.tostring().startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
+                                                        $Trustee = $Member -replace '^NotARecipient:', ''
                                                     } else {
-                                                        $Trustee = $Member
+                                                        $Trustee = $AllRecipients[$Member]
                                                     }
 
                                                     if ($ExportFromOnPrem) {
@@ -6136,7 +6173,11 @@ try {
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
-                                                        $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
+                                                        if ($ExportGroupMembersRecurse) {
+                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
+                                                        } else {
+                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberDirect] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
+                                                        }
                                                         $ExportFileLineExpanded.'Trustee Primary SMTP' = $Trustee.PrimarySmtpAddress.Address
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
                                                         if ($ExportGuids) {
