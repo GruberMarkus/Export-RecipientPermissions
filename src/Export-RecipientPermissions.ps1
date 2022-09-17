@@ -345,6 +345,7 @@ Param(
     [boolean]$ExportManagementRoleGroupMembers = $false,
     [boolean]$ExportForwarders = $true,
     [ValidateSet('None', 'All', 'OnlyTrustees')]$ExportDistributionGroupMembers = 'None',
+    [boolean]$ExportDistributionGroupMembersRecurse = $true,
     [boolean]$ExportGuids = $false,
     [boolean]$ExpandGroups = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
@@ -509,7 +510,7 @@ $FilterGetMemberRecurse = {
                     }
                 } else {
                     # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
-                    $member.ToString()
+                    "NotARecipient:$($member.ToString())"
                 }
             }
         } elseif ($GroupToCheckType -ieq 'DynamicDistributionGroup') {
@@ -539,16 +540,16 @@ $FilterGetMemberRecurse = {
                     }
                 } else {
                     # $member.ObjectGuid.Guid is neither known in $AllRecipients, nor in $AllGroups
-                    $member.ToString()
+                    "NotARecipient:$($member.ToString())"
                 }
             }
         } else {
             if (($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].UserFriendlName)) {
-                $AllRecipients[$AllRecipientsIndex].UserFriendlName
+                "NotARecipient:$($AllRecipients[$AllRecipientsIndex].UserFriendlName)"
             } elseif (($AllGroupsIndex -ge 0) -and (($AllGroups[$AllGroupsIndex].DisplayName) -or ($AllGroups[$AllGroupsIndex].Name) -or ($AllGroups[$AllGroupsIndex].DistinguishedName))) {
-                @(($AllGroups[$AllGroupsIndex].DisplayName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DistinguishedName)) | Where-Object { $_ } | Select-Object -First 1
+                "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName)) | Where-Object { $_ } | Select-Object -First 1)"
             } else {
-                $GroupToCheck
+                "NotARecipient:$($GroupToCheck)"
             }
         }
     }
@@ -5468,14 +5469,14 @@ try {
 
                                 try {
                                     foreach ($RoleGroupMember in $RoleGroupMembers) {
-                                        if ($RoleGroupMember -imatch '^\d+$') {
+                                        if ($RoleGroupMember.tostring().startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
+                                            $Trustee = $RoleGroupMember -replace '^NotARecipient:', ''
+                                        } else {
                                             try {
                                                 $Trustee = $AllRecipients[$RoleGroupMember]
                                             } catch {
-                                                $Trustee = $RoleGroupMember
+                                                $Trustee = $RoleGroupMember -replace '^NotARecipient:', ''
                                             }
-                                        } else {
-                                            $Trustee = $RoleGroupMember
                                         }
 
                                         if ($TrusteeFilter) {
