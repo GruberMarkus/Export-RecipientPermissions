@@ -5465,7 +5465,8 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $ExportGuids
+                            $ExportGuids,
+                            $ExportGroupMembersRecurse
                         )
 
                         try {
@@ -5674,6 +5675,7 @@ try {
                         ExportFileHeader                 = $ExportFileHeader
                         ExportFileFilter                 = $ExportFileFilter
                         ExportGuids                      = $ExportGuids
+                        ExportGroupMembersRecurse        = $ExportGroupMembersRecurse
                     }
                 )
 
@@ -5794,7 +5796,8 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $ExportGuids
+                            $ExportGuids,
+                            $ExportGroupMembersRecurse
                         )
 
                         try {
@@ -6005,6 +6008,7 @@ try {
                         AllGroupsIdentityGuidToIndex     = $AllGroupsIdentityGuidToIndex
                         AllGroupMembers                  = $AllGroupMembers
                         ExportGuids                      = $ExportGuids
+                        ExportGroupMembersRecurse        = $ExportGroupMembersRecurse
                     }
                 )
 
@@ -6119,7 +6123,8 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $ExportGuids
+                            $ExportGuids,
+                            $ExportGroupMembersRecurse
                         )
 
                         try {
@@ -6281,6 +6286,7 @@ try {
                         AllGroupsIdentityGuidToIndex = $AllGroupsIdentityGuidToIndex
                         AllGroupMembers              = $AllGroupMembers
                         ExportGuids                  = $ExportGuids
+                        ExportGroupMembersRecurse    = $ExportGroupMembersRecurse
                     }
                 )
 
