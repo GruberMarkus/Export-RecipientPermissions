@@ -5144,7 +5144,7 @@ try {
     Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
-        $AllGroups = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count))
+        $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
  
         $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
         $Filters = @()
