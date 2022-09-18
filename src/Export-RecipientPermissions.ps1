@@ -1953,7 +1953,7 @@ try {
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
         $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
- 
+
         $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
         $Filters = @()
 
@@ -2167,8 +2167,8 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
-    
-    
+
+
     # Define Grantors
     Write-Host
     Write-Host "Define grantors by filtering recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
