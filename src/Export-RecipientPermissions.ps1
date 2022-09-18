@@ -1947,6 +1947,228 @@ try {
     }
 
 
+    # Import direct group membership
+    Write-Host
+    Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+    if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
+        $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
+ 
+        $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
+        $Filters = @()
+
+        foreach ($tempChar in $tempChars) {
+            $Filters += "(name -like '$($tempChar)*')"
+        }
+
+        $tempChars = $null
+
+        $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
+
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
+
+        foreach ($Filter in $Filters) {
+            $tempQueue.enqueue($Filter)
+        }
+
+        $Filters = $null
+
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
+
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllGroups,
+                            $tempConnectionUriQueue,
+                            $tempQueue,
+                            $ErrorFile,
+                            $DebugFile,
+                            $ExportFromOnPrem,
+                            $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
+                            $ExchangeCredential,
+                            $UseDefaultCredential,
+                            $ScriptPath,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $UTF8Encoding
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -LiteralPath $DebugFile -Force
+                            }
+
+                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            . ([scriptblock]::Create($ConnectExchange))
+
+                            while ($tempQueue.count -gt 0) {
+                                try {
+                                    $filter = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                try {
+                                    try {
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                    } catch {
+                                        . ([scriptblock]::Create($ConnectExchange))
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                    }
+
+                                    if ($x) {
+                                        $AllGroups.AddRange(@($x))
+                                    }
+                                } catch {
+                                    (
+                                        '"' + (
+                                            @(
+                                                (
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    'Import direct group membership',
+                                                    "Filter '$($filter)'",
+                                                    $($_ | Out-String)
+                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                        ) + '"'
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                                }
+                            }
+                        } catch {
+                            (
+                                '"' + (
+                                    @(
+                                        (
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            'Import Recipients',
+                                            '',
+                                            $($_ | Out-String)
+                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                ) + '"'
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                        } finally {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        AllGroups                          = $AllGroups
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
+                        ExportFromOnPrem                   = $ExportFromOnPrem
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                        ExchangeCredential                 = $ExchangeCredential
+                        UseDefaultCredential               = $UseDefaultCredential
+                        ScriptPath                         = $PSScriptRoot
+                        VerbosePreference                  = $VerbosePreference
+                        DebugPreference                    = $DebugPreference
+                        UTF8Encoding                       = $UTF8Encoding
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+
+            if ($tempQueue.count -eq 0) {
+                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                Write-Host
+            } else {
+                Write-Host
+                Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobDebugFile | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobDebugFile -Force
+                }
+                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+        }
+
+        $AllGroups.TrimToSize()
+        Write-Host ('  {0:0000000} groups with direct members found' -f $($AllGroups.count))
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+    
+    
     # Define Grantors
     Write-Host
     Write-Host "Define grantors by filtering recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -5134,228 +5356,6 @@ try {
 
             [GC]::Collect(); Start-Sleep 1
         }
-    } else {
-        Write-Host '  Not required with current export settings.'
-    }
-
-
-    # Import direct group membership
-    Write-Host
-    Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-    if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
-        $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
- 
-        $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
-        $Filters = @()
-
-        foreach ($tempChar in $tempChars) {
-            $Filters += "(name -like '$($tempChar)*')"
-        }
-
-        $tempChars = $null
-
-        $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
-
-        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
-
-        foreach ($Filter in $Filters) {
-            $tempQueue.enqueue($Filter)
-        }
-
-        $Filters = $null
-
-        $tempQueueCount = $tempQueue.count
-
-        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
-
-        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
-
-        if ($ParallelJobsNeeded -ge 1) {
-            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
-            $RunspacePool.Open()
-
-            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
-
-            1..$ParallelJobsNeeded | ForEach-Object {
-                $Powershell = [powershell]::Create()
-                $Powershell.RunspacePool = $RunspacePool
-
-                [void]$Powershell.AddScript(
-                    {
-                        param(
-                            $AllGroups,
-                            $tempConnectionUriQueue,
-                            $tempQueue,
-                            $ErrorFile,
-                            $DebugFile,
-                            $ExportFromOnPrem,
-                            $ConnectExchange,
-                            $ExchangeOnlineConnectionParameters,
-                            $ExchangeCredential,
-                            $UseDefaultCredential,
-                            $ScriptPath,
-                            $VerbosePreference,
-                            $DebugPreference,
-                            $UTF8Encoding
-                        )
-
-                        try {
-                            $DebugPreference = 'Continue'
-
-                            Set-Location $ScriptPath
-
-                            if ($DebugFile) {
-                                $null = Start-Transcript -LiteralPath $DebugFile -Force
-                            }
-
-                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-                            . ([scriptblock]::Create($ConnectExchange))
-
-                            while ($tempQueue.count -gt 0) {
-                                try {
-                                    $filter = $tempQueue.dequeue()
-                                } catch {
-                                    continue
-                                }
-
-                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-                                try {
-                                    try {
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
-                                    }
-
-                                    if ($x) {
-                                        $AllGroups.AddRange(@($x))
-                                    }
-                                } catch {
-                                    (
-                                        '"' + (
-                                            @(
-                                                (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                                    'Import direct group membership',
-                                                    "Filter '$($filter)'",
-                                                    $($_ | Out-String)
-                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                        ) + '"'
-                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                                }
-                            }
-                        } catch {
-                            (
-                                '"' + (
-                                    @(
-                                        (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                            'Import Recipients',
-                                            '',
-                                            $($_ | Out-String)
-                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                ) + '"'
-                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                        } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module ExchangeOnlineManagement
-                            }
-
-                            if ($ExchangeSession) {
-                                Remove-PSSession -Session $ExchangeSession
-                            }
-
-                            if ($DebugFile) {
-                                $null = Stop-Transcript
-                                Start-Sleep -Seconds 1
-                            }
-                        }
-                    }
-                ).AddParameters(
-                    @{
-                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        AllGroups                          = $AllGroups
-                        tempConnectionUriQueue             = $tempConnectionUriQueue
-                        tempQueue                          = $tempQueue
-                        ExportFromOnPrem                   = $ExportFromOnPrem
-                        ConnectExchange                    = $ConnectExchange
-                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
-                        ExchangeCredential                 = $ExchangeCredential
-                        UseDefaultCredential               = $UseDefaultCredential
-                        ScriptPath                         = $PSScriptRoot
-                        VerbosePreference                  = $VerbosePreference
-                        DebugPreference                    = $DebugPreference
-                        UTF8Encoding                       = $UTF8Encoding
-                    }
-                )
-
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
-
-                $temp = '' | Select-Object PowerShell, Handle, Object
-                $temp.PowerShell = $PowerShell
-                $temp.Handle = $Handle
-                $temp.Object = $Object
-                [void]$runspaces.Add($Temp)
-            }
-
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
-
-            $lastCount = -1
-            while (($runspaces.Handle.IsCompleted -contains $False)) {
-                Start-Sleep -Seconds 1
-                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
-                for ($x = $lastCount; $x -le $done; $x++) {
-                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
-                        $lastCount = $x
-                    }
-                }
-            }
-
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
-            }
-
-            foreach ($runspace in $runspaces) {
-                $runspace.PowerShell.Dispose()
-            }
-
-            $RunspacePool.dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
-
-            if ($DebugFile) {
-                $null = Stop-Transcript
-                Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
-                    Remove-Item -LiteralPath $JobDebugFile -Force
-                }
-                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
-            }
-
-            if ($ErrorFile) {
-                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                    Remove-Item -LiteralPath $JobErrorFile -Force
-                }
-            }
-
-            [GC]::Collect(); Start-Sleep 1
-        }
-
-        $AllGroups.TrimToSize()
-        Write-Host ('    {0:0000000} groups with direct members found' -f $($AllGroups.count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
