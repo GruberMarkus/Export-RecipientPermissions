@@ -2579,12 +2579,18 @@ try {
                                                 }
                                             ))
                                     ) {
-                                        foreach ($TrusteeRight in @($MailboxPermission | Where-Object { if ($ExportMailboxAccessRightsSelf) { $true } else { $_.user.SecurityIdentifier -ine 'S-1-5-10' } } | Where-Object { if ($ExportMailboxAccessRightsInherited) { $true } else { $_.IsInherited -ne $true } } | Select-Object *, @{ name = 'trustee'; Expression = { $_.user.rawidentity } })) {
+                                        foreach ($TrusteeRight in @($MailboxPermission | Where-Object { if ($ExportMailboxAccessRightsInherited) { $true } else { $_.IsInherited -ne $true } } | Select-Object *, @{ name = 'trustee'; Expression = { $_.user.rawidentity } })) {
+                                            if ((-not $ExportMailboxAccessRightsSelf) -and ($TrusteeRight.user.SecurityIdentifier -ieq 'S-1-5-10')) {
+                                                continue
+                                            }
+
                                             $trustees = [system.collections.arraylist]::new(1000)
 
                                             try {
                                                 $index = $null
-                                                $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
+                                                if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
+                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
+                                                }
                                             } catch {
                                             }
 
@@ -3400,18 +3406,19 @@ try {
                                             $trustee = $null
 
                                             if ($entry.ObjectType -eq 'ab721a54-1e2f-11d0-9819-00aa0040529b') {
-                                                if (($entry.identityreference -ilike '*\*') -and ($ExportSendAsSelf -eq $false)) {
-                                                    if ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10') {
+                                                if (($entry.identityreference -ilike '*\*') -and ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10')) {
+                                                    if ($ExportSendAsSelf -eq $false) {
                                                         continue
                                                     }
-                                                }
-
-                                                try {
                                                     $index = $null
-                                                    $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.tostring())], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
-                                                } catch {
+                                                } else {
+                                                    try {
+                                                        $index = $null
+                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.tostring())], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
+                                                    } catch {
+                                                    }
                                                 }
-
+                                            
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
@@ -3449,7 +3456,18 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1),
+                                                                        $(
+                                                                            if ($trustee.identity.objectguid.guid) {
+                                                                                $trustee.identity.objectguid.guid
+                                                                            } else {
+                                                                                try {
+                                                                                    (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq $($args[0])" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                } catch {
+                                                                                    . ([scriptblock]::Create($ConnectExchange))
+                                                                                    (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq '$($args[0])'" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                }
+                                                                            }
+                                                                        ),
                                                                         $("$($Trustee.recipienttype.value)/$($Trustee.recipienttypedetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -3486,17 +3504,22 @@ try {
                                                 }
                                                 $trustee = $null
 
-                                                if ($entry.trustee -ilike '*\*') {
+                                                if ($entry.trusteesidstring -ieq 'S-1-5-10') {
+                                                    $index = $null
+                                                } elseif ($entry.trustee -ilike '*\*') {
                                                     try {
                                                         $index = $null
                                                         $index = ($AllRecipientsUfnToIndex[$($entry.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.trustee)]) | Select-Object -First 1
                                                     } catch {
                                                     }
                                                 } elseif ($entry.trustee -ilike '*@*') {
-                                                    $index = $null
-                                                    $index = $AllRecipientsSmtpToIndex[$($entry.trustee)]
+                                                    try {
+                                                        $index = $null
+                                                        $index = $AllRecipientsSmtpToIndex[$($entry.trustee)]
+                                                    } catch {
+                                                    }
                                                 }
-
+                                            
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
@@ -3535,7 +3558,18 @@ try {
                                                                             $Trustee.PrimarySmtpAddress.address,
                                                                             $Trustee.DisplayName,
                                                                             $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | Select-Object -First 1),
+                                                                            $(
+                                                                                if ($trustee.identity.objectguid.guid) {
+                                                                                    $trustee.identity.objectguid.guid
+                                                                                } else {
+                                                                                    try {
+                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq $($args[0])" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.TrusteeSidString)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                    } catch {
+                                                                                        . ([scriptblock]::Create($ConnectExchange))
+                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq '$($args[0])'" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.TrusteeSidString)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                    }
+                                                                                }
+                                                                            ),
                                                                             $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                             $TrusteeEnvironment
                                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
@@ -5444,7 +5478,7 @@ try {
                                                                         $Trustee.PrimarySmtpAddress.address,
                                                                         $Trustee.DisplayName,
                                                                         $Trustee.ExchangeGuid.Guid,
-                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | select-first 1),
+                                                                        $(($Trustee.Identity.ObjectGuid.Guid, $Trustee.ObjectGuid.Guid, '') | Select-Object -First 1),
                                                                         $("$($Trustee.RecipientType.value)/$($Trustee.RecipientTypeDetails.value)" -replace '^/$', ''),
                                                                         $TrusteeEnvironment
                                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
