@@ -1,4 +1,63 @@
 <#
+
+Wenn ExportGuids und (SendAs oder Exportmanagementrolegroup oder distributiongroup oder expandgroups)
+	Get-SecurityPrincipal parallelisieren (Filter Name)
+	Alle Abfragen (NameTranslate, Get-SecurityPrincipal) auf den Cache umleiten
+
+
+$tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
+$Filters = @()
+
+foreach ($tempChar in $tempChars) {
+	$Filters += "(name -like '$($tempChar)*')"
+}
+
+$tempChars = $null
+
+$filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
+
+cls
+
+get-date
+
+foreach ($filter in $filters) {
+	write-host "$filter"
+	$x=invoke-command -session $ExchangeSession -ScriptBlock {get-securityprincipal -filter $args[0] -resultsize unlimited | select-object sid, userfriendlyname, guid, distinguishedname} -argumentlist $filter -HideComputerName
+}
+
+get-date
+
+
+
+
+
+
+Send As
+	On-Prem
+		domain\user aufgelöst mit NameTranslate -> Erledigt
+	Cloud
+		Hat die Datenquelle irgendo die Guid, oder nur TrusteeSidString?
+			Wenn nur TrusteeSidString, umbauen auf Exchange-Job
+
+Management Role Group Members
+	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
+
+Distribution Group Members
+	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
+
+Expand Groups
+	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
+
+
+#>
+
+
+
+
+
+
+
+<#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
 Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups, distribution group members
@@ -2588,9 +2647,9 @@ try {
 
                                             try {
                                                 $index = $null
-                                                if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
-                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
-                                                }
+                                                #if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
+                                                $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
+                                                #}
                                             } catch {
                                             }
 
@@ -3406,15 +3465,12 @@ try {
                                             $trustee = $null
 
                                             if ($entry.ObjectType -eq 'ab721a54-1e2f-11d0-9819-00aa0040529b') {
-                                                if (($entry.identityreference -ilike '*\*') -and ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10')) {
-                                                    if ($ExportSendAsSelf -eq $false) {
-                                                        continue
-                                                    }
-                                                    $index = $null
+                                                if (($ExportSendAsSelf -eq $false) -and ($entry.identityreference.value -ilike '*\*') -and ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10')) {
+                                                    continue
                                                 } else {
                                                     try {
                                                         $index = $null
-                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.tostring())], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
+                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.value)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
                                                     } catch {
                                                     }
                                                 }
@@ -3422,7 +3478,7 @@ try {
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
-                                                    $trustee = $entry.identityreference
+                                                    $trustee = $entry.identityreference.value
                                                 }
 
                                                 if ($TrusteeFilter) {
@@ -3461,10 +3517,13 @@ try {
                                                                                 $trustee.identity.objectguid.guid
                                                                             } else {
                                                                                 try {
-                                                                                    (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq $($args[0])" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($entry.identityreference.value)"))
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                 } catch {
-                                                                                    . ([scriptblock]::Create($ConnectExchange))
-                                                                                    (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq '$($args[0])'" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                    ''
                                                                                 }
                                                                             }
                                                                         ),
@@ -3846,7 +3905,10 @@ try {
                                     if ($ExportFromOnPrem) {
                                         $directorySearcher = New-Object System.DirectoryServices.DirectorySearcher("(objectguid=$([System.String]::Join('', (([guid]$($Grantor.identity.objectguid.guid)).ToByteArray() | ForEach-Object { '\' + $_.ToString('x2') })).ToUpper()))")
                                         $directorySearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$($Grantor.identity.domainid)")
-                                        $directorySearcher.PropertiesToLoad.Add('publicDelegates')
+                                        $null = $directorySearcher.PropertiesToLoad.Add('publicDelegates')
+                                        if ($ExportGuids) {
+                                            $null = $directorySearcher.PropertiesToLoad.Add('objectGuid')
+                                        }
                                         $directorySearcherResults = $directorySearcher.FindOne()
 
                                         foreach ($directorySearcherResult in $directorySearcherResults) {
@@ -3896,11 +3958,7 @@ try {
                                                                                 $Trustee.Identity.ObjectGuid.Guid
                                                                             } else {
                                                                                 try {
-                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                    $objNT = $objTrans.GetType()
-                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
-                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    [guid]::new($directorySearcherResult.properties.objectguid[0]).Guid
                                                                                 } catch {
                                                                                     ''
                                                                                 }
