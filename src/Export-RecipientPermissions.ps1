@@ -1166,8 +1166,8 @@ try {
     $AllRecipients.TrimToSize()
     $x = $null
 
-
-    Write-Host "  Create lookup hashtable: DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Create lookup hashtables"
+    Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].distinguishedname) {
@@ -1181,7 +1181,7 @@ try {
         }
     }
 
-    Write-Host "  Create lookup hashtable: IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].identity.objectguid.guid) {
@@ -1195,7 +1195,7 @@ try {
         }
     }
 
-    Write-Host "  Create lookup hashtable: ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if (($AllRecipients[$x].ExchangeGuid.Guid) -and ($AllRecipients[$x].ExchangeGuid.Guid -ine '00000000-0000-0000-0000-000000000000')) {
@@ -1209,7 +1209,7 @@ try {
         }
     }
 
-    Write-Host "  Create lookup hashtable: EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].EmailAddresses) {
@@ -2184,7 +2184,8 @@ try {
         $AllSecurityPrincipals.TrimToSize()
         Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
 
-        Write-Host '  Create lookup hashtable: SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        write-host "  Create lookup hashtables"
+        Write-Host '    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
         $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -2199,7 +2200,7 @@ try {
             }
         }
 
-        Write-Host '  Create lookup hashtable: ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        Write-Host '    ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
         $AllSecurityPrincipalsObjectguidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -2214,7 +2215,7 @@ try {
             }
         }
 
-        Write-Host '  Create lookup hashtable: DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        Write-Host '    DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
         $AllSecurityPrincipalsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -2229,7 +2230,7 @@ try {
             }
         }
 
-        Write-Host '  Create lookup hashtable: UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        Write-Host '    UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
         $AllSecurityPrincipalsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
