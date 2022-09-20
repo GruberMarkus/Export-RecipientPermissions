@@ -2051,10 +2051,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -2873,9 +2873,9 @@ try {
 
                                             try {
                                                 $index = $null
-                                                #if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
-                                                $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
-                                                #}
+                                                if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
+                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
+                                                }
                                             } catch {
                                             }
 
@@ -2924,9 +2924,9 @@ try {
                                                                                     $AllSecurityPrincipalsLookupSearchString = "$($TrusteeRight.User.SecurityIdentifier)"
 
                                                                                     $AllSecurityPrincipalsLookupResult = (
-                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -3776,9 +3776,9 @@ try {
                                                                                 $AllSecurityPrincipalsLookupSearchString = "$($entry.identityreference.value)"
 
                                                                                 $AllSecurityPrincipalsLookupResult = (
-                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -3899,9 +3899,9 @@ try {
                                                                                     $AllSecurityPrincipalsLookupSearchString = "$($entry.TrusteeSidString)"
 
                                                                                     $AllSecurityPrincipalsLookupResult = (
-                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -4969,9 +4969,9 @@ try {
                                                                             $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
 
                                                                             $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -6187,9 +6187,9 @@ try {
                                                                             $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
 
                                                                             $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -6547,9 +6547,9 @@ try {
                                                                             $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
 
                                                                             $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
@@ -6881,9 +6881,9 @@ try {
                                                                     $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
 
                                                                     $AllSecurityPrincipalsLookupResult = (
-                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
