@@ -1166,7 +1166,7 @@ try {
     $AllRecipients.TrimToSize()
     $x = $null
 
-    Write-Host "  Create lookup hashtables"
+    Write-Host '  Create lookup hashtables'
     Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
@@ -2184,7 +2184,7 @@ try {
         $AllSecurityPrincipals.TrimToSize()
         Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
 
-        write-host "  Create lookup hashtables"
+        Write-Host '  Create lookup hashtables'
         Write-Host '    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
         $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
@@ -2476,14 +2476,15 @@ try {
     Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ine 'None')) {
-        Write-Host '  Create lookup hashtable: GroupIdentityGuid to group index'
+        Write-Host '  Create lookup hashtables'
+        Write-Host '    GroupIdentityGuid to group index'
         $AllGroupsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllGroups.Count; $x++) {
             $AllGroupsIdentityGuidToIndex.Add($AllGroups[$x].Guid.Guid, $x)
         }
 
-        Write-Host '  Create lookup hashtable: GroupIdentityGuid to recursive members'
+        Write-Host '    GroupIdentityGuid to recursive members'
         $AllGroupMembers = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
 
         # Normal distribution groups and management role groups
