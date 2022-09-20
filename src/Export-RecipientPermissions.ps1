@@ -1,63 +1,4 @@
 <#
-
-Wenn ExportGuids und (SendAs oder Exportmanagementrolegroup oder distributiongroup oder expandgroups)
-	Get-SecurityPrincipal parallelisieren (Filter Name)
-	Alle Abfragen (NameTranslate, Get-SecurityPrincipal) auf den Cache umleiten
-
-
-$tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
-$Filters = @()
-
-foreach ($tempChar in $tempChars) {
-	$Filters += "(name -like '$($tempChar)*')"
-}
-
-$tempChars = $null
-
-$filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
-
-cls
-
-get-date
-
-foreach ($filter in $filters) {
-	write-host "$filter"
-	$x=invoke-command -session $ExchangeSession -ScriptBlock {get-securityprincipal -filter $args[0] -resultsize unlimited | select-object sid, userfriendlyname, guid, distinguishedname} -argumentlist $filter -HideComputerName
-}
-
-get-date
-
-
-
-
-
-
-Send As
-	On-Prem
-		domain\user aufgelöst mit NameTranslate -> Erledigt
-	Cloud
-		Hat die Datenquelle irgendo die Guid, oder nur TrusteeSidString?
-			Wenn nur TrusteeSidString, umbauen auf Exchange-Job
-
-Management Role Group Members
-	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
-
-Distribution Group Members
-	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
-
-Expand Groups
-	NameTranslate nur für On-Prem. Was für Cloud? Oder einen Cache?
-
-
-#>
-
-
-
-
-
-
-
-<#
 .SYNOPSIS
 Export-RecipientPermissions XXXVersionStringXXX
 Document, filter and compare Exchange permissions: Mailbox access rights, mailbox folder permissions, public folder permissions, send as, send on behalf, managed by, linked master accounts, forwarders, management role groups, distribution group members
@@ -1215,7 +1156,9 @@ try {
         }
     }
 
-    Write-Host '  Sort list by PrimarySmtpAddress'
+    Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
+
+    Write-Host '  Sort list by PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
     $AllRecipients.TrimToSize()
     $x = @($AllRecipients | Where-Object { $_.PrimarySmtpAddress.Address } | Sort-Object -Property @{Expression = { $_.PrimarySmtpAddress.Address } })
     $AllRecipients.clear()
@@ -1223,7 +1166,64 @@ try {
     $AllRecipients.TrimToSize()
     $x = $null
 
-    Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
+
+    Write-Host "  Create lookup hashtable: DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
+    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+        if ($AllRecipients[$x].distinguishedname) {
+            if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
+                # Same DN defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
+                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
+            } else {
+                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $x
+            }
+        }
+    }
+
+    Write-Host "  Create lookup hashtable: IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
+    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+        if ($AllRecipients[$x].identity.objectguid.guid) {
+            if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
+                # Same GUID defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
+                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
+            } else {
+                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $x
+            }
+        }
+    }
+
+    Write-Host "  Create lookup hashtable: ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
+    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+        if (($AllRecipients[$x].ExchangeGuid.Guid) -and ($AllRecipients[$x].ExchangeGuid.Guid -ine '00000000-0000-0000-0000-000000000000')) {
+            if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
+                # Same GUID defined multiple times - set index to $null
+                Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
+                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
+            } else {
+                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $x
+            }
+        }
+    }
+
+    Write-Host "  Create lookup hashtable: EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
+    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+        if ($AllRecipients[$x].EmailAddresses) {
+            foreach ($EmailAddress in (@($AllRecipients[$x].EmailAddresses.SmtpAddress | Where-Object { $_ }))) {
+                if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
+                    # Same EmailAddress defined multiple times - set index to $null
+                    Write-Verbose "    '$($EmailAddress)' is not unique."
+                    $AllRecipientsSmtpToIndex[$EmailAddress] = $null
+                } else {
+                    $AllRecipientsSmtpToIndex[$EmailAddress] = $x
+                }
+            }
+        }
+    }
 
 
     # Import recipient permissions (SendAs)
@@ -1461,69 +1461,6 @@ try {
     }
 
     [GC]::Collect(); Start-Sleep 1
-
-
-    # Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress
-    Write-Host
-    Write-Host "Create lookup hashtables for GUID, DistinguishedName and PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-    Write-Host "  DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
-    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipients[$x].distinguishedname) {
-            if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
-                # Same DN defined multiple times - set index to $null
-                Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
-                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
-            } else {
-                $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $x
-            }
-        }
-    }
-
-    Write-Host "  IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
-    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipients[$x].identity.objectguid.guid) {
-            if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
-                # Same GUID defined multiple times - set index to $null
-                Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
-                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
-            } else {
-                $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $x
-            }
-        }
-    }
-
-    Write-Host "  ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
-    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if (($AllRecipients[$x].ExchangeGuid.Guid) -and ($AllRecipients[$x].ExchangeGuid.Guid -ine '00000000-0000-0000-0000-000000000000')) {
-            if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
-                # Same GUID defined multiple times - set index to $null
-                Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
-                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
-            } else {
-                $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $x
-            }
-        }
-    }
-
-    Write-Host "  EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
-    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
-        if ($AllRecipients[$x].EmailAddresses) {
-            foreach ($EmailAddress in (@($AllRecipients[$x].EmailAddresses.SmtpAddress | Where-Object { $_ }))) {
-                if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
-                    # Same EmailAddress defined multiple times - set index to $null
-                    Write-Verbose "    '$($EmailAddress)' is not unique."
-                    $AllRecipientsSmtpToIndex[$EmailAddress] = $null
-                } else {
-                    $AllRecipientsSmtpToIndex[$EmailAddress] = $x
-                }
-            }
-        }
-    }
 
 
     # Import LinkedMasterAccounts
@@ -2029,6 +1966,288 @@ try {
     Write-Host ('  {0:0000000}/{1:0000000} recipients are considered as grantors' -f $($GrantorsToConsider.count), $($AllRecipients.count))
 
 
+    # Import security principals
+    Write-Host
+    Write-Host "Import security principals, filtered by Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+    if (($ExportMailboxAccessRights) -and (($ExportSendAs) -or ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or ($ExportManagementRoleGroupMembers) -or (($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -or ($ExpandGroups))) {
+        $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
+
+        $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
+        $Filters = @()
+
+        foreach ($tempChar in $tempChars) {
+            $Filters += "(name -like '$($tempChar)*')"
+        }
+
+        $tempChars = $null
+
+        $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
+
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
+
+        foreach ($Filter in $Filters) {
+            $tempQueue.enqueue($Filter)
+        }
+
+        $Filters = $null
+
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
+
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllSecurityPrincipals,
+                            $tempConnectionUriQueue,
+                            $tempQueue,
+                            $ErrorFile,
+                            $DebugFile,
+                            $ExportFromOnPrem,
+                            $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
+                            $ExchangeCredential,
+                            $UseDefaultCredential,
+                            $ScriptPath,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $UTF8Encoding
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -LiteralPath $DebugFile -Force
+                            }
+
+                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            . ([scriptblock]::Create($ConnectExchange))
+
+                            while ($tempQueue.count -gt 0) {
+                                try {
+                                    $filter = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                try {
+                                    try {
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                    } catch {
+                                        . ([scriptblock]::Create($ConnectExchange))
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                    }
+
+                                    if ($x) {
+                                        $AllSecurityPrincipals.AddRange(@($x))
+                                    }
+                                } catch {
+                                    (
+                                        '"' + (
+                                            @(
+                                                (
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    'Import security principals',
+                                                    "Filter '$($filter)'",
+                                                    $($_ | Out-String)
+                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                        ) + '"'
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                                }
+                            }
+                        } catch {
+                            (
+                                '"' + (
+                                    @(
+                                        (
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            'Import security principals',
+                                            '',
+                                            $($_ | Out-String)
+                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                ) + '"'
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                        } finally {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        AllSecurityPrincipals              = $AllSecurityPrincipals
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
+                        ExportFromOnPrem                   = $ExportFromOnPrem
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                        ExchangeCredential                 = $ExchangeCredential
+                        UseDefaultCredential               = $UseDefaultCredential
+                        ScriptPath                         = $PSScriptRoot
+                        VerbosePreference                  = $VerbosePreference
+                        DebugPreference                    = $DebugPreference
+                        UTF8Encoding                       = $UTF8Encoding
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+
+            if ($tempQueue.count -eq 0) {
+                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                Write-Host
+            } else {
+                Write-Host
+                Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobDebugFile | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobDebugFile -Force
+                }
+                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+        }
+
+        $AllSecurityPrincipals.TrimToSize()
+        Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
+
+        Write-Host '  Create lookup hashtable: SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).Sid.Value) {
+                if ($AllSecurityPrincipalsSidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Sid.Value)) {
+                    # Same DN defined multiple times - set index to $null
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Sid.Value)' is not unique."
+                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid.Value)] = $null
+                } else {
+                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid.Value)] = $x
+                }
+            }
+        }
+
+        Write-Host '  Create lookup hashtable: ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        $AllSecurityPrincipalsObjectguidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).Guid.Guid) {
+                if ($AllSecurityPrincipalsObjectguidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Guid.Guid)) {
+                    # Same DN defined multiple times - set index to $null
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Guid.Guid)' is not unique."
+                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $null
+                } else {
+                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $x
+                }
+            }
+        }
+
+        Write-Host '  Create lookup hashtable: DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        $AllSecurityPrincipalsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).DistinguishedName) {
+                if ($AllSecurityPrincipalsDnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).DistinguishedName)) {
+                    # Same DN defined multiple times - set index to $null
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).DistinguishedName)' is not unique."
+                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $null
+                } else {
+                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $x
+                }
+            }
+        }
+
+        Write-Host '  Create lookup hashtable: UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@'
+        $AllSecurityPrincipalsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).UserFriendlyName) {
+                if ($AllSecurityPrincipalsUfnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).UserFriendlyName)) {
+                    # Same DN defined multiple times - set index to $null
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).UserFriendlyName)' is not unique."
+                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $null
+                } else {
+                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $x
+                }
+            }
+        }
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
+
     # Import direct group membership
     Write-Host
     Write-Host "Import direct group membership, filtered by Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -2510,8 +2729,8 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
-    
-    
+
+
     # Get and export Mailbox Access Rights
     Write-Host
     Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -2567,7 +2786,12 @@ try {
                             $ExportFileHeader,
                             $ExportFileFilter,
                             $AllRecipientsSmtpToIndex,
-                            $ExportGuids
+                            $ExportGuids,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -2695,11 +2919,32 @@ try {
                                                                                 if ($trustee.identity.objectguid.guid) {
                                                                                     $trustee.identity.objectguid.guid
                                                                                 } else {
-                                                                                    try {
-                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq $($args[0])" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList $TrusteeRight.User.SecurityIdentifier -ErrorAction Stop).Guid.Guid
-                                                                                    } catch {
-                                                                                        . ([scriptblock]::Create($ConnectExchange))
-                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq '$($args[0])'" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList $TrusteeRight.User.SecurityIdentifier -ErrorAction Stop).Guid.Guid
+                                                                                    $AllSecurityPrincipalsLookupSearchString = "$($TrusteeRight.User.SecurityIdentifier)"
+
+                                                                                    $AllSecurityPrincipalsLookupResult = (
+                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                    ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                    if ($AllSecurityPrincipalsLookupResult) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                    } else {
+                                                                                        try {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # count be an object from a trust
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        } catch {
+                                                                                            ''
+                                                                                        }
                                                                                     }
                                                                                 }
                                                                             ),
@@ -2833,6 +3078,11 @@ try {
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
                         ExportGuids                             = $ExportGuids
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
@@ -3421,7 +3671,12 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $ExportGuids
+                            $ExportGuids,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -3474,7 +3729,7 @@ try {
                                                     } catch {
                                                     }
                                                 }
-                                            
+
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
@@ -3516,14 +3771,32 @@ try {
                                                                             if ($trustee.identity.objectguid.guid) {
                                                                                 $trustee.identity.objectguid.guid
                                                                             } else {
-                                                                                try {
-                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                    $objNT = $objTrans.GetType()
-                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($entry.identityreference.value)"))
-                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-                                                                                } catch {
-                                                                                    ''
+                                                                                $AllSecurityPrincipalsLookupSearchString = "$($entry.identityreference.value)"
+
+                                                                                $AllSecurityPrincipalsLookupResult = (
+                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                if ($AllSecurityPrincipalsLookupResult) {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                } else {
+                                                                                    try {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # count be an object from a trust
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
                                                                                 }
                                                                             }
                                                                         ),
@@ -3578,7 +3851,7 @@ try {
                                                     } catch {
                                                     }
                                                 }
-                                            
+
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
@@ -3621,11 +3894,32 @@ try {
                                                                                 if ($trustee.identity.objectguid.guid) {
                                                                                     $trustee.identity.objectguid.guid
                                                                                 } else {
-                                                                                    try {
-                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq $($args[0])" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.TrusteeSidString)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
-                                                                                    } catch {
-                                                                                        . ([scriptblock]::Create($ConnectExchange))
-                                                                                        (Invoke-Command -Session $ExchangeSession -HideComputerName -ScriptBlock { Get-SecurityPrincipal -Filter "Sid -eq '$($args[0])'" -ResultSize 1 -WarningAction SilentlyContinue } -ArgumentList (([System.Security.Principal.NTAccount]::new($entry.TrusteeSidString)).Translate([System.Security.Principal.SecurityIdentifier])).value -ErrorAction Stop).Guid.Guid
+                                                                                    $AllSecurityPrincipalsLookupSearchString = "$($entry.TrusteeSidString)"
+
+                                                                                    $AllSecurityPrincipalsLookupResult = (
+                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                    ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                    if ($AllSecurityPrincipalsLookupResult) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                    } else {
+                                                                                        try {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # count be an object from a trust
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        } catch {
+                                                                                            ''
+                                                                                        }
                                                                                     }
                                                                                 }
                                                                             ),
@@ -3744,6 +4038,11 @@ try {
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
                         ExportGuids                             = $ExportGuids
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
@@ -4572,7 +4871,12 @@ try {
                             $UTF8Encoding,
                             $ExportFileHeader,
                             $ExportFileFilter,
-                            $ExportGuids
+                            $ExportGuids,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -4660,14 +4964,32 @@ try {
                                                                         if ($Trustee.Identity.ObjectGuid.Guid) {
                                                                             $Trustee.Identity.ObjectGuid.Guid
                                                                         } else {
-                                                                            try {
-                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                $objNT = $objTrans.GetType()
-                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
-                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-                                                                            } catch {
-                                                                                ''
+                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                            $AllSecurityPrincipalsLookupResult = (
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                            ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                            if ($AllSecurityPrincipalsLookupResult) {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                            } else {
+                                                                                try {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # count be an object from a trust
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
                                                                             }
                                                                         }
                                                                     ),
@@ -4782,6 +5104,11 @@ try {
                         ExportFileHeader                        = $ExportFileHeader
                         ExportFileFilter                        = $ExportFileFilter
                         ExportGuids                             = $ExportGuids
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
@@ -5763,7 +6090,12 @@ try {
                             $ExportFileHeader,
                             $ExportFileFilter,
                             $ExportGuids,
-                            $ExportGroupMembersRecurse
+                            $ExportGroupMembersRecurse,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -5850,14 +6182,32 @@ try {
                                                                         if ($Trustee.Identity.ObjectGuid.Guid) {
                                                                             $Trustee.Identity.ObjectGuid.Guid
                                                                         } else {
-                                                                            try {
-                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                $objNT = $objTrans.GetType()
-                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
-                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-                                                                            } catch {
-                                                                                ''
+                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                            $AllSecurityPrincipalsLookupResult = (
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                            ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                            if ($AllSecurityPrincipalsLookupResult) {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                            } else {
+                                                                                try {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # count be an object from a trust
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
                                                                             }
                                                                         }
                                                                     ),
@@ -5954,25 +6304,30 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                    = $AllRecipients
-                        AllGroups                        = $AllGroups
-                        AllGroupmembers                  = $AllGroupMembers
-                        tempQueue                        = $tempQueue
-                        ExportFile                       = $ExportFile
-                        ExportTrustees                   = $ExportTrustees
-                        AllRecipientsIdentityGuidToIndex = $AllRecipientsIdentityGuidToIndex
-                        ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                       = $PSScriptRoot
-                        ExportFromOnPrem                 = $ExportFromOnPrem
-                        VerbosePreference                = $VerbosePreference
-                        DebugPreference                  = $DebugPreference
-                        TrusteeFilter                    = $TrusteeFilter
-                        UTF8Encoding                     = $UTF8Encoding
-                        ExportFileHeader                 = $ExportFileHeader
-                        ExportFileFilter                 = $ExportFileFilter
-                        ExportGuids                      = $ExportGuids
-                        ExportGroupMembersRecurse        = $ExportGroupMembersRecurse
+                        AllRecipients                          = $AllRecipients
+                        AllGroups                              = $AllGroups
+                        AllGroupmembers                        = $AllGroupMembers
+                        tempQueue                              = $tempQueue
+                        ExportFile                             = $ExportFile
+                        ExportTrustees                         = $ExportTrustees
+                        AllRecipientsIdentityGuidToIndex       = $AllRecipientsIdentityGuidToIndex
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                             = $PSScriptRoot
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        VerbosePreference                      = $VerbosePreference
+                        DebugPreference                        = $DebugPreference
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportGuids                            = $ExportGuids
+                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
@@ -6094,7 +6449,12 @@ try {
                             $ExportFileHeader,
                             $ExportFileFilter,
                             $ExportGuids,
-                            $ExportGroupMembersRecurse
+                            $ExportGroupMembersRecurse,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -6182,14 +6542,32 @@ try {
                                                                         if ($Trustee.Identity.ObjectGuid.Guid) {
                                                                             $Trustee.Identity.ObjectGuid.Guid
                                                                         } else {
-                                                                            try {
-                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                $objNT = $objTrans.GetType()
-                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
-                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-                                                                            } catch {
-                                                                                ''
+                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                            $AllSecurityPrincipalsLookupResult = (
+                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                            ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                            if ($AllSecurityPrincipalsLookupResult) {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                            } else {
+                                                                                try {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # count be an object from a trust
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
                                                                             }
                                                                         }
                                                                     ),
@@ -6286,26 +6664,31 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                    = $AllRecipients
-                        AllRecipientsIdentityGuidToIndex = $AllRecipientsIdentityGuidToIndex
-                        tempQueue                        = $tempQueue
-                        ExportFile                       = $ExportFile
-                        ExportTrustees                   = $ExportTrustees
-                        ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                       = $PSScriptRoot
-                        ExportFromOnPrem                 = $ExportFromOnPrem
-                        VerbosePreference                = $VerbosePreference
-                        DebugPreference                  = $DebugPreference
-                        TrusteeFilter                    = $TrusteeFilter
-                        UTF8Encoding                     = $UTF8Encoding
-                        ExportFileHeader                 = $ExportFileHeader
-                        ExportFileFilter                 = $ExportFileFilter
-                        AllGroups                        = $AllGroups
-                        AllGroupsIdentityGuidToIndex     = $AllGroupsIdentityGuidToIndex
-                        AllGroupMembers                  = $AllGroupMembers
-                        ExportGuids                      = $ExportGuids
-                        ExportGroupMembersRecurse        = $ExportGroupMembersRecurse
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityGuidToIndex       = $AllRecipientsIdentityGuidToIndex
+                        tempQueue                              = $tempQueue
+                        ExportFile                             = $ExportFile
+                        ExportTrustees                         = $ExportTrustees
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                             = $PSScriptRoot
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        VerbosePreference                      = $VerbosePreference
+                        DebugPreference                        = $DebugPreference
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileFilter                       = $ExportFileFilter
+                        AllGroups                              = $AllGroups
+                        AllGroupsIdentityGuidToIndex           = $AllGroupsIdentityGuidToIndex
+                        AllGroupMembers                        = $AllGroupMembers
+                        ExportGuids                            = $ExportGuids
+                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
@@ -6421,7 +6804,12 @@ try {
                             $ExportFileHeader,
                             $ExportFileFilter,
                             $ExportGuids,
-                            $ExportGroupMembersRecurse
+                            $ExportGroupMembersRecurse,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsSidToIndex,
+                            $AllSecurityPrincipalsObjectguidToIndex,
+                            $AllSecurityPrincipalsDnToIndex,
+                            $AllSecurityPrincipalsUfnToIndex
                         )
 
                         try {
@@ -6488,14 +6876,32 @@ try {
                                                                 if ($Trustee.Identity.ObjectGuid.Guid) {
                                                                     $Trustee.Identity.ObjectGuid.Guid
                                                                 } else {
-                                                                    try {
-                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                        $objNT = $objTrans.GetType()
-                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$Trustee"))
-                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-                                                                    } catch {
-                                                                        ''
+                                                                    $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                    $AllSecurityPrincipalsLookupResult = (
+                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                    ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                    if ($AllSecurityPrincipalsLookupResult) {
+                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                    } else {
+                                                                        try {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # count be an object from a trust
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
                                                                     }
                                                                 }
                                                             )
@@ -6564,26 +6970,31 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        tempQueue                    = $tempQueue
-                        ExportFile                   = $ExportFile
-                        ExportTrustees               = $ExportTrustees
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                   = $PSScriptRoot
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        VerbosePreference            = $VerbosePreference
-                        DebugPreference              = $DebugPreference
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFileFilter             = $ExportFileFilter
-                        AllGroups                    = $AllGroups
-                        AllGroupsIdentityGuidToIndex = $AllGroupsIdentityGuidToIndex
-                        AllGroupMembers              = $AllGroupMembers
-                        ExportGuids                  = $ExportGuids
-                        ExportGroupMembersRecurse    = $ExportGroupMembersRecurse
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        tempQueue                              = $tempQueue
+                        ExportFile                             = $ExportFile
+                        ExportTrustees                         = $ExportTrustees
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                             = $PSScriptRoot
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        VerbosePreference                      = $VerbosePreference
+                        DebugPreference                        = $DebugPreference
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileFilter                       = $ExportFileFilter
+                        AllGroups                              = $AllGroups
+                        AllGroupsIdentityGuidToIndex           = $AllGroupsIdentityGuidToIndex
+                        AllGroupMembers                        = $AllGroupMembers
+                        ExportGuids                            = $ExportGuids
+                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
                     }
                 )
 
