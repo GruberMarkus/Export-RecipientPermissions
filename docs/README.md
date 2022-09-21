@@ -466,6 +466,13 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 	$_.throttlingpolicyid | Get-ThrottlingPolicy
 }
 ```
+
+For ideal results, make sure that all Active Directory servers, Exchange servers and the machine the script is executed on are installed in the same language, ideally in English.  
+Language refers to the system language, not just the language of the graphical user interface (for example, a German language pack on an English system is considered English).  
+If languages are different, well-known accounts and groups may be represented in different languages depending if a job is run locally, against Active Directory or against Exchange.  
+Not all queries return language independent identifiers such as SIDs or GUIDs, so the script can not differentiate here. Neither the script nor Windows itself has a translation table from 'NT AUTHORITY\SELF' to 'NT-AUTORITÄT\SELBST'. An example:
+- Mailbox access rights are queried remotely against an Exchange installed in English language, so 'NT AUTHORITY\SELF' is returned
+- Send As rights on-prem are queried against Active Directory but interpreted locally by a client installed in German language. Even after applying an English language pack, 'NT-AUTORITÄT\SELBST' is returned instead of 'NT AUTHORITY\SELF'.
 # 2. FAQ
 ## 2.1. Which permissions are required?
 Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:

@@ -1172,7 +1172,6 @@ try {
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].distinguishedname) {
             if ($AllRecipientsDnToIndex.ContainsKey($(($AllRecipients[$x]).distinguishedname))) {
-                # Same DN defined multiple times - set index to $null
                 Write-Verbose "    '$(($AllRecipients[$x]).distinguishedname)' is not unique."
                 $AllRecipientsDnToIndex[$(($AllRecipients[$x]).distinguishedname)] = $null
             } else {
@@ -1186,7 +1185,6 @@ try {
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].identity.objectguid.guid) {
             if ($AllRecipientsIdentityGuidToIndex.ContainsKey($(($AllRecipients[$x]).identity.objectguid.guid))) {
-                # Same GUID defined multiple times - set index to $null
                 Write-Verbose "    '$(($AllRecipients[$x]).identity.objectguid.guid)' is not unique."
                 $AllRecipientsIdentityGuidToIndex[$(($AllRecipients[$x]).identity.objectguid.guid)] = $null
             } else {
@@ -1200,7 +1198,6 @@ try {
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if (($AllRecipients[$x].ExchangeGuid.Guid) -and ($AllRecipients[$x].ExchangeGuid.Guid -ine '00000000-0000-0000-0000-000000000000')) {
             if ($AllRecipientsExchangeGuidToIndex.ContainsKey($(($AllRecipients[$x]).ExchangeGuid.Guid))) {
-                # Same GUID defined multiple times - set index to $null
                 Write-Verbose "    '$(($AllRecipients[$x]).ExchangeGuid.Guid)' is not unique."
                 $AllRecipientsExchangeGuidToIndex[$(($AllRecipients[$x]).ExchangeGuid.Guid)] = $null
             } else {
@@ -1215,7 +1212,6 @@ try {
         if ($AllRecipients[$x].EmailAddresses) {
             foreach ($EmailAddress in (@($AllRecipients[$x].EmailAddresses.SmtpAddress | Where-Object { $_ }))) {
                 if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
-                    # Same EmailAddress defined multiple times - set index to $null
                     Write-Verbose "    '$($EmailAddress)' is not unique."
                     $AllRecipientsSmtpToIndex[$EmailAddress] = $null
                 } else {
@@ -1909,12 +1905,9 @@ try {
         $Recipient = $AllRecipients[$x]
         if ($Recipient.userfriendlyname) {
             if ($AllRecipientsUfnToIndex.ContainsKey($($Recipient.userfriendlyname))) {
-                # Same UserFriendlyName defined multiple time - set index to $null
                 if ($AllRecipientsUfnToIndex[$($Recipient.userfriendlyname)]) {
-                    Write-Verbose "    '$($Recipient.userfriendlyname)' used not only once: '$($AllRecipients[$($AllRecipientsUfnToIndex[$($Recipient.userfriendlyname)])].primarysmtpaddress.address)'"
+                    Write-Verbose "    '$($Recipient.userfriendlyname)' is not unique."
                 }
-
-                Write-Verbose "    '$($Recipient.userfriendlyname)' used not only once: '$($Recipient.primarysmtpaddress.address)'"
 
                 $AllRecipientsUfnToIndex[$Recipient.userfriendlyname] = $null
             } else {
@@ -2191,7 +2184,6 @@ try {
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
             if (($AllSecurityPrincipals[$x]).Sid.Value) {
                 if ($AllSecurityPrincipalsSidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Sid.Value)) {
-                    # Same DN defined multiple times - set index to $null
                     Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Sid.Value)' is not unique."
                     $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid.Value)] = $null
                 } else {
@@ -2206,7 +2198,6 @@ try {
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
             if (($AllSecurityPrincipals[$x]).Guid.Guid) {
                 if ($AllSecurityPrincipalsObjectguidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Guid.Guid)) {
-                    # Same DN defined multiple times - set index to $null
                     Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Guid.Guid)' is not unique."
                     $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $null
                 } else {
@@ -2221,7 +2212,6 @@ try {
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
             if (($AllSecurityPrincipals[$x]).DistinguishedName) {
                 if ($AllSecurityPrincipalsDnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).DistinguishedName)) {
-                    # Same DN defined multiple times - set index to $null
                     Write-Verbose "    '$(($AllSecurityPrincipals[$x]).DistinguishedName)' is not unique."
                     $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $null
                 } else {
@@ -2236,7 +2226,6 @@ try {
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
             if (($AllSecurityPrincipals[$x]).UserFriendlyName) {
                 if ($AllSecurityPrincipalsUfnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).UserFriendlyName)) {
-                    # Same DN defined multiple times - set index to $null
                     Write-Verbose "    '$(($AllSecurityPrincipals[$x]).UserFriendlyName)' is not unique."
                     $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $null
                 } else {
@@ -2931,11 +2920,16 @@ try {
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
-                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
                                                                                     } else {
                                                                                         try {
                                                                                             if ($ExportFromOnPrem) {
-                                                                                                # count be an object from a trust
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                                 $objNT = $objTrans.GetType()
                                                                                                 $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -3722,12 +3716,12 @@ try {
                                             $trustee = $null
 
                                             if ($entry.ObjectType -eq 'ab721a54-1e2f-11d0-9819-00aa0040529b') {
-                                                if (($ExportSendAsSelf -eq $false) -and ($entry.identityreference.value -ilike '*\*') -and ((([System.Security.Principal.NTAccount]::new($entry.identityreference)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10')) {
+                                                if (($ExportSendAsSelf -eq $false) -and ($entry.identityreference.value -ilike '*\*') -and ((([System.Security.Principal.NTAccount]::new($entry.identityreference.value)).Translate([System.Security.Principal.SecurityIdentifier])).value -ieq 'S-1-5-10')) {
                                                     continue
                                                 } else {
                                                     try {
                                                         $index = $null
-                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.value)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.tostring())]) | Select-Object -First 1
+                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.value)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.value)]) | Select-Object -First 1
                                                     } catch {
                                                     }
                                                 }
@@ -3783,11 +3777,16 @@ try {
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
-                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
                                                                                 } else {
                                                                                     try {
                                                                                         if ($ExportFromOnPrem) {
-                                                                                            # count be an object from a trust
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                             $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                             $objNT = $objTrans.GetType()
                                                                                             $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -3906,11 +3905,16 @@ try {
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
-                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
                                                                                     } else {
                                                                                         try {
                                                                                             if ($ExportFromOnPrem) {
-                                                                                                # count be an object from a trust
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                                 $objNT = $objTrans.GetType()
                                                                                                 $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -4976,11 +4980,16 @@ try {
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
-                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                } else {
+                                                                                    ''
+                                                                                }
                                                                             } else {
                                                                                 try {
                                                                                     if ($ExportFromOnPrem) {
-                                                                                        # count be an object from a trust
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                         $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                         $objNT = $objTrans.GetType()
                                                                                         $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -6194,11 +6203,16 @@ try {
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
-                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                } else {
+                                                                                    ''
+                                                                                }
                                                                             } else {
                                                                                 try {
                                                                                     if ($ExportFromOnPrem) {
-                                                                                        # count be an object from a trust
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                         $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                         $objNT = $objTrans.GetType()
                                                                                         $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -6554,11 +6568,16 @@ try {
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
-                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                                } else {
+                                                                                    ''
+                                                                                }
                                                                             } else {
                                                                                 try {
                                                                                     if ($ExportFromOnPrem) {
-                                                                                        # count be an object from a trust
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                         $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                         $objNT = $objTrans.GetType()
                                                                                         $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
@@ -6888,11 +6907,16 @@ try {
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                     if ($AllSecurityPrincipalsLookupResult) {
-                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.Value.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                        } else {
+                                                                            ''
+                                                                        }
                                                                     } else {
                                                                         try {
                                                                             if ($ExportFromOnPrem) {
-                                                                                # count be an object from a trust
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
                                                                                 $objTrans = New-Object -ComObject 'NameTranslate'
                                                                                 $objNT = $objTrans.GetType()
                                                                                 $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
