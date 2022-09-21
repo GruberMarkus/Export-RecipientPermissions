@@ -227,7 +227,6 @@ Default: 'None'
 .PARAMETER ExportGroupMembersRecurse
 When disabled, only direct members of groups are exported, and the virtual right 'MemberDirect' is used in the export file.
 When enabled, recursive members of groups are exported, and the virtual right 'MemberRecurse' is used in the export file.
-
 Default: $false
 
 
@@ -347,12 +346,12 @@ Param(
     [boolean]$ExportPublicFolderPermissionsAnonymous = $true,
     [boolean]$ExportPublicFolderPermissionsDefault = $true,
     [string[]]$ExportPublicFolderPermissionsExcludeFoldertype = (''),
-    [boolean]$ExportManagementRoleGroupMembers = $false,
     [boolean]$ExportForwarders = $true,
+    [boolean]$ExportManagementRoleGroupMembers = $false,
     [ValidateSet('None', 'All', 'OnlyTrustees')]$ExportDistributionGroupMembers = 'None',
     [boolean]$ExportGroupMembersRecurse = $false,
-    [boolean]$ExportGuids = $false,
     [boolean]$ExpandGroups = $false,
+    [boolean]$ExportGuids = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
     [string]$ExportFile = '.\export\Export-RecipientPermissions_Result.csv',
