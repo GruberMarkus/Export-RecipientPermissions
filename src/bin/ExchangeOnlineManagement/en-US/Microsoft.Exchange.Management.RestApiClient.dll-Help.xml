@@ -2,388 +2,11 @@
 <helpItems schema="maml" xmlns="http://msh">
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
-      <command:name>Get-CustomNudge</command:name>
-      <command:verb>Get</command:verb>
-      <command:noun>CustomNudge</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Get-CustomNudge cmdlet to view Custom Nudges that are displayed in user Briefing email messages.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>Custom Nudges that are assigned to users appear their Briefing email messages. Users can mark Custom Nudges as complete after they finish the task.</maml:para>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Get-CustomNudge</maml:name>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Name</maml:name>
-          <maml:description>
-            <maml:para>The Name parameter specifies the name of the Custom Nudge that you want to view. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Name</maml:name>
-        <maml:description>
-          <maml:para>The Name parameter specifies the name of the Custom Nudge that you want to view. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Get-CustomNudge | Format-Table Name,Title,From</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns a summary list all Custom Nudges in the organization.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
-        <dev:code>Get-CustomNudge -Name Nudge 01</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns detailed information for the Custom Nudge named Nudge 01.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/get-customnudge</maml:uri>
-      </maml:navigationLink>
-      <maml:navigationLink>
-        <maml:linkText>Configure Briefing email</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/Briefing/be-admin</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Get-CustomNudgeAssignment</command:name>
-      <command:verb>Get</command:verb>
-      <command:noun>CustomNudgeAssignment</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Get-CustomNudgeAssignment to view the assignments of Custom Nudges to users. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Get-CustomNudgeAssignment</maml:name>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AssigneeId</maml:name>
-          <maml:description>
-            <maml:para>The AssigneeId parameter specifies the email address of the user that you want to view.</maml:para>
-            <maml:para>If you use this parameter without the NudgeName parameter, all Custom Nudges that are assigned to the user are returned.</maml:para>
-            <maml:para>If you use this parameter with the NudgeName parameter, the StartDate and EndDate values of the assignment are returned.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>NudgeName</maml:name>
-          <maml:description>
-            <maml:para>The NudgeName parameter filters the assignments by the name of the Custom Nudge. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>If you use this parameter without the AssigneeId parameter, all users who have the Custom Nudge assigned to them are returned.</maml:para>
-            <maml:para>If you use this parameter with the AssigneeId parameter, the StartDate and EndDate values of the assignment are returned.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>AssigneeId</maml:name>
-        <maml:description>
-          <maml:para>The AssigneeId parameter specifies the email address of the user that you want to view.</maml:para>
-          <maml:para>If you use this parameter without the NudgeName parameter, all Custom Nudges that are assigned to the user are returned.</maml:para>
-          <maml:para>If you use this parameter with the NudgeName parameter, the StartDate and EndDate values of the assignment are returned.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>NudgeName</maml:name>
-        <maml:description>
-          <maml:para>The NudgeName parameter filters the assignments by the name of the Custom Nudge. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>If you use this parameter without the AssigneeId parameter, all users who have the Custom Nudge assigned to them are returned.</maml:para>
-          <maml:para>If you use this parameter with the AssigneeId parameter, the StartDate and EndDate values of the assignment are returned.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Get-CustomNudgeAssignment -NudgeName perfReviewNudge</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns all assignments that contain the Custom Nudge named perfReviewNudge.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
-        <dev:code>Get-CustomNudgeAssignment -AssigneeId roy@contoso.onmicrosoft.com</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns all assignments that contain the user roy@contoso.onmicrosoft.com.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>-------------------------- Example 3 --------------------------</maml:title>
-        <dev:code>Get-CustomNudgeAssignment -NudgeName perfReviewNudge -AssigneeId roy@contoso.onmicrosoft.com</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns the StartTime and EndTime values for the assignment of the Custom Nudge named perfReviewNudge to the user roy@contoso.com .</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/get-customnudgeassignment</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Get-CustomNudgeSettings</command:name>
-      <command:verb>Get</command:verb>
-      <command:noun>CustomNudgeSettings</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Get-CustomNudgeSettings cmdlet to view the organization settings for Custom Nudges. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Get-CustomNudgeSettings</maml:name>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters />
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Get-CustomNudgeSettings</dev:code>
-        <dev:remarks>
-          <maml:para>This example returns the Custom Nudge settings for the organization.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>------------------------- -ResultSize -------------------------</maml:title>
-        <dev:code>Type: Unlimited
-Parameter Sets: (All)
-Aliases:
-Applicable: Exchange Online
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False</dev:code>
-        <dev:remarks>
-          <maml:para></maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>----------------------- CommonParameters -----------------------</maml:title>
-        <dev:code></dev:code>
-        <dev:remarks>
-          <maml:para></maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/get-customnudgesettings</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
       <command:name>Get-EXOCasMailbox</command:name>
       <command:verb>Get</command:verb>
       <command:noun>EXOCasMailbox</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOCasMailbox cmdlet to view the Client Access settings that are configured on mailboxes.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -448,7 +71,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -663,7 +286,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -891,7 +514,7 @@ Accept wildcard characters: False</dev:code>
         <maml:description>
           <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
           <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOCasMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exocasmailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
           <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
           <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
         </maml:description>
@@ -1077,7 +700,7 @@ Accept wildcard characters: False</dev:code>
     <command:inputTypes>
       <command:inputType>
         <dev:type>
-          <maml:name> </maml:name>
+          <maml:name>Input types</maml:name>
         </dev:type>
         <maml:description>
           <maml:para>The following Get-CasMailbox parameters are not available or supported in Get-EXOCasMailbox:</maml:para>
@@ -1090,7 +713,7 @@ Accept wildcard characters: False</dev:code>
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name> </maml:name>
+          <maml:name>Output types</maml:name>
         </dev:type>
         <maml:description>
           <maml:para>The following properties are removed by design from Get-EXOCasMailbox output:</maml:para>
@@ -1135,7 +758,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMailbox</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOMailbox cmdlet to view mailbox objects and attributes, populate property pages, or supply mailbox information to other tasks.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -1211,7 +834,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -1486,7 +1109,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -1775,7 +1398,7 @@ Accept wildcard characters: False</dev:code>
         <maml:description>
           <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
           <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXOMailbox property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exomailbox-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
           <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
           <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
         </maml:description>
@@ -2011,7 +1634,7 @@ Accept wildcard characters: False</dev:code>
     <command:inputTypes>
       <command:inputType>
         <dev:type>
-          <maml:name> </maml:name>
+          <maml:name>Input types</maml:name>
         </dev:type>
         <maml:description>
           <maml:para>The following Get-Mailbox parameters aren't available or functional in Get-EXOMailbox:</maml:para>
@@ -2026,7 +1649,7 @@ Accept wildcard characters: False</dev:code>
     <command:returnValues>
       <command:returnValue>
         <dev:type>
-          <maml:name> </maml:name>
+          <maml:name>Output types</maml:name>
         </dev:type>
         <maml:description>
           <maml:para>The following properties aren't included in the output of Get-EXOMailbox:</maml:para>
@@ -2092,7 +1715,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMailboxFolderPermission</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-ExOMailboxFolderPermission cmdlet to view folder-level permissions in mailboxes.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -2286,26 +1909,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -2334,19 +1939,19 @@ Accept wildcard characters: False</dev:code>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Get-MailboxFolderPermission</maml:linkText>
-        <maml:uri></maml:uri>
+        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/get-mailboxfolderpermission</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Set-MailboxFolderPermission</maml:linkText>
-        <maml:uri></maml:uri>
+        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/set-mailboxfolderpermission</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Remove-MailboxFolderPermission</maml:linkText>
-        <maml:uri></maml:uri>
+        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/remove-mailboxfolderpermission</maml:uri>
       </maml:navigationLink>
       <maml:navigationLink>
         <maml:linkText>Add-MailboxFolderPermission</maml:linkText>
-        <maml:uri></maml:uri>
+        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/add-mailboxfolderpermission</maml:uri>
       </maml:navigationLink>
     </command:relatedLinks>
   </command:command>
@@ -2356,7 +1961,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMailboxFolderStatistics</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOMailboxFolderStatistics cmdlet to retrieve information about the folders in a specified mailbox, including the number and size of items in the folder, the folder name and ID, and other information.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -2442,7 +2047,7 @@ Accept wildcard characters: False</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
           <maml:name>Identity</maml:name>
           <maml:description>
             <maml:para>The Identity parameter specifies the identity of the mailbox or mail user. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -2600,7 +2205,7 @@ Accept wildcard characters: False</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
         <maml:name>Identity</maml:name>
         <maml:description>
           <maml:para>The Identity parameter specifies the identity of the mailbox or mail user. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -2684,26 +2289,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -2745,7 +2332,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMailboxPermission</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOMailboxPermission cmdlet to retrieve permissions on a mailbox.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -2783,7 +2370,7 @@ Accept wildcard characters: False</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
           <maml:name>Identity</maml:name>
           <maml:description>
             <maml:para>The Identity parameter specifies the mailbox you want to view. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -2897,7 +2484,7 @@ Accept wildcard characters: False</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
         <maml:name>Identity</maml:name>
         <maml:description>
           <maml:para>The Identity parameter specifies the mailbox you want to view. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -2998,26 +2585,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -3045,7 +2614,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMailboxStatistics</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOMailboxStatistics cmdlet to return information about a mailbox, such as the size of the mailbox, the number of messages it contains, and the last time it was accessed.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -3092,7 +2661,7 @@ Accept wildcard characters: False</dev:code>
           </dev:type>
           <dev:defaultValue>None</dev:defaultValue>
         </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
           <maml:name>Identity</maml:name>
           <maml:description>
             <maml:para>The Identity parameter specifies the mailbox you want to view. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -3243,7 +2812,7 @@ Accept wildcard characters: False</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName)" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
         <maml:name>Identity</maml:name>
         <maml:description>
           <maml:para>The Identity parameter specifies the mailbox you want to view. For the best performance, we recommend using the user ID or user principal name (UPN) to identify the mailbox.</maml:para>
@@ -3359,26 +2928,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -3413,7 +2964,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXOMobileDeviceStatistics</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXOMobileDeviceStatistics cmdlet to retrieve the list of mobile devices configured to synchronize with a specified user's mailbox and return a list of statistics about the mobile devices.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -3560,7 +3111,7 @@ Accept wildcard characters: False</dev:code>
       </command:syntaxItem>
       <command:syntaxItem>
         <maml:name>Get-EXOMobileDeviceStatistics</maml:name>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
           <maml:name>Mailbox</maml:name>
           <maml:description>
             <maml:para>The Mailbox parameter filters the results by the user mailbox that's associated with the mobile device. You can use any value that uniquely identifies the mailbox. For example:</maml:para>
@@ -3673,7 +3224,7 @@ Accept wildcard characters: False</dev:code>
         </dev:type>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="True (ByPropertyName, ByValue)" position="named" aliases="none">
         <maml:name>Mailbox</maml:name>
         <maml:description>
           <maml:para>The Mailbox parameter filters the results by the user mailbox that's associated with the mobile device. You can use any value that uniquely identifies the mailbox. For example:</maml:para>
@@ -3813,26 +3364,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -3843,14 +3376,14 @@ Accept wildcard characters: False</dev:code>
         <maml:title>-------------------------- Example 1 --------------------------</maml:title>
         <dev:code>Get-EXOMobileDeviceStatistics -Mailbox john.doe@contoso.com</dev:code>
         <dev:remarks>
-          <maml:para>Above example fetches the statstics of all devices linked to user with email john.doe@contoso.com</maml:para>
+          <maml:para>This example returns the statistics of all devices linked to user with email john.doe@contoso.com</maml:para>
         </dev:remarks>
       </command:example>
       <command:example>
         <maml:title>-------------------------- Example 2 --------------------------</maml:title>
         <dev:code>Get-EXOMobileDeviceStatistics -Mailbox john.doe@contoso.com -ActiveSync</dev:code>
         <dev:remarks>
-          <maml:para>Above example fetches the statstics for active sync devices linked to user with email john.doe@contoso.com</maml:para>
+          <maml:para>This example returns the statistics for active sync devices linked to user with email john.doe@contoso.com</maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -3867,7 +3400,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXORecipient</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-ExORecipient cmdlet to view existing recipient objects in your organization. This cmdlet returns all mail-enabled objects (for example, mailboxes, mail users, mail contacts, and distribution groups).</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -3921,7 +3454,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -4133,7 +3666,7 @@ Accept wildcard characters: False</dev:code>
           <maml:description>
             <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
             <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+            <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
             <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
             <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
           </maml:description>
@@ -4357,7 +3890,7 @@ Accept wildcard characters: False</dev:code>
         <maml:description>
           <maml:para>The Filter parameter uses OPath syntax to filter the results by the specified properties and values. The search criteria uses the syntax `"Property -ComparisonOperator 'Value'"`.</maml:para>
           <maml:para>- Enclose the whole OPath filter in double quotation marks " ". If the filter contains system values (for example, `$true`, `$false`, or `$null`), use single quotation marks ' ' instead. Although this parameter is a string (not a system block), you can also use braces { }, but only if the filter doesn't contain variables.</maml:para>
-          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values (for example, `500`, `$true`, `$false`, or `$null`).</maml:para>
+          <maml:para>- Property is a filterable property. For more information about the filterable properties, see Get-EXORecipient property sets (https://docs.microsoft.com/powershell/exchange/cmdlet-property-sets#get-exorecipient-property-sets) and [Filterable properties for the Filter parameter](https://docs.microsoft.com/powershell/exchange/filter-properties). - ComparisonOperator is an OPath comparison operator (for example `-eq` for equals and `-like` for string comparison). For more information about comparison operators, see about_Comparison_Operators (https://docs.microsoft.com/powershell/module/microsoft.powershell.core/about/about_comparison_operators). - Value is the property value to search for. Enclose text values and variables in single quotation marks (`'Value'` or `'$Variable'`). If a variable value contains single quotation marks, you need to identify (escape) the single quotation marks to expand the variable correctly. For example, instead of `'$User'`, use `'$($User -Replace "'","''")'`. Don't enclose integers or system values in quotation marks (for example, use `500`, `$true`, `$false`, or `$null` instead).</maml:para>
           <maml:para>You can chain multiple search criteria together using the logical operators `-and` and `-or`. For example, `"Criteria1 -and Criteria2"` or `"(Criteria1 -and Criteria2) -or Criteria3"`.</maml:para>
           <maml:para>For detailed information about OPath filters in Exchange, see Additional OPATH syntax information (https://docs.microsoft.com/powershell/exchange/recipient-filters#additional-opath-syntax-information).</maml:para>
         </maml:description>
@@ -4544,26 +4077,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -4598,7 +4113,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>EXORecipientPermission</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-EXORecipientPermission cmdlet to view information about SendAs permissions that are configured for users in a cloud-based organization.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -4855,26 +4370,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -4902,7 +4399,7 @@ Accept wildcard characters: False</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>MyAnalyticsFeatureConfig</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-MyAnalyticsFeatureConfig cmdlet to view the availability and feature status of MyAnalytics for the specified user. Note : This cmdlet replaces the Get-UserAnalyticsConfig cmdlet.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -4970,26 +4467,8 @@ Accept wildcard characters: False</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -5023,7 +4502,7 @@ IsDigestEmailEnabled : false</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>UserBriefingConfig</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-UserBriefingConfig cmdlet to get the current state of the Briefing email flag for the specified user. For more details about configuring the Briefing email, see Configure Briefing email (https://docs.microsoft.com/Briefing/be-admin).</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -5091,26 +4570,8 @@ IsDigestEmailEnabled : false</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -5142,7 +4603,7 @@ IsDigestEmailEnabled : false</dev:code>
       <command:verb>Get</command:verb>
       <command:noun>VivaInsightsSettings</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : This cmdlet is available only in version 2.0.5-Preview2 or later of the EXO V2 module.</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module). Note : This cmdlet is available only in version 2.0.5 or later of the module.</maml:para>
         <maml:para>Use the Get-VivaInsightsSettings cmdlet to check whether a user has access to features in Microsoft Viva Insights in Microsoft Teams. Only users with provisioned Exchange Online mailboxes can access features within the Viva Insights app in Teams.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -5162,6 +4623,20 @@ IsDigestEmailEnabled : false</dev:code>
           <maml:name>Identity</maml:name>
           <maml:description>
             <maml:para>The Identity parameter specifies the user that you want to view. You identify the user by their User Principal Name (UPN) (for example, roy@contoso.onmicrosoft.com).</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>Feature</maml:name>
+          <maml:description>
+            <maml:para>The Feature parameter filters the results by the specified Microsoft Viva Insights feature. Valid values are:</maml:para>
+            <maml:para>- Headspace: Represents all features of Headspace.</maml:para>
+            <maml:para>- MeetingEffectivenessSurvey: This value is available only in version 2.0.6-Preview2 of the module as part of a Private Preview.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -5198,6 +4673,20 @@ IsDigestEmailEnabled : false</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>Feature</maml:name>
+        <maml:description>
+          <maml:para>The Feature parameter filters the results by the specified Microsoft Viva Insights feature. Valid values are:</maml:para>
+          <maml:para>- Headspace: Represents all features of Headspace.</maml:para>
+          <maml:para>- MeetingEffectivenessSurvey: This value is available only in version 2.0.6-Preview2 of the module as part of a Private Preview.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ResultSize</maml:name>
         <maml:description>
           <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
@@ -5210,26 +4699,8 @@ IsDigestEmailEnabled : false</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -5238,7 +4709,7 @@ IsDigestEmailEnabled : false</dev:code>
     <command:examples>
       <command:example>
         <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>PS C:\&gt; Get-VivaInsightsSettings -Identity roy@contoso.onmicrosoft.com
+        <dev:code>Get-VivaInsightsSettings -Identity roy@contoso.onmicrosoft.com
 
 UserId : roy@contoso.onmicrosoft.com
 IsInsightsHeadspaceEnabled : True</dev:code>
@@ -5256,1188 +4727,11 @@ IsInsightsHeadspaceEnabled : True</dev:code>
   </command:command>
   <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
     <command:details>
-      <command:name>New-CustomNudge</command:name>
-      <command:verb>New</command:verb>
-      <command:noun>CustomNudge</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the New-CustomNudge cmdlet to create Custom Nudges that are displayed in user Briefing email messages.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>Custom Nudges that are assigned to users appear their Briefing email messages. Users can mark these Custom Nudges as complete after they finish the task.</maml:para>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>New-CustomNudge</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Name</maml:name>
-          <maml:description>
-            <maml:para>The Name parameter specifies a unique name for the Custom Nudge. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>This value is not shown to users.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>From</maml:name>
-          <maml:description>
-            <maml:para>The From parameter specifies the creator of the Custom Nudge. The maximum length is 64 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>Typically, this value is the name of the company or department that's responsible for the Custom Nudge.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Title</maml:name>
-          <maml:description>
-            <maml:para>The Title parameter specifies the bold title of the Custom Nudge that's displayed in the Briefing email. The maximum length is 128 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Content</maml:name>
-          <maml:description>
-            <maml:para>The Content parameter specifies the text that appears below the Custom Nudge title in the Briefing email. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>To include hyperlinks, use the markdown format. For example, ` Contoso (https://www.contoso.com)`.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Name</maml:name>
-        <maml:description>
-          <maml:para>The Name parameter specifies a unique name for the Custom Nudge. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>This value is not shown to users.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>From</maml:name>
-        <maml:description>
-          <maml:para>The From parameter specifies the creator of the Custom Nudge. The maximum length is 64 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>Typically, this value is the name of the company or department that's responsible for the Custom Nudge.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Title</maml:name>
-        <maml:description>
-          <maml:para>The Title parameter specifies the bold title of the Custom Nudge that's displayed in the Briefing email. The maximum length is 128 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Content</maml:name>
-        <maml:description>
-          <maml:para>The Content parameter specifies the text that appears below the Custom Nudge title in the Briefing email. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>To include hyperlinks, use the markdown format. For example, ` Contoso (https://www.contoso.com)`.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>New-CustomNudge -Name perfReviewNudge -From "Microsoft HR" -Title "Please complete your performance reviews" -Content "They are very important to help your colleagues grow professionally."</dev:code>
-        <dev:remarks>
-          <maml:para>This example creates a new Custom Nudge that can later be assigned to specific users to show in their Briefing email.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/new-customnudge</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>New-CustomNudgeAssignment</command:name>
-      <command:verb>New</command:verb>
-      <command:noun>CustomNudgeAssignment</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the New-CustomNudgeAssignment cmdlet to assign Custom Nudges to users. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>New-CustomNudgeAssignment</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AssigneeId</maml:name>
-          <maml:description>
-            <maml:para>The AssigneeId parameter specifies the email address of the user that you want to assign the Custom Nudge to.</maml:para>
-            <maml:para>Together, this parameter and the NudgeName parameter create the unique Custom Nudge assignment.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-          <dev:type>
-            <maml:name>Boolean</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>NudgeName</maml:name>
-          <maml:description>
-            <maml:para>The NudgeName parameter specifies the name of the Custom Nudge that you want to assign to the user. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>Together, this parameter and the AssigneeId parameter create the unique Custom Nudge assignment.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>StartTime</maml:name>
-          <maml:description>
-            <maml:para>The StartTime parameter specifies the date when the Custom Nudge is first shown to the user.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>EndTime</maml:name>
-          <maml:description>
-            <maml:para>The EndTime parameter specifies the date when the Custom Nudge is no longer shown to the user.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>AssigneeId</maml:name>
-        <maml:description>
-          <maml:para>The AssigneeId parameter specifies the email address of the user that you want to assign the Custom Nudge to.</maml:para>
-          <maml:para>Together, this parameter and the NudgeName parameter create the unique Custom Nudge assignment.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-        <dev:type>
-          <maml:name>Boolean</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>NudgeName</maml:name>
-        <maml:description>
-          <maml:para>The NudgeName parameter specifies the name of the Custom Nudge that you want to assign to the user. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>Together, this parameter and the AssigneeId parameter create the unique Custom Nudge assignment.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>StartTime</maml:name>
-        <maml:description>
-          <maml:para>The StartTime parameter specifies the date when the Custom Nudge is first shown to the user.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>EndTime</maml:name>
-        <maml:description>
-          <maml:para>The EndTime parameter specifies the date when the Custom Nudge is no longer shown to the user.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>New-CustomNudgeAssignment -NudgeName perfReviewNudge -AssigneeId roy@contoso.onmicrosoft.com -StartTime 2/2/2022 -EndTime 2/10/2022</dev:code>
-        <dev:remarks>
-          <maml:para>This example assigns the Custom Nudge named perfReviewNudge to the user roy@contoso.onmicrosoft.com. If the Custom Nudge feature is enabled in the organization, and the current time is between the StartTime and EndTime values, the user will see the perfReviewNudge Custom Nudge in their next Briefing email message.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/new-customnudgeassignment</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Remove-CustomNudge</command:name>
-      <command:verb>Remove</command:verb>
-      <command:noun>CustomNudge</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Remove-CustomNudge cmdlet to remove Custom Nudges that are displayed in user Briefing email messages.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Remove-CustomNudge</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Name</maml:name>
-          <maml:description>
-            <maml:para>The Name parameter specifies the name of the Custom Nudge that you want to remove. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Name</maml:name>
-        <maml:description>
-          <maml:para>The Name parameter specifies the name of the Custom Nudge that you want to remove. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Remove-CustomNudge -Name perfReviewNudge</dev:code>
-        <dev:remarks>
-          <maml:para>This example removes the existing Custom Nudge named "perfReviewNudge".</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/remove-customnudge</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Remove-CustomNudgeAssignment</command:name>
-      <command:verb>Remove</command:verb>
-      <command:noun>CustomNudgeAssignment</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Remove-CustomNudgeAssignment cmdlet to remove the assignments of Custom Nudges from users. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Remove-CustomNudgeAssignment</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AssigneeId</maml:name>
-          <maml:description>
-            <maml:para>The AssigneeId parameter specifies the email address of the user in the Custom Nudge assignment that you want to remove.</maml:para>
-            <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to remove.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>NudgeName</maml:name>
-          <maml:description>
-            <maml:para>The NudgeName parameter specifies the name of the Custom Nudge in the Custom Nudge assignment that you want to remove. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to remove.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>AssigneeId</maml:name>
-        <maml:description>
-          <maml:para>The AssigneeId parameter specifies the email address of the user in the Custom Nudge assignment that you want to remove.</maml:para>
-          <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to remove.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>NudgeName</maml:name>
-        <maml:description>
-          <maml:para>The NudgeName parameter specifies the name of the Custom Nudge in the Custom Nudge assignment that you want to remove. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to remove.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Remove-CustomNudgeAssignment -NudgeName perfReviewNudge -AssigneeId roy@contoso.onmicrosoft.com</dev:code>
-        <dev:remarks>
-          <maml:para>This example removes the assignment of the Custom Nudge named perfReviewNudge from the user roy@contoso.onmicrosoft.com.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/remove-customnudgeassignment</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Set-CustomNudge</command:name>
-      <command:verb>Set</command:verb>
-      <command:noun>CustomNudge</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Set-CustomNudge cmdlet to modify Custom Nudges that are displayed in user Briefing email messages.</maml:para>
-        <maml:para>For information about the parameter Sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Set-CustomNudge</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Name</maml:name>
-          <maml:description>
-            <maml:para>The Name parameter specifies a unique name for Custom Nudge. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>This value is not shown to users.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Content</maml:name>
-          <maml:description>
-            <maml:para>The Content parameter specifies the text that appears below the Custom Nudge title in the Briefing email. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>To include hyperlinks, use the markdown format. For example, ` Contoso (https://www.contoso.com)`.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>From</maml:name>
-          <maml:description>
-            <maml:para>The From parameter specifies the creator of the Custom Nudge. The maximum length is 64 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-            <maml:para>Typically, this value is the name of the company or department that's responsible for the Custom Nudge.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Title</maml:name>
-          <maml:description>
-            <maml:para>The Title parameter specifies the bold title of the Custom Nudge that's displayed in the Briefing email. The maximum length is 128 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Name</maml:name>
-        <maml:description>
-          <maml:para>The Name parameter specifies a unique name for Custom Nudge. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>This value is not shown to users.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Content</maml:name>
-        <maml:description>
-          <maml:para>The Content parameter specifies the text that appears below the Custom Nudge title in the Briefing email. The maximum length is 512 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>To include hyperlinks, use the markdown format. For example, ` Contoso (https://www.contoso.com)`.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>From</maml:name>
-        <maml:description>
-          <maml:para>The From parameter specifies the creator of the Custom Nudge. The maximum length is 64 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          <maml:para>Typically, this value is the name of the company or department that's responsible for the Custom Nudge.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Title</maml:name>
-        <maml:description>
-          <maml:para>The Title parameter specifies the bold title of the Custom Nudge that's displayed in the Briefing email. The maximum length is 128 characters. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Set-CustomNudge -Name perfReviewNudge -From "Microsoft HR" -Title "Please complete your performance reviews ASAP" -Content "They are very important to help your colleagues grow professionally."</dev:code>
-        <dev:remarks>
-          <maml:para>This example updates an existing Custom Nudge named "perfReviewNudge" with the specified From, Title, and Content values.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/set-customnudge</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Set-CustomNudgeAssignment</command:name>
-      <command:verb>Set</command:verb>
-      <command:noun>CustomNudgeAssignment</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Set-CustomNudgeAssignment cmdlet to modify the date range of Custom Nudge assignments. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Set-CustomNudgeAssignment</maml:name>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>AssigneeId</maml:name>
-          <maml:description>
-            <maml:para>The AssigneeId parameter specifies the email address of the user in the Custom Nudge assignment that you want to modify.</maml:para>
-            <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to modify.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-          <dev:type>
-            <maml:name>Boolean</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>NudgeName</maml:name>
-          <maml:description>
-            <maml:para>The NudgeName parameter specifies the name of the Custom Nudge in the Custom Nudge assignment that you want to modify.</maml:para>
-            <maml:para>Together, this parameter and the NudgeName parameter uniquely identify the Custom Nudge assignment that you want to modify.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>StartTime</maml:name>
-          <maml:description>
-            <maml:para>The StartTime parameter specifies the date when the Custom Nudge is first shown to the user.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>EndTime</maml:name>
-          <maml:description>
-            <maml:para>The EndTime parameter specifies the date when the Custom Nudge is no longer shown to the user.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>AssigneeId</maml:name>
-        <maml:description>
-          <maml:para>The AssigneeId parameter specifies the email address of the user in the Custom Nudge assignment that you want to modify.</maml:para>
-          <maml:para>Together, this parameter and the AssigneeId parameter uniquely identify the Custom Nudge assignment that you want to modify.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-        <dev:type>
-          <maml:name>Boolean</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>NudgeName</maml:name>
-        <maml:description>
-          <maml:para>The NudgeName parameter specifies the name of the Custom Nudge in the Custom Nudge assignment that you want to modify.</maml:para>
-          <maml:para>Together, this parameter and the NudgeName parameter uniquely identify the Custom Nudge assignment that you want to modify.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>StartTime</maml:name>
-        <maml:description>
-          <maml:para>The StartTime parameter specifies the date when the Custom Nudge is first shown to the user.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>EndTime</maml:name>
-        <maml:description>
-          <maml:para>The EndTime parameter specifies the date when the Custom Nudge is no longer shown to the user.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Set-CustomNudgeAssignment -NudgeName perfReviewNudge -AssigneeId roy@contoso.onmicrosoft.com -StartTime 2/9/2022 -EndTime 2/11/2022</dev:code>
-        <dev:remarks>
-          <maml:para>This example updates the existing Custom Nudge assignment for the specified Custom Nudge and user so the user will only see the Custom Nudge in the Briefing email between 2/9/2022 and 2/11/2022</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/set-customnudgeassignment</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
-      <command:name>Set-CustomNudgeSettings</command:name>
-      <command:verb>Set</command:verb>
-      <command:noun>CustomNudgeSettings</command:noun>
-      <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview5 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : The features that are associated with this cmdlet are currently in Preview, are not available in all organizations, and are subject to change. Access to the cmdlet does not guarantee access to the feature.</maml:para>
-        <maml:para>Use the Set-CustomNudgeSettings cmdlet to modify the organization settings for Custom Nudges. Custom Nudges are shown in the Briefing email.</maml:para>
-        <maml:para>For information about the parameter Sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
-      </maml:description>
-    </command:details>
-    <maml:description>
-      <maml:para>This cmdlet requires the .NET Framework 4.7.2 or later. To run this cmdlet, you need to be a member of one of the following roles in Azure Active Directory:</maml:para>
-      <maml:para>- Global Administrator</maml:para>
-      <maml:para>- Exchange Administrator</maml:para>
-      <maml:para>- Insights Administrator</maml:para>
-      <maml:para></maml:para>
-      <maml:para>To learn more about administrator role permissions in Azure Active Directory, see Azure AD built-in roles (https://docs.microsoft.com/azure/active-directory/roles/permissions-reference).</maml:para>
-    </maml:description>
-    <command:syntax>
-      <command:syntaxItem>
-        <maml:name>Set-CustomNudgeSettings</maml:name>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Enabled</maml:name>
-          <maml:description>
-            <maml:para>The Enabled parameter enables or disables Custom Nudges in all Briefing email messages. Valid values are:</maml:para>
-            <maml:para>- $true: Custom Nudges and the Custom Nudge section are available. You create Custom Nudges by using the New-CustomNudge cmdlet. You assign Custom Nudges to users by using the New-CustomNudgeAssignment cmdlet.</maml:para>
-            <maml:para>- $false: Custom Nudges and the Custom Nudge section are not available in Briefing email messages.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-          <dev:type>
-            <maml:name>Boolean</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>Title</maml:name>
-          <maml:description>
-            <maml:para>The Title parameter specifies the title of the Custom Nudge section in the Briefing email. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-          <dev:type>
-            <maml:name>String</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-          <maml:name>ResultSize</maml:name>
-          <maml:description>
-            <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-          </maml:description>
-          <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-          <dev:type>
-            <maml:name>Unlimited</maml:name>
-            <maml:uri />
-          </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
-        </command:parameter>
-      </command:syntaxItem>
-    </command:syntax>
-    <command:parameters>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Enabled</maml:name>
-        <maml:description>
-          <maml:para>The Enabled parameter enables or disables Custom Nudges in all Briefing email messages. Valid values are:</maml:para>
-          <maml:para>- $true: Custom Nudges and the Custom Nudge section are available. You create Custom Nudges by using the New-CustomNudge cmdlet. You assign Custom Nudges to users by using the New-CustomNudgeAssignment cmdlet.</maml:para>
-          <maml:para>- $false: Custom Nudges and the Custom Nudge section are not available in Briefing email messages.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Boolean</command:parameterValue>
-        <dev:type>
-          <maml:name>Boolean</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>Title</maml:name>
-        <maml:description>
-          <maml:para>The Title parameter specifies the title of the Custom Nudge section in the Briefing email. If the value contains spaces, enclose the value in quotation marks (").</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
-        <dev:type>
-          <maml:name>String</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
-        <maml:name>ResultSize</maml:name>
-        <maml:description>
-          <maml:para>This parameter is reserved for internal Microsoft use.</maml:para>
-        </maml:description>
-        <command:parameterValue required="true" variableLength="false">Unlimited</command:parameterValue>
-        <dev:type>
-          <maml:name>Unlimited</maml:name>
-          <maml:uri />
-        </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
-      </command:parameter>
-    </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
-    <maml:alertSet>
-      <maml:alert>
-        <maml:para></maml:para>
-      </maml:alert>
-    </maml:alertSet>
-    <command:examples>
-      <command:example>
-        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
-        <dev:code>Set-CustomNudgeSettings -Enabled $true -Title "Contoso HR"</dev:code>
-        <dev:remarks>
-          <maml:para>This example turns on the Custom Nudge section and Custom Nudges in all Briefing email messages. The name of the Custom Nudge section is Contoso HR.</maml:para>
-        </dev:remarks>
-      </command:example>
-      <command:example>
-        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
-        <dev:code>Set-CustomNudgeSettings -Enabled $false</dev:code>
-        <dev:remarks>
-          <maml:para>This example turns off the Custom Nudge section and Custom Nudges in all Briefing email messages.</maml:para>
-        </dev:remarks>
-      </command:example>
-    </command:examples>
-    <command:relatedLinks>
-      <maml:navigationLink>
-        <maml:linkText>Online Version:</maml:linkText>
-        <maml:uri>https://docs.microsoft.com/powershell/module/exchange/set-customnudgesettings</maml:uri>
-      </maml:navigationLink>
-    </command:relatedLinks>
-  </command:command>
-  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
-    <command:details>
       <command:name>Set-MyAnalyticsFeatureConfig</command:name>
       <command:verb>Set</command:verb>
       <command:noun>MyAnalyticsFeatureConfig</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Set-MyAnalyticsFeatureConfig cmdlet to configure the availability and features of MyAnalytics for the specified user. Note : This cmdlet replaces the Set-UserAnalyticsConfig cmdlet.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -6605,26 +4899,8 @@ IsInsightsHeadspaceEnabled : True</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -6666,7 +4942,7 @@ IsInsightsHeadspaceEnabled : True</dev:code>
       <command:verb>Set</command:verb>
       <command:noun>UserBriefingConfig</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Set-UserBriefingConfig cmdlet to enable or disable the Briefing email for a user. For more details about configuring the Briefing email, see Configure Briefing email (https://docs.microsoft.com/Briefing/be-admin).</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -6762,26 +5038,8 @@ IsInsightsHeadspaceEnabled : True</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>
@@ -6813,7 +5071,7 @@ IsInsightsHeadspaceEnabled : True</dev:code>
       <command:verb>Set</command:verb>
       <command:noun>VivaInsightsSettings</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2). Note : This cmdlet is available only in version 2.0.5-Preview2 or later of the EXO V2 module.</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module). Note : This cmdlet is available only in version 2.0.5 or later of the module.</maml:para>
         <maml:para>Use the Set-VivaInsightsSettings cmdlet to control user access to features in Viva Insights. Only users with provisioned Exchange Online mailboxes can access features within the Viva Insights app in Teams.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
@@ -6858,8 +5116,9 @@ IsInsightsHeadspaceEnabled : True</dev:code>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Feature</maml:name>
           <maml:description>
-            <maml:para>The Feature parameter specifies feature of Microsoft Viva Insights in Microsoft Teams for the user. Current valid values are:</maml:para>
-            <maml:para>- headspace: Represents all features of Headspace.</maml:para>
+            <maml:para>The Feature parameter specifies the feature of Microsoft Viva Insights in Microsoft Teams for the user. Valid values are:</maml:para>
+            <maml:para>- Headspace: Represents all features of Headspace.</maml:para>
+            <maml:para>- MeetingEffectivenessSurvey: This value is available only in version 2.0.6-Preview2 of the module as part of a Private Preview.</maml:para>
           </maml:description>
           <command:parameterValueGroup>
             <command:parameterValue required="false" command:variableLength="false">headspace</command:parameterValue>
@@ -6915,8 +5174,9 @@ IsInsightsHeadspaceEnabled : True</dev:code>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Feature</maml:name>
         <maml:description>
-          <maml:para>The Feature parameter specifies feature of Microsoft Viva Insights in Microsoft Teams for the user. Current valid values are:</maml:para>
-          <maml:para>- headspace: Represents all features of Headspace.</maml:para>
+          <maml:para>The Feature parameter specifies the feature of Microsoft Viva Insights in Microsoft Teams for the user. Valid values are:</maml:para>
+          <maml:para>- Headspace: Represents all features of Headspace.</maml:para>
+          <maml:para>- MeetingEffectivenessSurvey: This value is available only in version 2.0.6-Preview2 of the module as part of a Private Preview.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -6938,26 +5198,8 @@ IsInsightsHeadspaceEnabled : True</dev:code>
         <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
     </command:parameters>
-    <command:inputTypes>
-      <command:inputType>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:inputType>
-    </command:inputTypes>
-    <command:returnValues>
-      <command:returnValue>
-        <dev:type>
-          <maml:name> </maml:name>
-        </dev:type>
-        <maml:description>
-          <maml:para></maml:para>
-        </maml:description>
-      </command:returnValue>
-    </command:returnValues>
+    <command:inputTypes />
+    <command:returnValues />
     <maml:alertSet>
       <maml:alert>
         <maml:para></maml:para>

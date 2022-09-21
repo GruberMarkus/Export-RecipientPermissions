@@ -1,6 +1,5 @@
 <!-- omit in toc -->
-# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank">Export-RecipientPermissions</a>**<br>Document, filter and compare Exchange permissions: Mailbox Access Rights, Mailbox Folder permissions, Public Folder permissions, Send As, Send On Behalf, Managed By, Linked Master Accounts, Forwarders, Group members, Management Role Group members
-<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+# **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a><br><a href="https://github.com/sponsors/GruberMarkus" target="_blank"><img src="https://img.shields.io/badge/sponsor-white?logo=githubsponsors" alt=""></a> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/views.svg" alt="" data-external="1"> <img src="https://raw.githubusercontent.com/GruberMarkus/my-traffic2badge/traffic/traffic-Export-RecipientPermissions/clones.svg" alt="" data-external="1"> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/downloads/GruberMarkus/Export-RecipientPermissions/total" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/network/members" target="_blank"><img src="https://img.shields.io/github/forks/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
 
 # Features <!-- omit in toc -->
 Document, filter and compare Exchange permissions:
@@ -54,12 +53,15 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.29. ExportManagementRoleGroupMembers](#1229-exportmanagementrolegroupmembers)
     - [1.2.30. ExportForwarders](#1230-exportforwarders)
     - [1.2.31. ExportDistributionGroupMembers](#1231-exportdistributiongroupmembers)
-    - [1.2.32. ExpandGroups](#1232-expandgroups)
-    - [1.2.33. ExportTrustees](#1233-exporttrustees)
-    - [1.2.34. ExportFile](#1234-exportfile)
-    - [1.2.35. ErrorFile](#1235-errorfile)
-    - [1.2.36. DebugFile](#1236-debugfile)
-    - [1.2.37. UpdateInverval](#1237-updateinverval)
+    - [1.2.32. ExportGroupMembersRecurse](#1232-exportgroupmembersrecurse)
+    - [1.2.33. ExportGuids](#1233-exportguids)
+    - [1.2.34. ExpandGroups](#1234-expandgroups)
+    - [1.2.35. ExportGrantorsWithNoPermissions](#1235-exportgrantorswithnopermissions)
+    - [1.2.36. ExportTrustees](#1236-exporttrustees)
+    - [1.2.37. ExportFile](#1237-exportfile)
+    - [1.2.38. ErrorFile](#1238-errorfile)
+    - [1.2.39. DebugFile](#1239-debugfile)
+    - [1.2.40. UpdateInverval](#1240-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -71,6 +73,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.6. A permission is reported, but the trustee details (primary SMTP address etc.) are empty](#26-a-permission-is-reported-but-the-trustee-details-primary-smtp-address-etc-are-empty)
   - [2.7. Isn't a plural noun in the script name against PowerShell best practices?](#27-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
   - [2.8. Is there a roadmap for future versions?](#28-is-there-a-roadmap-for-future-versions)
+  - [2.9. Is there a GUI available?](#29-is-there-a-gui-available)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -102,7 +105,7 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
   - All folder names start with '/', '/' representing the root folder
 - Permission: The permission granted/received (e.g., FullAccess, SendAs, SendOnBehalf etc.)
   - When public folder permissions are exported and a folder is mail-enabled, a "virtual" right 'MailEnabled' is exported
-  - When management role group members are exported, a "virtual" right 'MemberRecurse' is exported
+  - When management role group members are exported, a "virtual" right 'MemberRecurse' or 'MemberDirect' is exported
   - When forwarders are exported, one or more of the following "virtual" rights are exported:
     - Forward_ExternalEmailAddress_ForwardOnly
     - Forward_ForwardingAddress_DeliverAndForward
@@ -113,7 +116,7 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Inherited: Shows if the permission is inherited or not.
 - InheritanceType: Shows if the permission is also valid for child objects, and if yes, which child objects.
 - Trustee Original Identity: The original identity string of the trustee.
-  - When 'ExpandGroups' is enabled, this column contains the original identity string of the original trustee groups, extended with the string '     [MemberRecurse] ' and the original identity of the resolved group member
+  - When 'ExpandGroups' is enabled, this column contains the original identity string of the original trustee groups, extended with the string '     [MemberRecurse] ' or '     [MemberDirect] ' and the original identity of the resolved group member
 - Trustee Primary SMTP: The primary SMTP address of the object receiving a permission.
   - When 'ExpandGroups' is enabled, the primary SMTP address comes from the resolved group member
 - Trustee Display Name: The display name of the trustee.
@@ -163,31 +166,28 @@ Properties that are always included: 'Identity', 'DistinguishedName', 'Recipient
 ### 1.2.7. GrantorFilter
 Only check grantors where the filter criteria matches $true.
 
-The variable $Grantor has all attributes defined by '`RecipientProperties`. For example:
+The variable $Grantor has all attributes defined by '`RecipientProperties`'. For example:
 - .DistinguishedName
-- .RecipientType, .RecipientTypeDetails
+- .RecipientType.Value, .RecipientTypeDetails.Value
 - .DisplayName
 - .PrimarySmtpAddress: .Local, .Domain, .Address
-- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString
-  - This attribute is an array. Code example:
+- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString  
+  This attribute is an array. Code example:
     ```
-    $GrantorFilter = "foreach (`$XXXSingleSmtpAddressXXX in `$Grantor.EmailAddresses.SmtpAddress) { if (`$XXXSingleSmtpAddressXXX -iin @(
-                      'addressA@example.com’,
-                      'addressB@example.com’
-      )) { `$true; break } }"
+    $GrantorFilter = "if ((`$Grantor.EmailAddresses.SmtpAddress -ilike 'AddressA@example.com') -or (`$Grantor.EmailAddresses.SmtpAddress -ilike 'Test*@example.com')) { `$true } else { `$false }"
     ```
-- .UserFriendlyName: User account holding the mailbox in the `"<NetBIOS domain name>\<sAMAccountName>"` format
+- .UserFriendlyName: User account holding the mailbox in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 - .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
-  - This attribute is an array. Code example:
+    This attribute is an array. Code example:
     ```
     $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
-                          'example.com/OU1/OU2/ObjectA’,
-                          'example.com/OU3/OU4/ObjectB’,
-      )) { `$true; break } }"
+                        'example.com/OU1/OU2/ObjectA',
+                        'example.com/OU3/OU4/ObjectB',
+    )) { `$true; break } }"
     ```
-- On-prem only:
-  - .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
-  - .LinkedMasterAccount: Linked Master Account in the "<NetBIOS domain name>\<sAMAccountName>" format
+  On-prem only:
+    .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
+    .LinkedMasterAccount: Linked Master Account in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 
 Set to \$null or '' to define all recipients as grantors to consider
 
@@ -200,7 +200,7 @@ Default: $null
 ### 1.2.8. TrusteeFilter
 Only report trustees where the filter criteria matches $true.
 
-If the trustee matches a recipient, the available attributes are the same as für GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
+If the trustee matches a recipient, the available attributes are the same as for GrantorFilter, only the reference variable is $Trustee instead of $Grantor.
 
 If the trustee does not match a recipient (because it no longer exists, for exampe), $Trustee is just a string. In this case, the export shows the following:
 - Column "Trustee Original Identity" contains the trustee description string as reported by Exchange
@@ -220,6 +220,8 @@ This filter works against every single row of the results found. ExportFile will
 The $ExportFileLine contains an object with the header names from $ExportFile as string properties:
 - 'Grantor Primary SMTP'
 - 'Grantor Display Name'
+- 'Grantor Exchange GUID' (only when '`ExportGuids`' is enabled)
+- 'Grantor AD ObjectGUID' (only when '`ExportGuids`' is enabled)
 - 'Grantor Recipient Type'
 - 'Grantor Environment'
 - 'Folder'
@@ -230,6 +232,8 @@ The $ExportFileLine contains an object with the header names from $ExportFile as
 - 'Trustee Original Identity'
 - 'Trustee Primary SMTP'
 - 'Trustee Display Name'
+- 'Trustee Exchange GUID' (only when '`ExportGuids`' is enabled)
+- 'Trustee AD ObjectGUID' (only when '`ExportGuids`' is enabled)
 - 'Trustee Recipient Type'
 - 'Trustee Environment'
 
@@ -324,7 +328,9 @@ Default: $true
 ### 1.2.29. ExportManagementRoleGroupMembers
 Export members of management role groups
 
-GrantorFilter does not apply to the export of management role groups, but TrusteeFilter does
+The virtual right 'MemberRecurse' or 'MemberDirect' is used in the export file
+
+GrantorFilter does not apply to the export of management role groups, but TrusteeFilter and ExportFileFilter do
 
 Default: $true
 ### 1.2.30. ExportForwarders
@@ -357,23 +363,29 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 
 Default: $true
 ### 1.2.31. ExportDistributionGroupMembers
-Export recursive distribution group members, including nested groups and dynamic groups
+Export distribution group members, including nested groups and dynamic groups
 
-This is useful to document overall distributiong group membership
-
-This may drastically increase script run time and file size
-
-The virtual Right 'MemberRecurse' is used in the export file
-
-The parameter ExpandGroups can be used independently: ExpandGroups lists all members of a group every time a group is used as a trustee, ExportDistributionGroupMembers only lists the members of each group only once
+The parameter ExpandGroups can be used independently:
+  ExpandGroups acts when a group is used as trustee: It adds every recurse member of the group as a separate trustee entry
+  ExportDistributionGroupMembers exports the distribution group as grantor, which the recurse members as trustees
 
 Valid values: 'None', 'All', 'OnlyTrustees'
   'None': Distribution group members are not exported Parameter ExpandGroups can still be used.
   'All': Members of all distribution groups are exported, parameter GrantorFilter is considerd
   'OnlyTrustees': Only export members of those distribution groups that are used as trustees, even when they are excluded via GrantorFilter
 
-Default: 'OnlyTrustees'
-### 1.2.32. ExpandGroups
+Default: 'None'
+### 1.2.32. ExportGroupMembersRecurse
+When disabled, only direct members of groups are exported, and the virtual right 'MemberDirect' is used in the export file.
+
+When enabled, recursive members of groups are exported, and the virtual right 'MemberRecurse' is used in the export file.
+
+Default: $false
+### 1.2.33. ExportGuids
+When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
+
+Default: $false
+### 1.2.34. ExpandGroups
 Expand groups to their recursive members, including nested groups and dynamic groups
 
 This is useful in cases where users are sent permission reports, as not only permission changes but also changes in the underlying trustee groups are documented and directly associated with a grantor-permission-trustee triplet.  
@@ -386,14 +398,25 @@ The original permission is still documented, with one additional line for each m
   ```
        [MemberRecurse] 
   ```
-  The whitespace consists of five space characters in front of 'MemberRecurse' for sorting reasons, and one space at the end. Then the original identity string of the resolved group member is added.
+  or
+  ```
+       [MemberDirect] 
+  ```
+  The whitespace consists of five space characters in front of 'MemberRecurse'/'MemberDirect' for sorting reasons, and one space at the end. Then the original identity string of the resolved group member is added.
   The other trustee properties are the ones of the member
 
 TrusteeFilter is applied to trustee groups as well as to their finally expanded individual members
 - Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
 
 Default value: $false
-### 1.2.33. ExportTrustees
+### 1.2.35. ExportGrantorsWithNoPermissions
+Per default, Export-RecipientPermissions only exports grantors which have set at least one permission for at least one trustee.
+If all grantors should be exported, set this parameter to $true.
+
+If enabled, a grantor that that not grant any permission is included in the list with the following columns: "Grantor Primary SMTP", "Grantor Display Name", "Grantor Recipient Type", "Grantor Environment". The other columns for this recipient are empty.
+
+Default value: $false
+### 1.2.36. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -401,23 +424,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.34. ExportFile
+### 1.2.37. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.35. ErrorFile
+### 1.2.38. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.36. DebugFile
+### 1.2.39. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.37. UpdateInverval
+### 1.2.40. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
@@ -443,6 +466,13 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 	$_.throttlingpolicyid | Get-ThrottlingPolicy
 }
 ```
+
+For ideal results, make sure that all Active Directory servers, Exchange servers and the machine the script is executed on are installed in the same language, ideally in English.  
+Language refers to the system language, not just the language of the graphical user interface (for example, a German language pack on an English system is considered English).  
+If languages are different, well-known accounts and groups may be represented in different languages depending if a job is run locally, against Active Directory or against Exchange.  
+Not all queries return language independent identifiers such as SIDs or GUIDs, so the script can not differentiate here. Neither the script nor Windows itself has a translation table from 'NT AUTHORITY\SELF' to 'NT-AUTORITÄT\SELBST'. An example:
+- Mailbox access rights are queried remotely against an Exchange installed in English language, so 'NT AUTHORITY\SELF' is returned
+- Send As rights on-prem are queried against Active Directory but interpreted locally by a client installed in German language. Even after applying an English language pack, 'NT-AUTORITÄT\SELBST' is returned instead of 'NT AUTHORITY\SELF'.
 # 2. FAQ
 ## 2.1. Which permissions are required?
 Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
@@ -578,6 +608,13 @@ I intentionally decided not to follow the singular noun convention, as another l
 There is no binding roadmap for future versions, although I maintain a list of ideas in the 'Contribution opportunities' chapter of '.\docs\CONTRIBUTING.html'.
 
 Fixing issues has priority over new features, of course.
+## 2.9. Is there a GUI available?
+There is no dedicated graphical user interface.
+
+A basic GUI for configuring the script is accessible via the following built-in PowerShell command:
+```
+Show-Command .\Export-RecipientPermissions.ps1
+```
 # 3. Sample code
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
