@@ -6,13 +6,13 @@
       <command:verb>Get</command:verb>
       <command:noun>ConnectionInformation</command:noun>
       <maml:description>
-        <maml:para>This cmdlet is available only in the Exchange Online PowerShell V2 module v2.0.6-Preview7 or later. For more information, see About the Exchange Online PowerShell V2 module (https://docs.microsoft.com/powershell/exchange/exchange-online-powershell-v2).</maml:para>
+        <maml:para>This cmdlet is available only in the Exchange Online PowerShell module v2.0.6-Preview7 or later. For more information, see About the Exchange Online PowerShell module (https://aka.ms/exov3-module).</maml:para>
         <maml:para>Use the Get-ConnectionInformation cmdlet to get information about all REST-based connections in the current PowerShell instance with Exchange Online.</maml:para>
         <maml:para>For information about the parameter sets in the Syntax section below, see Exchange cmdlet syntax (https://docs.microsoft.com/powershell/exchange/exchange-cmdlet-syntax).</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>The Get-ConnectionInformation cmdlet returns the information about all active REST-based connections with Exchange Online in the current PowerShell instance. This cmdlet is the counterpart to Get-PSSession used with Remote PowerShell Sessions. This cmdlet is available only in version 2.0.6-Preview7 or later.</maml:para>
+      <maml:para>The Get-ConnectionInformation cmdlet returns the information about all active REST-based connections with Exchange Online in the current PowerShell instance. This cmdlet is equivalent to the Get-PSSession cmdlet that's used with remote PowerShell sessions.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
