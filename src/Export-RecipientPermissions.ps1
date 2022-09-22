@@ -570,7 +570,7 @@ $FilterGetMember = {
             if (($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].UserFriendlyName)) {
                 "NotARecipient:$($AllRecipients[$AllRecipientsIndex].UserFriendlyName)"
             } elseif (($AllGroupsIndex -ge 0) -and (($AllGroups[$AllGroupsIndex].DisplayName) -or ($AllGroups[$AllGroupsIndex].Name) -or ($AllGroups[$AllGroupsIndex].DistinguishedName))) {
-                "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName)) | Where-Object { $_ } | Select-Object -First 1)"
+                "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName), '') | Where-Object { $_ } | Select-Object -First 1)"
             } else {
                 "NotARecipient:$($GroupToCheck)"
             }
@@ -2043,10 +2043,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-SecurityPrincipal -Filter $args[0] -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -2322,10 +2322,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name) | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Group -Filter $args[0] -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails } -ArgumentList $filter -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -2862,7 +2862,7 @@ try {
                                             try {
                                                 $index = $null
                                                 if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
-                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)]) | Select-Object -First 1
+                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee), '']) | Select-Object -First 1
                                                 }
                                             } catch {
                                             }
@@ -2915,7 +2915,8 @@ try {
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        ''
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -3720,7 +3721,7 @@ try {
                                                 } else {
                                                     try {
                                                         $index = $null
-                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.value)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.value)]) | Select-Object -First 1
+                                                        $index = ($AllRecipientsUfnToIndex[$($entry.identityreference.value)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.identityreference.value)], '') | Select-Object -First 1
                                                     } catch {
                                                     }
                                                 }
@@ -3772,7 +3773,8 @@ try {
                                                                                     $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    ''
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
@@ -3841,7 +3843,7 @@ try {
                                                 } elseif ($entry.trustee -ilike '*\*') {
                                                     try {
                                                         $index = $null
-                                                        $index = ($AllRecipientsUfnToIndex[$($entry.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.trustee)]) | Select-Object -First 1
+                                                        $index = ($AllRecipientsUfnToIndex[$($entry.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.trustee)], '') | Select-Object -First 1
                                                     } catch {
                                                     }
                                                 } elseif ($entry.trustee -ilike '*@*') {
@@ -3900,7 +3902,8 @@ try {
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        ''
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -4614,7 +4617,7 @@ try {
                                         if ($index -ge 0) {
                                             $trustees.add($AllRecipients[$index])
                                         } else {
-                                            $trustees.add((($TrusteeRight.distinguishedname, $TrusteeRight.identity.objectguid.guid) | Select-Object -First 1))
+                                            $trustees.add((($TrusteeRight.distinguishedname, $TrusteeRight.identity.objectguid.guid, '') | Select-Object -First 1))
                                         }
 
                                         foreach ($Trustee in $Trustees) {
@@ -4975,7 +4978,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                ''
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -6133,7 +6137,7 @@ try {
                                 $RoleGroupMembers = @($AllGroupMembers[$RoleGroup.Guid.Guid])
 
                                 $GrantorPrimarySMTP = 'Management Role Group'
-                                $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name) | Where-Object { $_ } | Select-Object -First 1)
+                                $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, '') | Where-Object { $_ } | Select-Object -First 1)
                                 $GrantorRecipientType = 'RoleGroup'
 
                                 if ($ExportFromOnPrem) {
@@ -6198,7 +6202,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                ''
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -6563,7 +6568,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                ''
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -6884,9 +6890,9 @@ try {
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress.address)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress.address))) {
                                                         if ($ExportGroupMembersRecurse) {
-                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
+                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberRecurse] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString(), '') | Select-Object -First 1)"
                                                         } else {
-                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberDirect] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString()) | Select-Object -First 1)"
+                                                            $ExportFileLineExpanded.'Trustee Original Identity' = "$($ExportFileLineExpanded.'Trustee Original Identity')     [MemberDirect] $(($Trustee.PrimarySmtpAddress.Address, $Trustee.ToString(), '') | Select-Object -First 1)"
                                                         }
                                                         $ExportFileLineExpanded.'Trustee Primary SMTP' = $Trustee.PrimarySmtpAddress.Address
                                                         $ExportFileLineExpanded.'Trustee Display Name' = $Trustee.DisplayName
@@ -6902,7 +6908,8 @@ try {
                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        ''
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -7723,7 +7730,7 @@ try {
                                             $RoleGroup = $AllGroups[$AllGroupsId]
 
                                             $GrantorPrimarySMTP = 'Management Role Group'
-                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name) | Select-Object -First 1)
+                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, '') | Where-Object { $_ } | Select-Object -First 1)
                                             $GrantorRecipientType = 'RoleGroup'
 
                                             if ($ExportFromOnPrem) {
@@ -7760,7 +7767,7 @@ try {
                                                     ('"' + (@((
                                                                 $GrantorPrimarySMTP,
                                                                 $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                $GrantorRecipientType,
                                                                 $GrantorEnvironment,
                                                                 '',
                                                                 '',
