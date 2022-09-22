@@ -2486,7 +2486,7 @@ try {
             if (
                     ($ExportManagementRoleGroupMembers -and ($AllGroups[$x].RecipientTypeDetails.value -ieq 'RoleGroup')) -or
                     (($ExportDistributionGroupMembers -ieq 'All') -and ($index -ge 0) -and ($index -iin $GrantorsToConsider)) -or
-                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'TrusteesOnly')) -and ($index -ge 0) -and ($AllRecipients[$index].IsTrustee -eq $true))
+                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($index -ge 0) -and ($AllRecipients[$index].IsTrustee -eq $true))
             ) {
                 $AllGroupMembers.Add($AllGroups[$x].Guid.Guid, @())
             }
@@ -2500,7 +2500,7 @@ try {
 
             if (
                     (($ExportDistributionGroupMembers -ieq 'All') -and ($index -iin $GrantorsToConsider)) -or
-                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'TrusteesOnly')) -and ($AllRecipients[$index].IsTrustee -eq $true))
+                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($AllRecipients[$index].IsTrustee -eq $true))
             ) {
                 $AllGroupMembers.Add($AllRecipients[$index].Identity.ObjectGuid.Guid, @())
             }
