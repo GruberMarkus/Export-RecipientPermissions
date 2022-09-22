@@ -15,6 +15,11 @@
   ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.1" target="_blank">v2.2.1</a> - YYYY-MM-DD
+### Fixed
+- When ExportGrantorsWithNoPermissions is enabled and ExportGuids is disabled, empty management role groups were exported with no name and a trailing slash in the recipient type field
+- Some major tasks did not show a timestamp, but rather the PowerShell code generating the timestamp
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.0" target="_blank">v2.2.0</a> - 2022-09-21
 ### Changed
 - Updated '`README`' to correctly document value names (.RecipientType.Value, .RecipientTypeDetails.Value) (<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues/14" target="_blank">#14</a>) (Thanks <a href="https://github.com/snurbnacnud" target="_blank">@snurbnacnud</a>!)
