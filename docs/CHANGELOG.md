@@ -15,11 +15,12 @@
   ### Fixed
 -->
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.1" target="_blank">v2.2.1</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.1" target="_blank">v2.2.1</a> - 2022-09-27
 ### Fixed
 - When ExportGrantorsWithNoPermissions is enabled and ExportGuids is disabled, empty management role groups were exported with no name and a trailing slash in the recipient type field
 - Some major tasks did not show a timestamp, but rather the PowerShell code generating the timestamp
 - ExpandGroups did not work for groups which were not part of the grantor filter
+- Mailbox access rights now correctly show data for trustees identified via linked master account
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.0" target="_blank">v2.2.0</a> - 2022-09-21
 ### Changed

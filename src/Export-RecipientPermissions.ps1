@@ -2600,7 +2600,7 @@ try {
                                             try {
                                                 $index = $null
                                                 if ($TrusteeRight.user.SecurityIdentifier -ine 'S-1-5-10') {
-                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee), '']) | Select-Object -First 1
+                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
                                                 }
                                             } catch {
                                             }
