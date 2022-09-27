@@ -2459,268 +2459,6 @@ try {
     }
 
 
-    # Calculate group membership
-    Write-Host
-    Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-    if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ine 'None')) {
-        Write-Host '  Create lookup hashtables'
-        Write-Host '    GroupIdentityGuid to group index'
-        $AllGroupsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
-
-        for ($x = 0; $x -lt $AllGroups.Count; $x++) {
-            $AllGroupsIdentityGuidToIndex.Add($AllGroups[$x].Guid.Guid, $x)
-        }
-
-        Write-Host '    GroupIdentityGuid to recursive members'
-        $AllGroupMembers = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
-
-        # Normal distribution groups and management role groups
-        for ($x = 0; $x -lt $AllGroups.count; $x++) {
-            try {
-                $index = $AllRecipientsIdentityGuidToIndex[$AllGroups[$x].Guid.Guid]
-            } catch {
-                $index = $null
-            }
-
-            if (
-                    ($ExportManagementRoleGroupMembers -and ($AllGroups[$x].RecipientTypeDetails.value -ieq 'RoleGroup')) -or
-                    (($ExportDistributionGroupMembers -ieq 'All') -and ($index -ge 0) -and ($index -iin $GrantorsToConsider)) -or
-                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($index -ge 0) -and ($AllRecipients[$index].IsTrustee -eq $true))
-            ) {
-                $AllGroupMembers.Add($AllGroups[$x].Guid.Guid, @())
-            }
-        }
-
-        # Dynamic distribution groups
-        for ($index = 0; $index -lt $AllRecipients.count; $index++) {
-            if ($AllRecipients[$index].RecipientTypeDetails.Value -ine 'DynamicDistributionGroup') {
-                continue
-            }
-
-            if (
-                    (($ExportDistributionGroupMembers -ieq 'All') -and ($index -iin $GrantorsToConsider)) -or
-                    ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($AllRecipients[$index].IsTrustee -eq $true))
-            ) {
-                $AllGroupMembers.Add($AllRecipients[$index].Identity.ObjectGuid.Guid, @())
-            }
-        }
-
-        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
-
-        foreach ($Enumerator in $AllGroupMembers.GetEnumerator()) {
-            $tempQueue.enqueue($Enumerator.Name)
-        }
-
-        $tempQueueCount = $tempQueue.count
-
-        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
-
-        if ($ExportGroupMembersRecurse) {
-            Write-Host '  Calculate recursive group membership'
-        } else {
-            Write-Host '  Calculate direct group membership'
-        }
-
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
-
-        if ($ParallelJobsNeeded -ge 1) {
-            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
-            $RunspacePool.Open()
-
-            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
-
-            1..$ParallelJobsNeeded | ForEach-Object {
-                $Powershell = [powershell]::Create()
-                $Powershell.RunspacePool = $RunspacePool
-
-                [void]$Powershell.AddScript(
-                    {
-                        param(
-                            $AllRecipients,
-                            $AllGroups,
-                            $AllRecipientsIdentityGuidToIndex,
-                            $AllGroupsIdentityGuidToIndex,
-                            $AllGroupMembers,
-                            $tempConnectionUriQueue,
-                            $tempQueue,
-                            $ErrorFile,
-                            $DebugFile,
-                            $ExportFromOnPrem,
-                            $ConnectExchange,
-                            $ExchangeOnlineConnectionParameters,
-                            $ExchangeCredential,
-                            $UseDefaultCredential,
-                            $ScriptPath,
-                            $VerbosePreference,
-                            $DebugPreference,
-                            $UTF8Encoding,
-                            $FilterGetMember,
-                            $ExportGroupMembersRecurse
-                        )
-
-                        try {
-                            $DebugPreference = 'Continue'
-
-                            Set-Location $ScriptPath
-
-                            if ($DebugFile) {
-                                $null = Start-Transcript -LiteralPath $DebugFile -Force
-                            }
-
-                            Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-                            . ([scriptblock]::Create($ConnectExchange))
-
-                            . ([scriptblock]::Create($FilterGetMember))
-
-                            while ($tempQueue.count -gt 0) {
-                                try {
-                                    $GroupIdentityGuid = $tempQueue.dequeue()
-                                } catch {
-                                    continue
-                                }
-
-                                Write-Host "Group $($GroupIdentityGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-
-                                try {
-                                    if ($ExportGroupMembersRecurse) {
-                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse | Sort-Object -Unique)
-                                    } else {
-                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse -DirectMembersOnly | Sort-Object -Unique)
-                                    }
-
-                                } catch {
-                                    (
-                                        '"' + (
-                                            @(
-                                                (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                                    'Calculate recursive group membership',
-                                                    "Group Identity GUID $($GroupIdentityGuid)",
-                                                    $($_ | Out-String)
-                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                        ) + '"'
-                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                                }
-                            }
-                        } catch {
-                            (
-                                '"' + (
-                                    @(
-                                        (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                            'Calculate group membership',
-                                            '',
-                                            $($_ | Out-String)
-                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                ) + '"'
-                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                        } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module ExchangeOnlineManagement
-                            }
-
-                            if ($ExchangeSession) {
-                                Remove-PSSession -Session $ExchangeSession
-                            }
-
-                            if ($DebugFile) {
-                                $null = Stop-Transcript
-                                Start-Sleep -Seconds 1
-                            }
-                        }
-                    }
-                ).AddParameters(
-                    @{
-                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        AllRecipients                      = $AllRecipients
-                        AllGroups                          = $AllGroups
-                        AllRecipientsIdentityGuidToIndex   = $AllRecipientsIdentityGuidToIndex
-                        AllGroupsIdentityGuidToIndex       = $AllGroupsIdentityGuidToIndex
-                        AllGroupMembers                    = $AllGroupMembers
-                        tempConnectionUriQueue             = $tempConnectionUriQueue
-                        tempQueue                          = $tempQueue
-                        ExportFromOnPrem                   = $ExportFromOnPrem
-                        ConnectExchange                    = $ConnectExchange
-                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
-                        ExchangeCredential                 = $ExchangeCredential
-                        UseDefaultCredential               = $UseDefaultCredential
-                        ScriptPath                         = $PSScriptRoot
-                        VerbosePreference                  = $VerbosePreference
-                        DebugPreference                    = $DebugPreference
-                        UTF8Encoding                       = $UTF8Encoding
-                        FilterGetMember                    = $FilterGetMember
-                        ExportGroupMembersRecurse          = $ExportGroupMembersRecurse
-                    }
-                )
-
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
-
-                $temp = '' | Select-Object PowerShell, Handle, Object
-                $temp.PowerShell = $PowerShell
-                $temp.Handle = $Handle
-                $temp.Object = $Object
-                [void]$runspaces.Add($Temp)
-            }
-
-            Write-Host ('    {0:0000000} groups to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
-
-            $lastCount = -1
-            while (($runspaces.Handle.IsCompleted -contains $False)) {
-                Start-Sleep -Seconds 1
-                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
-                for ($x = $lastCount; $x -le $done; $x++) {
-                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
-                        $lastCount = $x
-                    }
-                }
-            }
-
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '    Not all groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
-            }
-
-            foreach ($runspace in $runspaces) {
-                $runspace.PowerShell.Dispose()
-            }
-
-            $RunspacePool.dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
-
-            if ($DebugFile) {
-                $null = Stop-Transcript
-                Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
-                    Remove-Item -LiteralPath $JobDebugFile -Force
-                }
-                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
-            }
-
-            if ($ErrorFile) {
-                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
-                    Remove-Item -LiteralPath $JobErrorFile -Force
-                }
-            }
-
-            [GC]::Collect(); Start-Sleep 1
-        }
-    } else {
-        Write-Host '  Not required with current export settings.'
-    }
-
-
     # Get and export Mailbox Access Rights
     Write-Host
     Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -6055,6 +5793,268 @@ try {
     }
 
 
+    # Calculate group membership
+    Write-Host
+    Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+    if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ine 'None')) {
+        Write-Host '  Create lookup hashtables'
+        Write-Host "    GroupIdentityGuid to group index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $AllGroupsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllGroups.Count; $x++) {
+            $AllGroupsIdentityGuidToIndex.Add($AllGroups[$x].Guid.Guid, $x)
+        }
+
+        Write-Host "    GroupIdentityGuid to recursive members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        $AllGroupMembers = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
+
+        # Normal distribution groups and management role groups
+        for ($AllGroupsIndex = 0; $AllGroupsIndex -lt $AllGroups.count; $AllGroupsIndex++) {
+            try {
+                $AllRecipientsIndex = $AllRecipientsIdentityGuidToIndex[$AllGroups[$AllGroupsIndex].Guid.Guid]
+            } catch {
+                $AllRecipientsIndex = $null
+            }
+
+            if (
+                        ($ExportManagementRoleGroupMembers -and ($AllGroups[$AllGroupsIndex].RecipientTypeDetails.value -ieq 'RoleGroup')) -or
+                        (($ExportDistributionGroupMembers -ieq 'All') -and ($AllRecipientsIndex -ge 0) -and ($AllRecipientsIndex -iin $GrantorsToConsider)) -or
+                        ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].IsTrustee -eq $true))
+            ) {
+                $AllGroupMembers.Add($AllGroups[$AllGroupsIndex].Guid.Guid, @())
+            }
+        }
+
+        # Dynamic distribution groups
+        for ($AllRecipientsIndex = 0; $AllRecipientsIndex -lt $AllRecipients.count; $AllRecipientsIndex++) {
+            if ($AllRecipients[$AllRecipientsIndex].RecipientTypeDetails.Value -ine 'DynamicDistributionGroup') {
+                continue
+            }
+
+            if (
+                        (($ExportDistributionGroupMembers -ieq 'All') -and ($AllRecipientsIndex -ge 0) -and ($AllRecipientsIndex -iin $GrantorsToConsider)) -or
+                        ((($ExpandGroups) -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -and ($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].IsTrustee -eq $true))
+            ) {
+                $AllGroupMembers.Add($AllRecipients[$AllRecipientsIndex].Identity.ObjectGuid.Guid, @())
+            }
+        }
+
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllGroupMembers.count))
+
+        foreach ($Enumerator in $AllGroupMembers.GetEnumerator()) {
+            $tempQueue.enqueue($Enumerator.Name)
+        }
+
+        $tempQueueCount = $tempQueue.count
+
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
+
+        if ($ExportGroupMembersRecurse) {
+            Write-Host '  Calculate recursive group membership'
+        } else {
+            Write-Host '  Calculate direct group membership'
+        }
+
+        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+
+        if ($ParallelJobsNeeded -ge 1) {
+            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
+            $RunspacePool.Open()
+
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+
+            1..$ParallelJobsNeeded | ForEach-Object {
+                $Powershell = [powershell]::Create()
+                $Powershell.RunspacePool = $RunspacePool
+
+                [void]$Powershell.AddScript(
+                    {
+                        param(
+                            $AllRecipients,
+                            $AllGroups,
+                            $AllRecipientsIdentityGuidToIndex,
+                            $AllGroupsIdentityGuidToIndex,
+                            $AllGroupMembers,
+                            $tempConnectionUriQueue,
+                            $tempQueue,
+                            $ErrorFile,
+                            $DebugFile,
+                            $ExportFromOnPrem,
+                            $ConnectExchange,
+                            $ExchangeOnlineConnectionParameters,
+                            $ExchangeCredential,
+                            $UseDefaultCredential,
+                            $ScriptPath,
+                            $VerbosePreference,
+                            $DebugPreference,
+                            $UTF8Encoding,
+                            $FilterGetMember,
+                            $ExportGroupMembersRecurse
+                        )
+
+                        try {
+                            $DebugPreference = 'Continue'
+
+                            Set-Location $ScriptPath
+
+                            if ($DebugFile) {
+                                $null = Start-Transcript -LiteralPath $DebugFile -Force
+                            }
+
+                            Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                            . ([scriptblock]::Create($ConnectExchange))
+
+                            . ([scriptblock]::Create($FilterGetMember))
+
+                            while ($tempQueue.count -gt 0) {
+                                try {
+                                    $GroupIdentityGuid = $tempQueue.dequeue()
+                                } catch {
+                                    continue
+                                }
+
+                                Write-Host "Group $($GroupIdentityGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+
+                                try {
+                                    if ($ExportGroupMembersRecurse) {
+                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse | Sort-Object -Unique)
+                                    } else {
+                                        $AllGroupMembers[$GroupIdentityGuid] = @($GroupIdentityGuid | GetMemberRecurse -DirectMembersOnly | Sort-Object -Unique)
+                                    }
+
+                                } catch {
+                                    (
+                                        '"' + (
+                                            @(
+                                                (
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    'Calculate recursive group membership',
+                                                    "Group Identity GUID $($GroupIdentityGuid)",
+                                                    $($_ | Out-String)
+                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                        ) + '"'
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                                }
+                            }
+                        } catch {
+                            (
+                                '"' + (
+                                    @(
+                                        (
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            'Calculate group membership',
+                                            '',
+                                            $($_ | Out-String)
+                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                ) + '"'
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                        } finally {
+                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                                Disconnect-ExchangeOnline -Confirm:$false
+                                Remove-Module ExchangeOnlineManagement
+                            }
+
+                            if ($ExchangeSession) {
+                                Remove-PSSession -Session $ExchangeSession
+                            }
+
+                            if ($DebugFile) {
+                                $null = Stop-Transcript
+                                Start-Sleep -Seconds 1
+                            }
+                        }
+                    }
+                ).AddParameters(
+                    @{
+                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        AllRecipients                      = $AllRecipients
+                        AllGroups                          = $AllGroups
+                        AllRecipientsIdentityGuidToIndex   = $AllRecipientsIdentityGuidToIndex
+                        AllGroupsIdentityGuidToIndex       = $AllGroupsIdentityGuidToIndex
+                        AllGroupMembers                    = $AllGroupMembers
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
+                        ExportFromOnPrem                   = $ExportFromOnPrem
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
+                        ExchangeCredential                 = $ExchangeCredential
+                        UseDefaultCredential               = $UseDefaultCredential
+                        ScriptPath                         = $PSScriptRoot
+                        VerbosePreference                  = $VerbosePreference
+                        DebugPreference                    = $DebugPreference
+                        UTF8Encoding                       = $UTF8Encoding
+                        FilterGetMember                    = $FilterGetMember
+                        ExportGroupMembersRecurse          = $ExportGroupMembersRecurse
+                    }
+                )
+
+                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+                $Handle = $Powershell.BeginInvoke($Object, $Object)
+
+                $temp = '' | Select-Object PowerShell, Handle, Object
+                $temp.PowerShell = $PowerShell
+                $temp.Handle = $Handle
+                $temp.Object = $Object
+                [void]$runspaces.Add($Temp)
+            }
+
+            Write-Host ('    {0:0000000} groups to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+
+            $lastCount = -1
+            while (($runspaces.Handle.IsCompleted -contains $False)) {
+                Start-Sleep -Seconds 1
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle.IsCompleted | Where-Object { $_ -eq $false }).count)
+                for ($x = $lastCount; $x -le $done; $x++) {
+                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
+                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        if ($x -eq 0) { Write-Host }
+                        $lastCount = $x
+                    }
+                }
+            }
+
+            if ($tempQueue.count -eq 0) {
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                Write-Host
+            } else {
+                Write-Host
+                Write-Host '    Not all groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            }
+
+            foreach ($runspace in $runspaces) {
+                $runspace.PowerShell.Dispose()
+            }
+
+            $RunspacePool.dispose()
+            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+
+            if ($DebugFile) {
+                $null = Stop-Transcript
+                Start-Sleep -Seconds 1
+                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobDebugFile | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobDebugFile -Force
+                }
+                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
+            }
+
+            if ($ErrorFile) {
+                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
+                    Remove-Item -LiteralPath $JobErrorFile -Force
+                }
+            }
+
+            [GC]::Collect(); Start-Sleep 1
+        }
+    } else {
+        Write-Host '  Not required with current export settings.'
+    }
+
+
     # Get and export Management Role Group Members
     Write-Host
     Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -6654,18 +6654,6 @@ try {
                                         $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                     }
 
-                                    foreach ($ExportFileLine in $ExportFileLines) {
-                                        try {
-                                            $index = $null
-                                            $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
-                                        } catch {
-                                        }
-
-                                        if ($index -ge 0) {
-                                            $AllRecipients[$index].IsTrustee = $true
-                                        }
-                                    }
-
                                     $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -LiteralPath([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                 }
                             }
@@ -7239,18 +7227,6 @@ try {
                                                     $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                                 }
 
-                                                foreach ($ExportFileLine in $ExportFileLines) {
-                                                    try {
-                                                        $index = $null
-                                                        $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
-                                                    } catch {
-                                                    }
-
-                                                    if ($index -ge 0) {
-                                                        $AllRecipients[$index].IsTrustee = $true
-                                                    }
-                                                }
-
                                                 $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -LiteralPath([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.txt' -f $RecipientId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                             }
                                         }
@@ -7520,18 +7496,6 @@ try {
                                                     $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
                                                 }
 
-                                                foreach ($ExportFileLine in $ExportFileLines) {
-                                                    try {
-                                                        $index = $null
-                                                        $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
-                                                    } catch {
-                                                    }
-
-                                                    if ($index -ge 0) {
-                                                        $AllRecipients[$index].IsTrustee = $true
-                                                    }
-                                                }
-
                                                 $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -LiteralPath([io.path]::ChangeExtension(($ExportFile), ('TEMP.{0:0000000}.PF{1:0000000}.txt' -f $RecipientId, $PublicFolderId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation
                                             }
                                         }
@@ -7797,18 +7761,6 @@ try {
                                                     }
 
                                                     $ExportFileLines = @($ExportFileLines[$ExportFileLinesIndex])
-                                                }
-
-                                                foreach ($ExportFileLine in $ExportFileLines) {
-                                                    try {
-                                                        $index = $null
-                                                        $index = $AllRecipientsSmtpToIndex[$ExportFileLine.'Trustee Primary SMTP']
-                                                    } catch {
-                                                    }
-
-                                                    if ($index -ge 0) {
-                                                        $AllRecipients[$index].IsTrustee = $true
-                                                    }
                                                 }
 
                                                 $ExportFileLines | Sort-Object -Property $ExportFileHeader -Unique | Export-Csv -LiteralPath([io.path]::ChangeExtension(($ExportFile), ('TEMP.MRG{0:0000000}.txt' -f $AllGroupsId))) -Delimiter ';' -Encoding $UTF8Encoding -Force -Append -NoTypeInformation

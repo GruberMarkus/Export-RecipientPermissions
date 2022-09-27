@@ -19,6 +19,7 @@
 ### Fixed
 - When ExportGrantorsWithNoPermissions is enabled and ExportGuids is disabled, empty management role groups were exported with no name and a trailing slash in the recipient type field
 - Some major tasks did not show a timestamp, but rather the PowerShell code generating the timestamp
+- ExpandGroups did not work for groups which were not part of the grantor filter
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.0" target="_blank">v2.2.0</a> - 2022-09-21
 ### Changed
