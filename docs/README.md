@@ -133,11 +133,14 @@ $true for export from on-prem, $false for export from Exchange Online
 
 Default: $false
 ### 1.2.2. ExchangeConnectionUriList
-Server URIs to connect to
+Exchange remote PowerShell URIs to connect to
 
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
+For Exchange Online, use 'https://outlook.office365.com/powershell-liveid/' or the URI specific to your cloud environment
 
-For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
+Default:  
+- If ExportFromOnPrem ist set to false: 'https://outlook.office365.com/powershell-liveid/'
+- If ExportFromOnPrem ist set to true: 'http://\<server\>/powershell' for each Exchange server with the mailbox server role
 ### 1.2.3. ExchangeOnlineConnectionParameters
 This hashtable will be passed as parameter to Connect-ExchangeOnline
 

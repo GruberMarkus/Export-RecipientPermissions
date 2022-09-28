@@ -31,10 +31,12 @@ Default: $false
 
 
 .PARAMETER ExchangeConnectionUriList
-Server URIs to connect to
+Exchange remote PowerShell URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
-For Exchange Online, this parameter is ignored use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-
+For Exchange Online, use 'https://outlook.office365.com/powershell-liveid/' or the URI specific to your cloud environment
+Default:
+    If ExportFromOnPrem ist set to false: 'https://outlook.office365.com/powershell-liveid/'
+    If ExportFromOnPrem ist set to true: 'http://<server>/powershell' for each Exchange server with the mailbox server role
 
 .PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
@@ -316,7 +318,21 @@ License: MIT license (see '.\docs\LICENSE.txt' for details and copyright)
 
 Param(
     [boolean]$ExportFromOnPrem = $false,
-    [uri[]]$ExchangeConnectionUriList = ('https://outlook.office365.com/powershell-liveid'),
+    [uri[]]$ExchangeConnectionUriList = $(
+        if ($ExportFromOnPrem) {
+            try {
+                $search = New-Object DirectoryServices.DirectorySearcher([ADSI]"LDAP://$(([ADSI]'LDAP://RootDse').configurationNamingContext)")
+                $search.Filter = '(&(objectClass=msExchExchangeServer)(msExchCurrentServerRoles:1.2.840.113556.1.4.803:=2))' # all Exchange servers with the mailbox role 
+                $search.PageSize = 1000
+                [void]$search.PropertiesToLoad.Add('networkaddress')
+                @((($search.FindAll().properties.networkaddress | Where-Object { $_ -ilike 'ncacn_ip_tcp:*' }) -ireplace '^ncacn_ip_tcp:', 'http://' -ireplace '$', '/powershell'))
+            } catch {
+                @()
+            }
+        } else {
+            @('https://outlook.office365.com/powershell-liveid')
+        }
+    ),
     [boolean]$UseDefaultCredential = $false,
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
