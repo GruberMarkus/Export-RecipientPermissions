@@ -325,7 +325,7 @@ Param(
                 $search.Filter = '(&(objectClass=msExchExchangeServer)(msExchCurrentServerRoles:1.2.840.113556.1.4.803:=2))' # all Exchange servers with the mailbox role 
                 $search.PageSize = 1000
                 [void]$search.PropertiesToLoad.Add('networkaddress')
-                @((($search.FindAll().properties.networkaddress | Where-Object { $_ -ilike 'ncacn_ip_tcp:*' }) -ireplace '^ncacn_ip_tcp:', 'http://' -ireplace '$', '/powershell'))
+                @((($search.FindAll().properties.networkaddress | Where-Object { $_ -ilike 'ncacn_ip_tcp:*' }) -ireplace '^ncacn_ip_tcp:', 'http://' -ireplace '$', '/powershell') | Sort-Object -Unique)
             } catch {
                 @()
             }
