@@ -100,10 +100,10 @@ Default: $null
 .PARAMETER ExportFileFilter
 Only report results where the filter criteria matches $true.
 This filter works against every single row of the results found. ExportFile will only contain lines where this filter returns $true.
-The $ExportFileLine contains an object with the header names from $ExportFile as string properties
+The $ExportFileLine variable contains an object with the header names from $ExportFile as string properties
     'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Folder', 'Permission', 'Allow/Deny', 'Inherited', 'InheritanceType', 'Trustee Original Identity', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment'
-
-Example: "`$ExportFileFilter.'Trustee Environment' -ieq 'On-Prem'"
+    When GUIDs are exported, additional attributes are available: 'Grantor Exchange GUID', 'Grantor AD ObjectGUID', 'Trustee Exchange GUID', 'Trustee AD ObjectGUID'
+Example: "`$ExportFileLine.'Trustee Environment' -ieq 'On-Prem'"
 Default: $null
 
 

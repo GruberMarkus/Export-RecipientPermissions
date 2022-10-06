@@ -220,7 +220,7 @@ Only report results where the filter criteria matches $true.
 
 This filter works against every single row of the results found. ExportFile will only contain lines where this filter returns $true.
 
-The $ExportFileLine contains an object with the header names from $ExportFile as string properties:
+The $ExportFileLine variable contains an object with the header names from $ExportFile as string properties
 - 'Grantor Primary SMTP'
 - 'Grantor Display Name'
 - 'Grantor Exchange GUID' (only when '`ExportGuids`' is enabled)
@@ -240,7 +240,7 @@ The $ExportFileLine contains an object with the header names from $ExportFile as
 - 'Trustee Recipient Type'
 - 'Trustee Environment'
 
-Example: "`$ExportFileFilter.'Trustee Environment' -ieq 'On-Prem'"
+Example: "`$ExportFileLine.'Trustee Environment' -ieq 'On-Prem'"
 
 Default: $null
 ### 1.2.10. ExportMailboxAccessRights
