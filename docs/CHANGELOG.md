@@ -16,6 +16,9 @@
 -->
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.3.0" target="_blank">v2.3.0</a> - YYYY-MM-DD
+### Added
+- New FAQ in '`README`': 'Which resources does a particular user or group have access to?'
+- New sample code 'MemberOfRecurse.ps1'
 ### Changed
 - When '`ExportFromOnPrem`' is set to '`$true`' and '`ExchangeConnectionUriList`' is not specified, '`ExchangeConnectionUriList`' defaults to '`http://<server>/powershell`' for each Exchange server with the mailbox server role
 
