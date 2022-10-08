@@ -408,6 +408,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         }
 
         if ($LdapFilterSids -ilike '*(objectsid=*') {
+            # Across each trust, search for all Foreign Security Principals matching a SID from our list
             for ($DomainNumber = 0; $DomainNumber -lt $TrustsToCheckForGroups.count; $DomainNumber++) {
                 if (($TrustsToCheckForGroups[$DomainNumber] -ne '') -and ($TrustsToCheckForGroups[$DomainNumber] -ine $UserDomain) -and ($UserDomain -ne '')) {
                     Write-Host "    $($TrustsToCheckForGroups[$DomainNumber]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -416,11 +417,12 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
                     foreach ($fsp in $Search.FindAll()) {
                         if (($fsp.path -ne '') -and ($null -ne $fsp.path)) {
-                            # A Foreign Security Principal ist created in each (sub)domain, in which it is granted permissions,
-                            #   and it can only be member of a domain local group - so we set the searchroot to the (sub)domain of the Foreign Security Principal.
-                            # Foreign Security Principals do not have the tokengroups attribute, which would not contain domain local groups anyhow
+                            # A Foreign Security Principal (FSP) is created in each (sub)domain in which it is granted permissions
+                            # A FSP it can only be member of a domain local group - so we set the searchroot to the (sub)domain of the Foreign Security Principal
+                            # FSPs have on tokengroups attribute, which would not contain domain local groups anyhow
                             # member:1.2.840.113556.1.4.1941:= (LDAP_MATCHING_RULE_IN_CHAIN) returns groups containing a specific DN as member, incl. nesting
                             Write-Verbose "      Found ForeignSecurityPrincipal $($fsp.properties.cn) in $((($fsp.path -split ',DC=')[1..999] -join '.'))"
+                            
                             try {
                                 $Search.searchroot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$((($fsp.path -split ',DC=')[1..999] -join '.'))")
                                 $Search.filter = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=4)(member:1.2.840.113556.1.4.1941:=$($fsp.Properties.distinguishedname)))"
