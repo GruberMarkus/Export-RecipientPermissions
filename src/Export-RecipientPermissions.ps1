@@ -2908,7 +2908,7 @@ try {
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             $Recipient = $AllRecipients[$x]
 
-            if (($Recipient.RecipientTypeDetails.Value -ilike '*Mailbox') -and ($x -in $GrantorsToConsider) -and ($Recipient.RecipientTypeDetails.Value -ine 'PublicFolderMailbox') -and (-not $Recipient.WhenSoftDeleted)) {
+            if (($Recipient.RecipientTypeDetails.Value -ilike '*Mailbox') -and ($x -in $GrantorsToConsider) -and ($Recipient.RecipientTypeDetails.Value -inotin @('PublicFolderMailbox', 'MonitoringMailbox')) -and (-not $Recipient.WhenSoftDeleted)) {
                 $tempQueue.enqueue($x)
             }
         }
