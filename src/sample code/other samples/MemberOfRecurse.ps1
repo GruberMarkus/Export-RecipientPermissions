@@ -58,7 +58,7 @@ function CheckADConnectivity {
                 $Search.searchroot = New-Object System.DirectoryServices.DirectoryEntry("$($CheckProtocolText)://$CheckDomain")
                 $Search.filter = '(objectclass=user)'
                 try {
-                    $UserAccount = ([ADSI]"$(($Search.FindOne()).path)")
+                    $null = ([ADSI]"$(($Search.FindOne()).path)")
                     Write-Output 'QueryPassed'
                 } catch {
                     Write-Output 'QueryFailed'
@@ -300,7 +300,7 @@ try {
                                         $TrustsToCheckForGroups += $TrustedDomain.properties.name.tolower()
                                         $LookupDomainsToTrusts.add($TrustedDomain.properties.name.tolower(), $TrustedDomain.properties.name.tolower())
                                     }
-            
+
                                     $temp = @(
                                         @(@(Resolve-DnsName -Name "_gc._tcp.$($TrustedDomain.properties.name)" -Type srv).nametarget) | ForEach-Object { ($_ -split '\.')[1..999] -join '.' } | Where-Object { $_ -ine $TrustedDomain.properties.name } | Select-Object -Unique | Sort-Object @{Expression = {
                                                 $TemporaryArray = @($_.Split('.'))
@@ -309,7 +309,7 @@ try {
                                             }
                                         }
                                     )
-            
+
                                     $temp | ForEach-Object {
                                         Write-Host "      Child domain: $($_.tolower())"
                                         $LookupDomainsToTrusts.add($_.tolower(), $TrustedDomain.properties.name.tolower())
@@ -386,7 +386,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
                     ) | ForEach-Object { $_ -replace '"', '""' }
                 ) -join '";"'
             ) + '"')
-        
+
         $script:SIDsToCheckInTrusts = @()
 
         Write-Verbose "    $($LookupDomainsToTrusts[$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
@@ -414,8 +414,8 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
             foreach ($SidHistorySid in @($DistributionGroup.properties.sidhistory | Where-Object { $_ })) {
                 $sid = (New-Object System.Security.Principal.SecurityIdentifier $SidHistorySid, 0).value
-                Write-Verbose "        $sid"
-                ConvertSidToGuidAndFillResult $sid $AdObjectToCheckDn '          '
+                Write-Verbose "        SidHistory: $sid"
+                $script:SIDsToCheckInTrusts += $sid
             }
         }
 
@@ -434,13 +434,11 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
                 foreach ($SidHistorySid in @($LocalGroup.properties.sidhistory | Where-Object { $_ })) {
                     $sid = (New-Object System.Security.Principal.SecurityIdentifier $SidHistorySid, 0).value
-                    Write-Verbose "          $sid"
-                    ConvertSidToGuidAndFillResult $sid $AdObjectToCheckDn '            '
+                    Write-Verbose "          SidHistory: $sid"
+                    $script:SIDsToCheckInTrusts += $sid
                 }
             }
         }
-
-        $script:SIDsToCheckInTrusts = @($script:SIDsToCheckInTrusts | Select-Object -Unique)
 
         # Loop through all domains to check if the mailbox account has a group membership there
         # Across a trust, a user can only be added to a domain local group.
@@ -448,7 +446,9 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         # But when it's a cross-forest trust, we need to query every every domain on that other side of the trust
         #   This is handled before by adding every single domain of a cross-forest trusted forest to $TrustsToCheckForGroups
         if ($script:SIDsToCheckInTrusts.count -gt 0) {
+            $script:SIDsToCheckInTrusts = @($script:SIDsToCheckInTrusts | Select-Object -Unique)
             $LdapFilterSIDs = '(|'
+
             foreach ($SidToCheckInTrusts in $script:SIDsToCheckInTrusts) {
                 try {
                     $SidHex = @()
@@ -498,8 +498,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
                                     foreach ($SidHistorySid in @($group.properties.sidhistory | Where-Object { $_ })) {
                                         $sid = (New-Object System.Security.Principal.SecurityIdentifier $SidHistorySid, 0).value
-                                        Write-Verbose "        $sid"
-                                        ConvertSidToGuidAndFillResult $sid $AdObjectToCheckDn '          '
+                                        Write-Verbose "        SidHistory: $sid"
                                     }
                                 }
                             } catch {
@@ -529,8 +528,8 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 Write-Host
 Write-Host "Final MemberOfRecurse result @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 $script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Unique
-$script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header @('Original object', 'MemberOf recurse AD GUID', 'MemberOf recurse group')
-$script:MemberOfRecurse
+$script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header @('Original object', 'MemberOf recurse group objectGUID', 'MemberOf recurse group canonicalName') | Sort-Object -Property 'Original object', 'MemberOf recurse group canonicalName', 'MemberOf recurse group objectGUID'
+$script:MemberOfRecurse | Format-Table
 
 
 Write-Host
@@ -567,7 +566,7 @@ $params = @{
     RecipientProperties                         = @()
     GrantorFilter                               = $null
     TrusteeFilter                               = $null
-    ExportFileFilter                            = "if (`$ExportFileLine.'Trustee AD ObjectGUID' -iin $('@(''' + (@($script:MemberOfRecurse.'MemberOf recurse AD GUID') -join ''', ''') + ''')')) { `$true } else { `$false }"
+    ExportFileFilter                            = "if (`$ExportFileLine.'Trustee AD ObjectGUID' -iin $('@(''' + (@($script:MemberOfRecurse.'MemberOf recurse group objectGUID') -join ''', ''') + ''')')) { `$true } else { `$false }"
 
     ExportFile                                  = '.\export\Export-RecipientPermissions_Result_MemberOfRecurse.csv'
     ErrorFile                                   = '.\export\Export-RecipientPermissions_Error_MemberOfRecurse.csv'
@@ -577,7 +576,7 @@ $params = @{
 }
 
 Write-Host '  Parameters ($params hashtable)'
-$params | Out-String -Stream | ForEach-Object { Write-Host "  $($_.trim())" }
+$params | Format-Table
 
 Write-Host '  Run Export-RecipientPermissions with parameters from $params (demo)'
 Write-Host "    '& ..\..\Export-RecipientPermissions.ps1 @params'"
