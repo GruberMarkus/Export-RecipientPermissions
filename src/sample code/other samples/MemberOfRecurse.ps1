@@ -123,15 +123,15 @@ function ConvertSidToGuidAndFillResult {
         $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($sid)"))
         $GroupGuid = $($objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}'))
         Write-Verbose "$indent$($GroupGuid)"
-        $script:MemberOfRecurse += $('"' + (
-                @(
-                    @(
-                        $($ADObjectToCheck),
-                        $($GroupGuid),
-                        $($objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 2))
-                    ) | ForEach-Object { $_ -replace '"', '""' }
-                ) -join '";"'
-            ) + '"')
+
+        $script:MemberOfRecurse += New-Object PSObject -Property (
+            [ordered]@{
+                'Original object'                      = $ADObjectToCheck.ToString()
+                'MemberOf recurse group objectGUID'    = $GroupGuid.ToString()
+                'MemberOf recurse group canonicalName' = $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 2).ToString()
+            }
+        )
+
         $script:SIDsToCheckInTrusts += $sid
     } catch {
         try {
@@ -157,15 +157,13 @@ function ConvertSidToGuidAndFillResult {
             $Group = $local:search.FindOne()
             $GroupGuid = [guid]::new($Group.Properties.objectguid[0]).guid
             Write-Verbose "$indent$($GroupGuid)"
-            $script:MemberOfRecurse += $('"' + (
-                    @(
-                        @(
-                            $($ADObjectToCheck),
-                            $($GroupGuid),
-                            $($Group.Properties.canonicalname)
-                        ) | ForEach-Object { $_ -replace '"', '""' }
-                    ) -join '";"'
-                ) + '"')
+            $script:MemberOfRecurse += New-Object PSObject -Property (
+                [ordered]@{
+                    'Original object'                      = $ADObjectToCheck.ToString()
+                    'MemberOf recurse group objectGUID'    = $GroupGuid.ToString()
+                    'MemberOf recurse group canonicalName' = $Group.Properties.canonicalname[0].ToString()
+                }
+            )
         } catch {
             Write-Verbose "$indent$($_ | Out-String)"
         }
@@ -377,15 +375,13 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AdObjectToCheck)"))
         $AdObjectToCheckDn = $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 1)
         $AdObjectToCheckGuid = $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
-        $script:MemberOfRecurse += $('"' + (
-                @(
-                    @(
-                        $($ADObjectToCheck),
-                        $($ADObjectToCheckGuid),
-                        $($objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 2))
-                    ) | ForEach-Object { $_ -replace '"', '""' }
-                ) -join '";"'
-            ) + '"')
+        $script:MemberOfRecurse += New-Object PSObject -Property (
+            [ordered]@{
+                'Original object'                      = $ADObjectToCheck.ToString()
+                'MemberOf recurse group objectGUID'    = $ADObjectToCheckGuid.ToString()
+                'MemberOf recurse group canonicalName' = $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 2).ToString()
+            }
+        )
 
         $script:SIDsToCheckInTrusts = @()
 
@@ -527,8 +523,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
 Write-Host
 Write-Host "Final MemberOfRecurse result @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-$script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Unique
-$script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Unique | ConvertFrom-Csv -Delimiter ';' -Header @('Original object', 'MemberOf recurse group objectGUID', 'MemberOf recurse group canonicalName') | Sort-Object -Property 'Original object', 'MemberOf recurse group canonicalName', 'MemberOf recurse group objectGUID'
+$script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Property * -Unique | Sort-Object -Property 'Original object', 'MemberOf recurse group canonicalName', 'MemberOf recurse group objectGUID'
 $script:MemberOfRecurse | Format-Table
 
 
