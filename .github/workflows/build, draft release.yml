@@ -10,7 +10,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@latest
+        uses: gittools/actions/checkout@latest
         with:
           fetch-depth: 0
 
