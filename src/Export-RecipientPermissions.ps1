@@ -1979,7 +1979,8 @@ try {
         ($ExportManagementRoleGroupMembers) -or
         ($ExportDistributionGroupMembers -ieq 'All') -or
         ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
-        ($ExpandGroups)
+        ($ExpandGroups) -or
+        ($ExportGuids)
     ) {
         $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
