@@ -1972,7 +1972,15 @@ try {
     Write-Host
     Write-Host "Import security principals, filtered by Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if (($ExportMailboxAccessRights) -and (($ExportSendAs) -or ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or ($ExportManagementRoleGroupMembers) -or (($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -or ($ExpandGroups))) {
+    if (
+        ($ExportMailboxAccessRights) -or
+        ($ExportSendAs) -or
+        ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or
+        ($ExportManagementRoleGroupMembers) -or
+        ($ExportDistributionGroupMembers -ieq 'All') -or
+        ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
+        ($ExpandGroups)
+    ) {
         $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
         $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
