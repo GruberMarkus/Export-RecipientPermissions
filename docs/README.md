@@ -691,9 +691,9 @@ $params = @{
     TrusteeFilter                               = $null
     ExportFileFilter                            = "
         if ([string]::IsNullOrEmpty(`$ExportFileLine.Permission) -eq `$true) {
-            `$false
+            `$true
         } else {
-            `$true 
+            `$false 
         }
     "
 
