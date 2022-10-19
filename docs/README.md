@@ -75,6 +75,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.8. Is there a roadmap for future versions?](#28-is-there-a-roadmap-for-future-versions)
   - [2.9. Is there a GUI available?](#29-is-there-a-gui-available)
   - [2.10. Which resources does a particular user or group have access to?](#210-which-resources-does-a-particular-user-or-group-have-access-to)
+  - [2.11. How to find distribution lists without members?](#211-how-to-find-distribution-lists-without-members)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -655,6 +656,57 @@ The most economic solution to all these problems is the following:
     - AD ObjectGUID of group X (because group Z is a member of group Y, and group Y is a member of group X)
 
 Getting all these GUIDs can be a lot of work. Use the sample code '`MemberOfRecurse.ps1`', which is described later in this document, to make this task as simple as possible.
+## 2.11. How to find distribution lists without members?
+When a distribution group has no members, E-Mails sent to the group's address are lost because there is no member Exchange could distribute the e-mail to. The sender is not informed about this, as an empty distribution group is a valid recipient, so no Non-Delivery Report is generated.
+
+When looking for distribution groups, counting the direct members is not enough. A group can have another group as only member, and this other group can be empty.
+
+Use the following configuration to reliably identify empty distribution groups:
+```
+$params = @{
+    ExportMailboxAccessRights                   = $false
+    ExportMailboxFolderPermissions              = $false
+    ExportSendAs                                = $false
+    ExportSendOnBehalf                          = $false
+    ExportManagedBy                             = $false
+    ExportLinkedMasterAccount                   = $false
+    ExportPublicFolderPermissions               = $false
+    ExportForwarders                            = $false
+    ExportManagementRoleGroupMembers            = $false
+    ExportDistributionGroupMembers              = 'All'
+    ExportGroupMembersRecurse                   = $true
+    ExpandGroups                                = $false
+    ExportGuids                                 = $true
+    ExportGrantorsWithNoPermissions             = $true
+    ExportTrustees                              = 'All'
+
+    GrantorFilter                               = "
+        if (`$Grantor.RecipientTypeDetails.Value -ilike ""*Group*"")
+        ) {
+            `$true
+        } else {
+            `$false 
+        }
+    "
+    TrusteeFilter                               = $null
+    ExportFileFilter                            = "
+        if ([string]::IsNullOrEmpty(`$ExportFileLine.Permissions) -eq `$true) {
+            `$false
+        } else {
+            `$true 
+        }
+    "
+
+    ExportFile                                  = '..\export\Export-RecipientPermissions_DVSV-Verteiler_Result.csv'
+    ErrorFile                                   = '..\export\Export-RecipientPermissions_DVSV-Verteiler_Error.csv'
+    DebugFile                                   = $null
+
+    verbose                                     = $false
+}
+
+
+& .\Export-RecipientPermissions\Export-RecipientPermissions.ps1 @params
+```
 # 3. Sample code
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
