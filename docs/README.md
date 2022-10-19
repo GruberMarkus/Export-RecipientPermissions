@@ -690,7 +690,7 @@ $params = @{
     "
     TrusteeFilter                               = $null
     ExportFileFilter                            = "
-        if ([string]::IsNullOrEmpty(`$ExportFileLine.Permissions) -eq `$true) {
+        if ([string]::IsNullOrEmpty(`$ExportFileLine.Permission) -eq `$true) {
             `$false
         } else {
             `$true 
