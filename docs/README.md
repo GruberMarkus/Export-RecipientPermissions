@@ -74,10 +74,13 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.7. Isn't a plural noun in the script name against PowerShell best practices?](#27-isnt-a-plural-noun-in-the-script-name-against-powershell-best-practices)
   - [2.8. Is there a roadmap for future versions?](#28-is-there-a-roadmap-for-future-versions)
   - [2.9. Is there a GUI available?](#29-is-there-a-gui-available)
+  - [2.10. Which resources does a particular user or group have access to?](#210-which-resources-does-a-particular-user-or-group-have-access-to)
+  - [2.11. How to find distribution lists without members?](#211-how-to-find-distribution-lists-without-members)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
   - [3.3. FiltersAndSidhistory.ps1](#33-filtersandsidhistoryps1)
+  - [3.4. MemberOfRecurse.ps1](#34-memberofrecurseps1)
 - [4. Recommendations](#4-recommendations)
 
 # 1. Export-RecipientPermissions.ps1
@@ -133,11 +136,14 @@ $true for export from on-prem, $false for export from Exchange Online
 
 Default: $false
 ### 1.2.2. ExchangeConnectionUriList
-Server URIs to connect to
+Exchange remote PowerShell URIs to connect to
 
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
+For Exchange Online, use 'https://outlook.office365.com/powershell-liveid/' or the URI specific to your cloud environment
 
-For Exchange Online use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
+Default:  
+- If ExportFromOnPrem ist set to false: 'https://outlook.office365.com/powershell-liveid/'
+- If ExportFromOnPrem ist set to true: 'http://\<server\>/powershell' for each Exchange server with the mailbox server role
 ### 1.2.3. ExchangeOnlineConnectionParameters
 This hashtable will be passed as parameter to Connect-ExchangeOnline
 
@@ -217,7 +223,7 @@ Only report results where the filter criteria matches $true.
 
 This filter works against every single row of the results found. ExportFile will only contain lines where this filter returns $true.
 
-The $ExportFileLine contains an object with the header names from $ExportFile as string properties:
+The $ExportFileLine variable contains an object with the header names from $ExportFile as string properties
 - 'Grantor Primary SMTP'
 - 'Grantor Display Name'
 - 'Grantor Exchange GUID' (only when '`ExportGuids`' is enabled)
@@ -237,7 +243,7 @@ The $ExportFileLine contains an object with the header names from $ExportFile as
 - 'Trustee Recipient Type'
 - 'Trustee Environment'
 
-Example: "`$ExportFileFilter.'Trustee Environment' -ieq 'On-Prem'"
+Example: "`$ExportFileLine.'Trustee Environment' -ieq 'On-Prem'"
 
 Default: $null
 ### 1.2.10. ExportMailboxAccessRights
@@ -615,6 +621,92 @@ A basic GUI for configuring the script is accessible via the following built-in 
 ```
 Show-Command .\Export-RecipientPermissions.ps1
 ```
+## 2.10. Which resources does a particular user or group have access to?
+As many other IT systems, Exchange stores permissions as forward links and not as backward links. This means that the information about granted permissions is stored on the granting object (forwarding to the trustee), without storing any information about the granted permission at the trustee object (pointing backwards to the grantor).
+
+This means that we have to query all granted permissions first and then filter those for trustees that involve the user or group we are looking for.
+
+There are some exceptions where Exchange stores permissions not only as forward links but also as backward links, to allow getting a list of certain permission with just one fast query from the grantor perspective. All these cases rely on automatic calculation of the backlink attribute in Active Directory. Well-known examples are publicDelegates/publicDelegatesBL, member/memberOf, manager/directReports and owner/ownerBL.
+
+But back to the initial question which resources a particular user or group has access to.  
+We already know that we need to query all permissions of interest first, and then filter the results. But what should we filter for?
+
+If we are only interested in permissions granted directly to a certain user or group, the search is straight forward:
+- If the user or group is an Exchange recipient, use '`TrusteeFilter`' to filter for 'Trustee Primary SMTP'
+- If The user or group is not an Exchange recipient, enable '`ExportGUIDs`' and use '`ExportFileFilter`' to filter for '`Trustee AD ObjectGuid`'
+
+If we are interested in permissions granted directly or indirectly to a certain user or group, it get's more complicated.  
+Export-RecipientPermissions can resolve permissions granted to groups in three ways: Do not resolve groups, resolve groups to their direct members, or resolve groups to their resulting members.
+- Not resolving groups does not take into consideration nested groups (permissions granted indirectly)
+- Resolving groups also does not consider nested groups (permissions granted indirectly) below the first membership level
+- Resolving groups to their resulting members requires relatively high CPU and RAM ressources and results in large result files.
+  - '`ExportDistributionGroupMembers`' only helps when the group in question might be a security group
+  - '`ExpandGroups`' results in large result files
+  - Neither '`ExportDistributionGroupMembers`' nor '`ExpandGroups`' can handle the following case: User A grants group X a certain permission. group Y is a member of group X, group Z is a member of group Y. Group Z does not have any members, but we need to know that future members of group Z will have access to the permission granted by user A.
+
+The most economic solution to all these problems is the following:
+- Export all the permissions you are interested in
+- Do not use '`ExportDistributionGroupMembers`' or '`ExpandGroups`'
+- Use '`ExportFileFilter`' to filter for '`Trustee AD ObjectGUID`', looking for the following AD ObjectGUIDs:
+  - The AD ObjectGUID of the object you are looking for
+  - All AD ObjectGUIDs of groups the initial object is a direct or indirect member of.
+  - In the example above, the following GUIDs are needed:
+    - AD ObjectGUID of group Z (because we are looking for permissions granted to group Z directly or indirectly)
+    - AD ObjectGUID of group Y (because group Z is a member of group Y)
+    - AD ObjectGUID of group X (because group Z is a member of group Y, and group Y is a member of group X)
+
+Getting all these GUIDs can be a lot of work. Use the sample code '`MemberOfRecurse.ps1`', which is described later in this document, to make this task as simple as possible.
+## 2.11. How to find distribution lists without members?
+When a distribution group has no members, E-Mails sent to the group's address are lost because there is no member Exchange could distribute the e-mail to. The sender is not informed about this, as an empty distribution group is a valid recipient, so no Non-Delivery Report is generated.
+
+When looking for distribution groups, counting the direct members is not enough. A group can have another group as only member, and this other group can be empty.
+
+Use the following configuration to reliably identify empty distribution groups:
+```
+$params = @{
+    ExportMailboxAccessRights                   = $false
+    ExportMailboxFolderPermissions              = $false
+    ExportSendAs                                = $false
+    ExportSendOnBehalf                          = $false
+    ExportManagedBy                             = $false
+    ExportLinkedMasterAccount                   = $false
+    ExportPublicFolderPermissions               = $false
+    ExportForwarders                            = $false
+    ExportManagementRoleGroupMembers            = $false
+    ExportDistributionGroupMembers              = 'All'
+    ExportGroupMembersRecurse                   = $true
+    ExpandGroups                                = $false
+    ExportGuids                                 = $true
+    ExportGrantorsWithNoPermissions             = $true
+    ExportTrustees                              = 'All'
+
+    GrantorFilter                               = "
+        if (`$Grantor.RecipientTypeDetails.Value -ilike ""*Group*"")
+        ) {
+            `$true
+        } else {
+            `$false 
+        }
+    "
+    TrusteeFilter                               = $null
+    ExportFileFilter                            = "
+        if ([string]::IsNullOrEmpty(`$ExportFileLine.Permission) -eq `$true) {
+            `$true
+        } else {
+            `$false 
+        }
+    "
+
+    ExportFile                                  = '..\export\Export-RecipientPermissions_DVSV-Verteiler_Result.csv'
+    ErrorFile                                   = '..\export\Export-RecipientPermissions_DVSV-Verteiler_Error.csv'
+    DebugFile                                   = $null
+
+    verbose                                     = $false
+}
+
+
+& .\Export-RecipientPermissions\Export-RecipientPermissions.ps1 @params
+```
 # 3. Sample code
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
@@ -658,6 +750,16 @@ The script can be found in '`.\sample code\other samples`'.
 This sample code shows how to use TrusteeFilter to find permissions which may be affected by SIDHistory removal.
 
 GrantorFilter behaves exactly like TrusteeFilter, only the reference variable is $Grantor instead of $Trustee.
+## 3.4. MemberOfRecurse.ps1
+The script can be found in '`.\sample code\other samples`'.
+
+This sample code shows how to list the GUIDs of all groups a certain AD object is a member of. The script considers
+- nested groups
+- security groups, no matter of which group scope they are
+- distribution groups (static only), no matter of which group scope they are
+- group membership in trusted domains/forests (incl. nested groups)
+
+These GUIDs can then be used to answer the question 'Which resources does a particular user or group have access to?', which is described in detail in the FAQ section of this document. 
 # 4. Recommendations
 Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, .Net framework).
 

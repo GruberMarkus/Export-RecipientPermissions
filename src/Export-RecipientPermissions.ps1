@@ -31,10 +31,12 @@ Default: $false
 
 
 .PARAMETER ExchangeConnectionUriList
-Server URIs to connect to
+Exchange remote PowerShell URIs to connect to
 For on-prem installations, list all Exchange Server Remote PowerShell URIs the script can use
-For Exchange Online, this parameter is ignored use 'https://outlook.office365.com/powershell-liveid/', or the URI specific to your cloud environment
-
+For Exchange Online, use 'https://outlook.office365.com/powershell-liveid/' or the URI specific to your cloud environment
+Default:
+    If ExportFromOnPrem ist set to false: 'https://outlook.office365.com/powershell-liveid/'
+    If ExportFromOnPrem ist set to true: 'http://<server>/powershell' for each Exchange server with the mailbox server role
 
 .PARAMETER ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
@@ -98,10 +100,10 @@ Default: $null
 .PARAMETER ExportFileFilter
 Only report results where the filter criteria matches $true.
 This filter works against every single row of the results found. ExportFile will only contain lines where this filter returns $true.
-The $ExportFileLine contains an object with the header names from $ExportFile as string properties
+The $ExportFileLine variable contains an object with the header names from $ExportFile as string properties
     'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Folder', 'Permission', 'Allow/Deny', 'Inherited', 'InheritanceType', 'Trustee Original Identity', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment'
-
-Example: "`$ExportFileFilter.'Trustee Environment' -ieq 'On-Prem'"
+    When GUIDs are exported, additional attributes are available: 'Grantor Exchange GUID', 'Grantor AD ObjectGUID', 'Trustee Exchange GUID', 'Trustee AD ObjectGUID'
+Example: "`$ExportFileLine.'Trustee Environment' -ieq 'On-Prem'"
 Default: $null
 
 
@@ -316,7 +318,21 @@ License: MIT license (see '.\docs\LICENSE.txt' for details and copyright)
 
 Param(
     [boolean]$ExportFromOnPrem = $false,
-    [uri[]]$ExchangeConnectionUriList = ('https://outlook.office365.com/powershell-liveid'),
+    [uri[]]$ExchangeConnectionUriList = $(
+        if ($ExportFromOnPrem) {
+            try {
+                $search = New-Object DirectoryServices.DirectorySearcher([ADSI]"LDAP://$(([ADSI]'LDAP://RootDse').configurationNamingContext)")
+                $search.Filter = '(&(objectClass=msExchExchangeServer)(msExchCurrentServerRoles:1.2.840.113556.1.4.803:=2))' # all Exchange servers with the mailbox role
+                $search.PageSize = 1000
+                [void]$search.PropertiesToLoad.Add('networkaddress')
+                @((($search.FindAll().properties.networkaddress | Where-Object { $_ -ilike 'ncacn_ip_tcp:*' }) -ireplace '^ncacn_ip_tcp:', 'http://' -ireplace '$', '/powershell') | Sort-Object -Unique)
+            } catch {
+                @()
+            }
+        } else {
+            @('https://outlook.office365.com/powershell-liveid')
+        }
+    ),
     [boolean]$UseDefaultCredential = $false,
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
@@ -1050,12 +1066,10 @@ try {
             }
         }
 
-        if ($tempQueue.count -eq 0) {
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-            Write-Host
-        } else {
-            Write-Host
-            Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+        if ($tempQueue.count -ne 0) {
+            Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
         }
 
         foreach ($runspace in $runspaces) {
@@ -1639,12 +1653,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all databases have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all databases have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -1855,12 +1867,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all recipients have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -1962,7 +1972,16 @@ try {
     Write-Host
     Write-Host "Import security principals, filtered by Name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
-    if (($ExportMailboxAccessRights) -and (($ExportSendAs) -or ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or ($ExportManagementRoleGroupMembers) -or (($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) -or ($ExpandGroups))) {
+    if (
+        ($ExportMailboxAccessRights) -or
+        ($ExportSendAs) -or
+        ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or
+        ($ExportManagementRoleGroupMembers) -or
+        ($ExportDistributionGroupMembers -ieq 'All') -or
+        ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
+        ($ExpandGroups) -or
+        ($ExportGuids)
+    ) {
         $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
         $tempChars = ([char[]](0..255) -clike '[A-Z0-9]')
@@ -2138,12 +2157,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2417,12 +2434,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '    Not all queries have been performed. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2845,12 +2860,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantor mailboxes have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2892,7 +2905,7 @@ try {
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             $Recipient = $AllRecipients[$x]
 
-            if (($Recipient.RecipientTypeDetails.Value -ilike '*Mailbox') -and ($x -in $GrantorsToConsider) -and ($Recipient.RecipientTypeDetails.Value -ine 'PublicFolderMailbox') -and (-not $Recipient.WhenSoftDeleted)) {
+            if (($Recipient.RecipientTypeDetails.Value -ilike '*Mailbox') -and ($x -in $GrantorsToConsider) -and ($Recipient.RecipientTypeDetails.Value -inotin @('PublicFolderMailbox', 'MonitoringMailbox')) -and (-not $Recipient.WhenSoftDeleted)) {
                 $tempQueue.enqueue($x)
             }
         }
@@ -3314,12 +3327,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantor mailboxes have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -3817,12 +3828,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantors have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -4224,12 +4233,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantors have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -4529,12 +4536,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantors have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -4889,12 +4894,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all grantors have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -5436,12 +5439,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all Public Folders have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -5754,12 +5755,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all recipients have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -6016,12 +6015,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '    Not all groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -6376,12 +6373,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all management role group members have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all management role group members have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -6731,12 +6726,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all distribution groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all distribution groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -7043,12 +7036,10 @@ try {
                 }
             }
 
-            if ($tempQueue.count -eq 0) {
-                Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                Write-Host
-            } else {
-                Write-Host
-                Write-Host '  Not all files have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+            if ($tempQueue.count -ne 0) {
+                Write-Host '    Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -7306,12 +7297,10 @@ try {
                     }
                 }
 
-                if ($tempQueue.count -eq 0) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                    Write-Host
-                } else {
-                    Write-Host
-                    Write-Host '    Not all recipients have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+                if ($tempQueue.count -ne 0) {
+                    Write-Host '      Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
                 }
 
                 foreach ($runspace in $runspaces) {
@@ -7577,12 +7566,10 @@ try {
                     }
                 }
 
-                if ($tempQueue.count -eq 0) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                    Write-Host
-                } else {
-                    Write-Host
-                    Write-Host '    Not all Public Folders have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+                if ($tempQueue.count -ne 0) {
+                    Write-Host '      Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
                 }
 
                 foreach ($runspace in $runspaces) {
@@ -7842,12 +7829,10 @@ try {
                     }
                 }
 
-                if ($tempQueue.count -eq 0) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                    Write-Host
-                } else {
-                    Write-Host
-                    Write-Host '    Not all Management Role Groups have been checked. Enable DebugFile option and check log file.' -ForegroundColor red
+                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+                if ($tempQueue.count -ne 0) {
+                    Write-Host '      Not all Management Role Groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
                 }
 
                 foreach ($runspace in $runspaces) {
@@ -8062,12 +8047,10 @@ try {
                     }
                 }
 
-                if ($tempQueue.count -eq 0) {
-                    Write-Host (("`b" * 100) + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
-                    Write-Host
-                } else {
-                    Write-Host
-                    Write-Host '        Not all files have been combined. Enable DebugFile option and check log file.' -ForegroundColor red
+                Write-Host (("`b" * 100) + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+
+                if ($tempQueue.count -ne 0) {
+                    Write-Host '          Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
                 }
 
                 foreach ($runspace in $runspaces) {

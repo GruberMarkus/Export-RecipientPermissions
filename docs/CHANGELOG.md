@@ -15,6 +15,12 @@
   ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.3.0" target="_blank">v2.3.0</a> - 2022-10-25
+### Added
+- When '`ExportFromOnPrem`' is set to '`$true`' and '`ExchangeConnectionUriList`' is not specified, '`ExchangeConnectionUriList`' defaults to '`http://<server>/powershell`' for each Exchange server with the mailbox server role
+- New FAQs in '`README`': 'Which resources does a particular user or group have access to?', 'How to find distribution lists without members?'
+- New sample code 'MemberOfRecurse.ps1'
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.2.1" target="_blank">v2.2.1</a> - 2022-09-27
 ### Fixed
 - When ExportGrantorsWithNoPermissions is enabled and ExportGuids is disabled, empty management role groups were exported with no name and a trailing slash in the recipient type field
