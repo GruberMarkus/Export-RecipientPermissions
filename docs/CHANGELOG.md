@@ -16,8 +16,11 @@
 -->
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Added
+- New FAQ in '`README`': 'How to export permissions for specific public folders?'
 ### Fixed
 - Sample code '`compare.ps1`' now additionally outputs the original identity of a trustee and not only the primary SMTP address. This helps with permissions granted to 'Anonymous' and 'Default', as well as with recipients which have been deleted in the time between the old and the new export.
+- Always include trustee groups in GrantorFilter when ExportDistributionGroups is set to OnlyTrustees
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.3.0" target="_blank">v2.3.0</a> - 2022-10-25
 ### Added

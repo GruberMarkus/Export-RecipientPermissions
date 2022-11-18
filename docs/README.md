@@ -76,6 +76,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.9. Is there a GUI available?](#29-is-there-a-gui-available)
   - [2.10. Which resources does a particular user or group have access to?](#210-which-resources-does-a-particular-user-or-group-have-access-to)
   - [2.11. How to find distribution lists without members?](#211-how-to-find-distribution-lists-without-members)
+    - [2.11.1. How to export permissions for specific public folders?](#2111-how-to-export-permissions-for-specific-public-folders)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -702,6 +703,76 @@ $params = @{
     DebugFile                                   = $null
 
     verbose                                     = $false
+}
+
+
+& .\Export-RecipientPermissions\Export-RecipientPermissions.ps1 @params
+```
+### 2.11.1. How to export permissions for specific public folders?
+You need three things for this:
+- GrantorFilter should only include Public Folder Mailboxes
+- ExportFileFilter needs to remove everything not of interest
+
+The following example shows how to export permissions granted on the public folder '/X', '/Y' and their subfolders, plus all members of groups granted permissions:
+```
+$params = @{
+    ExportFromOnPrem                            = $true
+    UseDefaultCredential                        = $true
+
+    ExportMailboxAccessRights                   = $false
+    ExportMailboxAccessRightsSelf               = $false
+    ExportMailboxAccessRightsInherited          = $false
+    ExportMailboxFolderPermissions              = $false
+    ExportMailboxFolderPermissionsAnonymous     = $true
+    ExportMailboxFolderPermissionsDefault       = $true
+    ExportMailboxFolderPermissionsOwnerAtLocal  = $true
+    ExportMailboxFolderPermissionsMemberAtLocal = $true
+    ExportSendAs                                = $false
+    ExportSendAsSelf                            = $false
+    ExportSendOnBehalf                          = $true
+    ExportManagedBy                             = $false
+    ExportLinkedMasterAccount                   = $false
+    ExportPublicFolderPermissions               = $true
+    ExportPublicFolderPermissionsAnonymous      = $true
+    ExportPublicFolderPermissionsDefault        = $true
+    ExportForwarders                            = $false
+    ExportManagementRoleGroupMembers            = $false
+    ExportDistributionGroupMembers              = 'OnlyTrustees'
+    ExportGroupMembersRecurse                   = $true
+    ExpandGroups                                = $false
+    ExportGuids                                 = $true
+    ExportGrantorsWithNoPermissions             = $true
+    ExportTrustees                              = 'All'
+
+    RecipientProperties                         = @()
+    GrantorFilter                               = "if ( (`$Grantor.RecipientTypeDetails.Value -ieq 'PublicFolderMailbox') ) { `$true } else { `$false }"
+    TrusteeFilter                               = $null
+    ExportFileFilter                            = "
+                                                    if (
+                                                        (
+                                                            (`$ExportFileLine.'Grantor Recipient Type' -ieq 'UserMailbox/PublicFolderMailbox') -and
+                                                            (
+                                                                (`$ExportFileLine.'Folder' -ieq '/X') -or
+                                                                (`$ExportFileLine.'Folder' -ilike '/X/*') -or
+                                                                (`$ExportFileLine.'Folder' -ieq '/Y') -or
+                                                                (`$ExportFileLine.'Folder' -ilike '/Y/*')
+                                                            )
+                                                        ) -or
+                                                        (
+                                                            `$ExportFileLine.'Grantor Recipient Type' -ine 'UserMailbox/PublicFolderMailbox'
+                                                        )
+                                                    ) {
+                                                        `$true
+                                                    } else {
+                                                        `$false 
+                                                    }
+                                                 "
+
+    ExportFile                                  = '..\export\Export-RecipientPermissions_Result.csv'
+    ErrorFile                                   = '..\export\Export-RecipientPermissions_Error.csv'
+    DebugFile                                   = ''
+
+    verbose                                     = $true
 }
 
 
