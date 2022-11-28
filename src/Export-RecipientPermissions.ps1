@@ -6423,6 +6423,10 @@ try {
                     if ($AllGroupMembers.ContainsKey($AllRecipients[$x].Identity.ObjectGuid.Guid)) {
                         $tempQueue.enqueue($x)
                     }
+
+                    if (($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -and (($x -notin $GrantorsToConsider))) {
+                        $null = $GrantorsToConsider.add($x) # makes $ExportGrantorsWithNoPermissions work for these groups
+                    }
                 }
             }
         }
@@ -7085,8 +7089,21 @@ try {
             $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
             foreach ($x in $GrantorsToConsider) {
-                $tempQueue.enqueue($x)
+                if (($AllRecipients[$x].RecipientTypeDetails.Value -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails.Value -ilike '*Group')) {
+                    if ($ExportDistributionGroupMembers -ieq 'None') {
+                        # do nothing
+                    } elseif ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') {
+                        if ($AllRecipients[$x].IsTrustee -eq $true) {
+                            $tempQueue.enqueue($x)
+                        }
+                    } else {
+                        $tempQueue.enqueue($x)
+                    }
+                } else {
+                    $tempQueue.enqueue($x)
+                }
             }
+
             $tempQueueCount = $tempQueue.count
 
             $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsLocal)

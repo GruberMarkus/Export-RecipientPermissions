@@ -21,12 +21,11 @@ Param(
     $newCsv = '.\Export-RecipientPermissions_Output_new.csv',
 
     # Display results on screen before creating file showing changes
-    $DisplayResults = $false,
-
+    $DisplayResults = $true,
 
     # Path for export file showing changes
     # Set to '' or $null to not create this file
-    $ChangeFile = '.\changes.csv'
+    $ChangeFile = '.\comparison.csv'
 )
 
 
@@ -91,11 +90,11 @@ if ($DisplayResults) {
         Write-Host "  $($GrantorPrimarySmtp)"
         foreach ($DatasetObject in $Dataset[$($GrantorPrimarySmtpOrder.IndexOf($GrantorPrimarySmtp))..$($GrantorPrimarySmtpReverseOrder.count - 1 - $GrantorPrimarySmtpReverseOrder.IndexOf($GrantorPrimarySmtp))]) {
             if ($DatasetObject.Change -eq 'Deleted') {
-                Write-Host ("    Deleted: $($DatasetObject.'Trustee Primary SMTP') no longer has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
+                Write-Host ("    Deleted: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')') no longer has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
             } elseif ($DatasetObject.change -eq 'New') {
-                Write-Host ("    New: $($DatasetObject.'Trustee Primary SMTP') now has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
+                Write-Host ("    New: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')) now has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
             } else {
-                Write-Host ("    Unchanged: $($DatasetObject.'Trustee Primary SMTP') still has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
+                Write-Host ("    Unchanged: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')') still has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
             }
         }
     }
