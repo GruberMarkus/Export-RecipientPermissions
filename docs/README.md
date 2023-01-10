@@ -526,34 +526,37 @@ For best results, especially when Export-RecipientPermissions is used with Excha
 # 2. FAQ
 ## 2.1. Which permissions are required?
 Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
-- 'Get-CalendarProcessing'
-- 'Get-DistributionGroup'
-- 'Get-DynamicDistributionGroup'
-- 'Get-DynamicDistributionGroupMember' # Exchange Online only
-- 'Get-EXOMailbox' # Exchange Online only
-- 'Get-EXOMailboxFolderPermission' # Exchange Online only
-- 'Get-EXOMailboxFolderStatistics' # Exchange Online only
-- 'Get-EXOMailboxPermission' # Exchange Online only
-- 'Get-EXORecipient' # Exchange Online only
-- 'Get-EXORecipientPermission' # Exchange Online only
-- 'Get-Group'
-- 'Get-Mailbox'
-- 'Get-MailboxDatabase' # Exchange on-prem only
-- 'Get-MailboxFolderPermission'
-- 'Get-MailboxFolderStatistics'
-- 'Get-MailboxPermission'
-- 'Get-MailPublicFolder'
-- 'Get-MailContact'
-- 'Get-MailUser'
-- 'Get-Publicfolder'
-- 'Get-PublicFolderClientPermission'
-- 'Get-Recipient'
-- 'Get-EXORecipient' # Exchange Online only
-- 'Get-RecipientPermission'
-- 'Get-RemoteMailbox' # Exchange on-prem only
-- 'Get-SecurityPrincipal'
-- 'Get-UnifiedGroup' # Exchange Online only
-- 'Get-UnifiedGroupLinks' # Exchange Online only
+- 'Get-CASMailbox',
+- 'Get-CalendarProcessing',
+- 'Get-DistributionGroup',
+- 'Get-DynamicDistributionGroup',
+- 'Get-DynamicDistributionGroupMember', # Exchange Online only
+- 'Get-EXOMailbox', # Exchange Online only
+- 'Get-EXOMailboxFolderPermission', # Exchange Online only
+- 'Get-EXOMailboxFolderStatistics', # Exchange Online only
+- 'Get-EXOMailboxPermission', # Exchange Online only
+- 'Get-EXORecipient', # Exchange Online only
+- 'Get-EXORecipientPermission', # Exchange Online only
+- 'Get-Group',
+- 'Get-LinkedUser',
+- 'Get-Mailbox',
+- 'Get-MailboxDatabase', # Exchange on-prem only
+- 'Get-MailboxFolderPermission',
+- 'Get-MailboxFolderStatistics',
+- 'Get-MailboxPermission',
+- 'Get-MailContact',
+- 'Get-MailPublicFolder',
+- 'Get-MailUser',
+- 'Get-Publicfolder',
+- 'Get-PublicFolderClientPermission',
+- 'Get-Recipient',
+- 'Get-RecipientPermission',
+- 'Get-RemoteMailbox', # Exchange on-prem only
+- 'Get-SecurityPrincipal',
+- 'Get-UMMailbox',
+- 'Get-UnifiedGroup', # Exchange Online only
+- 'Get-UnifiedGroupLinks', # Exchange Online only
+- 'Get-User',
 - 'Set-AdServerSettings' # Exchange on-prem only
 
 
@@ -568,35 +571,38 @@ You can use the following script to find out which cmdlet is assisgned to which 
 $ExportFile = '.\Required Cmdlets and their management role assignment.csv'
 
 $Cmdlets = (
-  'Get-CalendarProcessing',
-  'Get-DistributionGroup',
-  'Get-DynamicDistributionGroup',
-  'Get-DynamicDistributionGroupMember', # Exchange Online only
-  'Get-EXOMailbox', # Exchange Online only
-  'Get-EXOMailboxFolderPermission', # Exchange Online only
-  'Get-EXOMailboxFolderStatistics', # Exchange Online only
-  'Get-EXOMailboxPermission', # Exchange Online only
-  'Get-EXORecipient', # Exchange Online only
-  'Get-EXORecipientPermission', # Exchange Online only
-  'Get-Group',
-  'Get-Mailbox',
-  'Get-MailboxDatabase', # Exchange on-prem only
-  'Get-MailboxFolderPermission',
-  'Get-MailboxFolderStatistics',
-  'Get-MailboxPermission',
-  'Get-MailPublicFolder',
-  'Get-MailContact',
-  'Get-MailUser',
-  'Get-Publicfolder',
-  'Get-PublicFolderClientPermission',
-  'Get-Recipient',
-  'Get-EXORecipient', # Exchange Online only
-  'Get-RecipientPermission',
-  'Get-RemoteMailbox', # Exchange on-prem only
-  'Get-SecurityPrincipal',
-  'Get-UnifiedGroup', # Exchange Online only
-  'Get-UnifiedGroupLinks', # Exchange Online only
-  'Set-AdServerSettings' # Exchange on-prem only
+        'Get-CASMailbox',
+        'Get-CalendarProcessing',
+        'Get-DistributionGroup',
+        'Get-DynamicDistributionGroup',
+        'Get-DynamicDistributionGroupMember', # Exchange Online only
+        'Get-EXOMailbox', # Exchange Online only
+        'Get-EXOMailboxFolderPermission', # Exchange Online only
+        'Get-EXOMailboxFolderStatistics', # Exchange Online only
+        'Get-EXOMailboxPermission', # Exchange Online only
+        'Get-EXORecipient', # Exchange Online only
+        'Get-EXORecipientPermission', # Exchange Online only
+        'Get-Group',
+        'Get-LinkedUser',
+        'Get-Mailbox',
+        'Get-MailboxDatabase', # Exchange on-prem only
+        'Get-MailboxFolderPermission',
+        'Get-MailboxFolderStatistics',
+        'Get-MailboxPermission',
+        'Get-MailContact',
+        'Get-MailPublicFolder',
+        'Get-MailUser',
+        'Get-Publicfolder',
+        'Get-PublicFolderClientPermission',
+        'Get-Recipient',
+        'Get-RecipientPermission',
+        'Get-RemoteMailbox', # Exchange on-prem only
+        'Get-SecurityPrincipal',
+        'Get-UMMailbox',
+        'Get-UnifiedGroup', # Exchange Online only
+        'Get-UnifiedGroupLinks', # Exchange Online only
+        'Get-User',
+        'Set-AdServerSettings' # Exchange on-prem only
 )
 
 

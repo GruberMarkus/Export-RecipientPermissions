@@ -490,7 +490,7 @@ $ConnectExchange = {
 
                 if (($ExportFromOnPrem -eq $true)) {
                     if ($ExchangeSession) {
-                        Remove-PSSession $ExchangeSession
+                        Remove-PSSession -Session $ExchangeSession
                     }
                 }
 
@@ -546,7 +546,7 @@ $ConnectExchange = {
 
                     if (($ExportFromOnPrem -eq $true)) {
                         if ($ExchangeSession) {
-                            Remove-PSSession $ExchangeSession
+                            Remove-PSSession -Session $ExchangeSession
                         }
                     }
 
@@ -1126,7 +1126,7 @@ try {
 
                         if (($ExportFromOnPrem -eq $true)) {
                             if ($ExchangeSession) {
-                                Remove-PSSession $ExchangeSession
+                                # Remove-PSSession -Session $ExchangeSession # Hangs often
                             }
                         }
 
@@ -1157,13 +1157,11 @@ try {
                 }
             )
 
-            $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-            $Handle = $Powershell.BeginInvoke($Object, $Object)
+            $Handle = $Powershell.BeginInvoke()
 
             $temp = '' | Select-Object PowerShell, Handle, Object
             $temp.PowerShell = $PowerShell
             $temp.Handle = $Handle
-            $temp.Object = $Object
             [void]$runspaces.Add($Temp)
         }
 
@@ -1190,13 +1188,13 @@ try {
 
         foreach ($runspace in $runspaces) {
             # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-            $runspace.PowerShell.Stop()
+            # $runspace.PowerShell.Stop()
             $runspace.PowerShell.Dispose()
         }
 
         $RunspacePool.Close()
         $RunspacePool.Dispose()
-        'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+        'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
         if ($DebugFile) {
             $null = Stop-Transcript
@@ -1609,7 +1607,7 @@ try {
 
     if (($ExportFromOnPrem -eq $true)) {
         if ($ExchangeSession) {
-            Remove-PSSession $ExchangeSession
+            Remove-PSSession -Session $ExchangeSession
         }
     }
 
@@ -1744,7 +1742,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -1774,13 +1772,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -1807,13 +1803,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -1969,7 +1965,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -1999,13 +1995,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -2032,13 +2026,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -2263,7 +2257,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -2293,13 +2287,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -2326,13 +2318,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -2518,7 +2510,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -2548,13 +2540,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -2581,13 +2571,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -2772,7 +2762,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -2802,13 +2792,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -2835,13 +2823,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -2995,7 +2983,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -3024,13 +3012,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -3057,13 +3043,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -3262,7 +3248,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -3292,13 +3278,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -3325,13 +3309,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -3560,7 +3544,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -3589,13 +3573,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -3622,13 +3604,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -3840,7 +3822,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -3869,13 +3851,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -3902,13 +3882,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -4262,7 +4242,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -4307,13 +4287,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -4340,13 +4318,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -4746,7 +4724,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -4788,13 +4766,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -4821,13 +4797,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -5255,13 +5231,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -5288,13 +5262,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -5665,13 +5639,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -5698,13 +5670,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -5973,13 +5945,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -6006,13 +5976,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -6335,13 +6305,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -6368,13 +6336,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -6842,7 +6810,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -6886,13 +6854,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -6919,13 +6885,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -7206,13 +7172,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -7239,13 +7203,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -7519,13 +7483,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -7552,13 +7514,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -7830,13 +7792,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -7863,13 +7823,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -8159,13 +8119,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -8192,13 +8150,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -8459,13 +8417,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -8492,13 +8448,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -8695,7 +8651,7 @@ try {
 
                             if (($ExportFromOnPrem -eq $true)) {
                                 if ($ExchangeSession) {
-                                    Remove-PSSession $ExchangeSession
+                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
                                 }
                             }
 
@@ -8731,13 +8687,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -8764,13 +8718,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -9095,13 +9049,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -9128,13 +9080,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -9456,13 +9408,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -9489,13 +9439,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -9770,13 +9720,11 @@ try {
                     }
                 )
 
-                $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                $Handle = $Powershell.BeginInvoke($Object, $Object)
+                $Handle = $Powershell.BeginInvoke()
 
                 $temp = '' | Select-Object PowerShell, Handle, Object
                 $temp.PowerShell = $PowerShell
                 $temp.Handle = $Handle
-                $temp.Object = $Object
                 [void]$runspaces.Add($Temp)
             }
 
@@ -9803,13 +9751,13 @@ try {
 
             foreach ($runspace in $runspaces) {
                 # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                $runspace.PowerShell.Stop()
+                # $runspace.PowerShell.Stop()
                 $runspace.PowerShell.Dispose()
             }
 
             $RunspacePool.Close()
             $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
             if ($DebugFile) {
                 $null = Stop-Transcript
@@ -10048,13 +9996,11 @@ try {
                         }
                     )
 
-                    $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                    $Handle = $Powershell.BeginInvoke($Object, $Object)
+                    $Handle = $Powershell.BeginInvoke()
 
                     $temp = '' | Select-Object PowerShell, Handle, Object
                     $temp.PowerShell = $PowerShell
                     $temp.Handle = $Handle
-                    $temp.Object = $Object
                     [void]$runspaces.Add($Temp)
                 }
 
@@ -10081,13 +10027,13 @@ try {
 
                 foreach ($runspace in $runspaces) {
                     # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                    $runspace.PowerShell.Stop()
+                    # $runspace.PowerShell.Stop()
                     $runspace.PowerShell.Dispose()
                 }
 
                 $RunspacePool.Close()
                 $RunspacePool.Dispose()
-                'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+                'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
                 if ($DebugFile) {
                     $null = Stop-Transcript
@@ -10321,13 +10267,11 @@ try {
                         }
                     )
 
-                    $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                    $Handle = $Powershell.BeginInvoke($Object, $Object)
+                    $Handle = $Powershell.BeginInvoke()
 
                     $temp = '' | Select-Object PowerShell, Handle, Object
                     $temp.PowerShell = $PowerShell
                     $temp.Handle = $Handle
-                    $temp.Object = $Object
                     [void]$runspaces.Add($Temp)
                 }
 
@@ -10354,13 +10298,13 @@ try {
 
                 foreach ($runspace in $runspaces) {
                     # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                    $runspace.PowerShell.Stop()
+                    # $runspace.PowerShell.Stop()
                     $runspace.PowerShell.Dispose()
                 }
 
                 $RunspacePool.Close()
                 $RunspacePool.Dispose()
-                'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+                'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
                 if ($DebugFile) {
                     $null = Stop-Transcript
@@ -10588,13 +10532,11 @@ try {
                         }
                     )
 
-                    $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                    $Handle = $Powershell.BeginInvoke($Object, $Object)
+                    $Handle = $Powershell.BeginInvoke()
 
                     $temp = '' | Select-Object PowerShell, Handle, Object
                     $temp.PowerShell = $PowerShell
                     $temp.Handle = $Handle
-                    $temp.Object = $Object
                     [void]$runspaces.Add($Temp)
                 }
 
@@ -10621,13 +10563,13 @@ try {
 
                 foreach ($runspace in $runspaces) {
                     # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                    $runspace.PowerShell.Stop()
+                    # $runspace.PowerShell.Stop()
                     $runspace.PowerShell.Dispose()
                 }
 
                 $RunspacePool.Close()
                 $RunspacePool.Dispose()
-                'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+                'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
                 if ($DebugFile) {
                     $null = Stop-Transcript
@@ -10678,7 +10620,7 @@ try {
 
     if (($ExportFromOnPrem -eq $true)) {
         if ($ExchangeSession) {
-            Remove-PSSession $ExchangeSession
+            Remove-PSSession -Session $ExchangeSession
         }
     }
 
@@ -10687,7 +10629,7 @@ try {
     if ($runspaces) {
         foreach ($runspace in $runspaces) {
             # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-            $runspace.PowerShell.Stop()
+            # $runspace.PowerShell.Stop()
             $runspace.PowerShell.Dispose()
         }
     }
@@ -10816,13 +10758,11 @@ try {
                         }
                     )
 
-                    $Object = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-                    $Handle = $Powershell.BeginInvoke($Object, $Object)
+                    $Handle = $Powershell.BeginInvoke()
 
                     $temp = '' | Select-Object PowerShell, Handle, Object
                     $temp.PowerShell = $PowerShell
                     $temp.Handle = $Handle
-                    $temp.Object = $Object
                     [void]$runspaces.Add($Temp)
                 }
 
@@ -10849,13 +10789,13 @@ try {
 
                 foreach ($runspace in $runspaces) {
                     # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                    $runspace.PowerShell.Stop()
+                    # $runspace.PowerShell.Stop()
                     $runspace.PowerShell.Dispose()
                 }
 
                 $RunspacePool.Close()
                 $RunspacePool.Dispose()
-                'temp', 'powershell', 'handle', 'object', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
+                'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
 
                 if ($DebugFile) {
                     $null = Stop-Transcript
