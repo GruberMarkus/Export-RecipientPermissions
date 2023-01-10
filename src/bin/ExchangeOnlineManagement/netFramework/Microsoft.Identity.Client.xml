@@ -637,6 +637,27 @@
             <returns>The builder to chain the .With methods</returns>
             <remarks></remarks>
         </member>
+        <member name="M:Microsoft.Identity.Client.AcquireTokenInteractiveParameterBuilder.WithProofOfPossession(System.String,System.Net.Http.HttpMethod,System.Uri)">
+            <summary>
+             Modifies the token acquisition request so that the acquired token is a Proof of Possession token (PoP), rather than a Bearer token. 
+             PoP tokens are similar to Bearer tokens, but are bound to the HTTP request and to a cryptographic key, which MSAL can manage on Windows.
+             Note that only the host and path parts of the request URI will be bound.
+             See https://aka.ms/msal-net-pop
+            </summary>
+            <param name="httpMethod">The HTTP method ("GET", "POST" etc.) method that will be bound to the token. Leave null and the POP token will not be bound to the method.
+            Corresponds to the "m" part of the a signed HTTP request.</param>
+            <param name="requestUri">The URI to bind the signed HTTP request to.</param>
+            <param name="nonce">Nonce of the protected resource (RP) which will be published as part of the WWWAuthenticate header associated with a 401 HTTP response
+            or as part of the AuthorityInfo header associated with 200 response. Set it here to make it part of the Signed HTTP Request part of the POP token.</param>
+            <returns>The builder.</returns>
+            <remarks>
+            <list type="bullet">
+            <item><description>An Authentication header is automatically added to the request</description></item>
+            <item><description>The PoP token is bound to the HTTP request, more specifically to the HTTP method (GET, POST, etc.) and to the Uri (path and query, but not query parameters).</description></item>
+            <item><description>This is an experimental API. The method signature may change in the future without involving a major version upgrade.</description></item>
+            </list>
+            </remarks>
+        </member>
         <member name="M:Microsoft.Identity.Client.AcquireTokenInteractiveParameterBuilder.Validate">
             <inheritdoc />
         </member>
@@ -769,6 +790,28 @@
             <remarks>
             <list type="bullet">
             <item><description>An Authentication header is automatically added to the request.</description></item>
+            <item><description>The PoP token is bound to the HTTP request, more specifically to the HTTP method (GET, POST, etc.) and to the Uri (path and query, but not query parameters).</description></item>
+            <item><description>MSAL creates, reads and stores a key in memory that will be cycled every 8 hours.</description></item>
+            <item><description>This is an experimental API. The method signature may change in the future without involving a major version upgrade.</description></item>
+            </list>
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Identity.Client.AcquireTokenSilentParameterBuilder.WithProofOfPossession(System.String,System.Net.Http.HttpMethod,System.Uri)">
+            <summary>
+             Modifies the token acquisition request so that the acquired token is a Proof of Possession token (PoP), rather than a Bearer token. 
+             PoP tokens are similar to Bearer tokens, but are bound to the HTTP request and to a cryptographic key, which MSAL can manage on Windows.
+             Note that only the host and path parts of the request URI will be bound.
+             See https://aka.ms/msal-net-pop
+            </summary>
+            <param name="httpMethod">The HTTP method ("GET", "POST" etc.) method that will be bound to the token. Leave null and the POP token will not be bound to the method.
+            Corresponds to the "m" part of the a signed HTTP request.</param>
+            <param name="requestUri">The URI to bind the signed HTTP request to.</param>
+            <param name="nonce">Nonce of the protected resource (RP) which will be published as part of the WWWAuthenticate header associated with a 401 HTTP response
+            or as part of the AuthorityInfo header associated with 200 response. Set it here to make it part of the Signed HTTP Request part of the POP token.</param>
+            <returns>The builder.</returns>
+            <remarks>
+            <list type="bullet">
+            <item><description>An Authentication header is automatically added to the request</description></item>
             <item><description>The PoP token is bound to the HTTP request, more specifically to the HTTP method (GET, POST, etc.) and to the Uri (path and query, but not query parameters).</description></item>
             <item><description>MSAL creates, reads and stores a key in memory that will be cycled every 8 hours.</description></item>
             <item><description>This is an experimental API. The method signature may change in the future without involving a major version upgrade.</description></item>
@@ -1656,25 +1699,69 @@
             Kerberos Service Ticket container to be used.
             </summary>
         </member>
+        <member name="T:Microsoft.Identity.Client.AppTokenProviderParameters">
+            <summary>
+            The authentication parameters provided to the app token provider callback.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AppTokenProviderParameters.Scopes">
+            <summary>
+            Specifies which scopes to request.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AppTokenProviderParameters.CorrelationId">
+            <summary>
+            Correlation id of the authentication request.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AppTokenProviderParameters.Claims">
+            <summary>
+            A string with one or multiple claims.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AppTokenProviderParameters.TenantId">
+            <summary>
+            Tenant id of the 
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AppTokenProviderParameters.CancellationToken">
+            <summary>
+            Used to cancel the authentication attempt made by the token provider
+            </summary>
+        </member>
         <member name="T:Microsoft.Identity.Client.AuthorityInfo">
             <remarks>
             This class must be kept immutable
             </remarks>
         </member>
+        <member name="T:Microsoft.Identity.Client.AuthorityInfo.AuthorityInfoHelper">
+            <summary>
+            This is extension for AuthorityInfo
+            </summary>
+        </member>
+        <member name="M:Microsoft.Identity.Client.AuthorityInfo.AuthorityInfoHelper.CreateAuthorityForRequestAsync(Microsoft.Identity.Client.Internal.RequestContext,Microsoft.Identity.Client.AuthorityInfo,Microsoft.Identity.Client.IAccount)">
+             <summary>
+             Figures out the authority based on the authority from the config and the authority from the request,
+             and optionally the homeAccountTenantId, which has an impact on AcquireTokenSilent
+            
+             The algorithm is:
+            
+             1. If there is no request authority (i.e. no authority override), use the config authority.
+                 1.1. For AAD, if the config authority is "common" etc, try to use the tenanted version with the home account tenant ID
+             2. If there is a request authority, try to use it.
+                 2.1. If the request authority is not "common", then use it
+                 2.2  If the request authority is "common", ignore it, and use 1.1
+            
+             Special cases:
+            
+             - if the authority is not defined at the application level and the request level is not AAD, use the request authority
+             - if the authority is defined at app level, and the request level authority of is of different type, throw an exception
+            
+             </summary>
+        </member>
         <member name="T:Microsoft.Identity.Client.AuthorityType">
             <summary>
-            </summary>
-        </member>
-        <member name="F:Microsoft.Identity.Client.AuthorityType.Aad">
-            <summary>
-            </summary>
-        </member>
-        <member name="F:Microsoft.Identity.Client.AuthorityType.Adfs">
-            <summary>
-            </summary>
-        </member>
-        <member name="F:Microsoft.Identity.Client.AuthorityType.B2C">
-            <summary>
+            Enumeration for the AuthorityTypes
             </summary>
         </member>
         <member name="T:Microsoft.Identity.Client.AzureCloudInstance">
@@ -1888,6 +1975,17 @@
             False by default.
             Not recommended for apps that call RemoveAsync
             </remarks>
+        </member>
+        <member name="M:Microsoft.Identity.Client.ConfidentialClientApplicationBuilder.WithAppTokenProvider(System.Func{Microsoft.Identity.Client.AppTokenProviderParameters,System.Threading.Tasks.Task{Microsoft.Identity.Client.TokenProviderResult}})">
+            <summary>
+            Allows setting a callback which returns an access token, based on the passed-in parameters.
+            MSAL will pass in its authentication parameters to the callback and it is expected that the callback
+            will construct a <see cref="T:Microsoft.Identity.Client.TokenProviderResult"/> and return it to MSAL.
+            MSAL will cache the token response the same way it does for other authentication results.
+            Note: This is only for client credential flows.
+            </summary>
+            <param name="appTokenProvider">Authentication callback which returns an access token.</param>
+            <returns>The builder to chain the .With methods</returns>
         </member>
         <member name="M:Microsoft.Identity.Client.ConfidentialClientApplicationBuilder.Validate">
             <inheritdoc />
@@ -2231,7 +2329,7 @@
         </member>
         <member name="P:Microsoft.Identity.Client.AppConfig.PoPAuthenticationConfiguration.SignHttpRequest">
             <summary>
-            Allows app developers to bypass the creation of the SignedHttpRequest envelope by setting this property to true.
+            Allows app developers to bypass the creation of the SignedHttpRequest envelope by setting this property to false.
             App developers can use a package like Microsoft.IdentityModel.Protocols.SignedHttpRequest to later create and sign the envelope. 
             </summary>
             <remarks>
@@ -2292,6 +2390,15 @@
             <returns>A <see cref="T:Microsoft.Identity.Client.PublicClientApplicationBuilder"/> from which to set more
             parameters, and to create a public client application instance</returns>
         </member>
+        <member name="M:Microsoft.Identity.Client.PublicClientApplicationBuilder.WithMultiCloudSupport(System.Boolean)">
+            <summary>
+            Enables multi cloud support for this instance of public client application.
+            It enables applications to use in a global public cloud authority to the library and can still get tokens for resources from national clouds.
+            </summary>
+            <param name="enableMultiCloudSupport">Enable or disable multi cloud support.</param>
+            <returns>A <see cref="T:Microsoft.Identity.Client.PublicClientApplicationBuilder"/> from which to set more
+            parameters, and to create a public client application instance</returns>
+        </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplicationBuilder.WithIosKeychainSecurityGroup(System.String)">
             <summary>
             You can specify a Keychain Access Group to use for persisting the token cache across multiple applications.
@@ -2317,7 +2424,7 @@
             <returns>A <see cref="T:Microsoft.Identity.Client.PublicClientApplicationBuilder"/> from which to set more
             parameters, and to create a public client application instance</returns>
             <remarks>If your app uses .NET classic or .NET Core 3.x, and you wish to use the Windows broker, 
-            please install the nuget package Microsoft.Identity.Client.Desktop and call .WithDesktopFeatures()</remarks>
+            please install the NuGet package Microsoft.Identity.Client.Desktop and call .WithDesktopFeatures()</remarks>
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplicationBuilder.WithWindowsBrokerOptions(Microsoft.Identity.Client.WindowsBrokerOptions)">
             <summary>
@@ -2363,15 +2470,17 @@
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplicationBuilder.IsBrokerAvailable">
             <summary>
-            Returns true if a broker can be used. 
+            Returns <c>true</c> if a broker can be used.
+            This method is only needed to be used in mobile scenarios which support Mobile Application Management. In other supported scenarios, use <c>WithBroker</c> by itself, which will fall back to use a browser if broker is unavailable.
             </summary>
             <remarks>
-            On Windows, the broker (WAM) can be used on Win10 and is always installed. See https://aka.ms/msal-net-wam
-            On Mac, Linux and older versions of Windows a broker is not available.
-            If your application is .NET5, please use the target .net5.0-windows10.0.17763.0 for all Windows versions and target net5.0 to target Linux and Mac.
-            If your application is .NET classic or .NET Core 3.1 and you wish to use the Windows Broker, please install Microsoft.Identity.Client.Desktop first and call WithDesktopFeatures().
-            
-            On mobile, the device must be Intune joined and Authenticator or Company Portal must be installed. See https://aka.ms/msal-brokers
+            <list type="bullet">
+            <item><description>On Windows, the broker (WAM) can be used on Windows 10 and is always installed. See https://aka.ms/msal-net-wam </description></item>
+            <item><description>On Mac, Linux, and older versions of Windows a broker is not available.</description></item>
+            <item><description>In .NET 5 apps, target <c>net5.0-windows10.0.17763.0</c> for all Windows versions and target <c>net5.0</c> for Linux and Mac.</description></item>
+            <item><description>In .NET classic or .NET Core 3.1 apps, install Microsoft.Identity.Client.Desktop first and call <c>WithDesktopFeatures()</c>.</description></item>
+            <item><description>In mobile apps, the device must be Intune joined and Authenticator or Company Portal must be installed. See https://aka.ms/msal-brokers </description></item>
+            </list>
             </remarks>
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplicationBuilder.Build">
@@ -2391,6 +2500,33 @@
             <summary>
             Configuration options for a public client application (desktop/mobile app).
             See https://aka.ms/msal-net/application-configuration
+            </summary>
+        </member>
+        <member name="T:Microsoft.Identity.Client.TokenProviderResult">
+            <summary>
+            Token result from external token provider
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.TokenProviderResult.AccessToken">
+            <summary>
+            Access token
+            Mandatory
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.TokenProviderResult.TenantId">
+            <summary>
+            Tenant Id for client application
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.TokenProviderResult.ExpiresInSeconds">
+            <summary>
+            Expiration of token
+            Mandatory
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.TokenProviderResult.RefreshInSeconds">
+            <summary>
+            When the token should be refreshed proactivly. (Optional)
             </summary>
         </member>
         <member name="T:Microsoft.Identity.Client.TraceTelemetryConfig">
@@ -2638,6 +2774,11 @@
         <member name="P:Microsoft.Identity.Client.AuthenticationResultMetadata.CacheRefreshReason">
             <summary>
             Specifies the reason for fetching the access token from the identity provider.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.AuthenticationResultMetadata.RegionDetails">
+            <summary>
+            Contains the Outcome of the region discovery if Region was used.
             </summary>
         </member>
         <member name="M:Microsoft.Identity.Client.AuthScheme.AuthSchemeHelper.StoreTokenTypeInCacheKey(System.String)">
@@ -3114,7 +3255,7 @@
             Family Refresh Tokens, can be used for all clients part of the family
             </summary>
         </member>
-        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllAccessTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllAccessTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             <summary>
             Returns all access tokens from the underlying cache collection.
             If <paramref name="optionalPartitionKey"/> is specified, returns access tokens from that partition only.
@@ -3125,7 +3266,7 @@
             Not all classes that implement this method are required to filter by partition (e.g. mobile)
             </remarks>
         </member>
-        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllRefreshTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllRefreshTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             <summary>
             Returns all refresh tokens from the underlying cache collection.
             If <paramref name="optionalPartitionKey"/> is specified, returns refresh tokens from that partition only.
@@ -3136,7 +3277,7 @@
             Not all classes that implement this method are required to filter by partition (e.g. mobile)
             </remarks>
         </member>
-        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllIdTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllIdTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             <summary>
             Returns all ID tokens from the underlying cache collection.
             If <paramref name="optionalPartitionKey"/> is specified, returns ID tokens from that partition only.
@@ -3147,7 +3288,7 @@
             Not all classes that implement this method are required to filter by partition (e.g. mobile)
             </remarks>
         </member>
-        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllAccounts(System.String)">
+        <member name="M:Microsoft.Identity.Client.Cache.ITokenCacheAccessor.GetAllAccounts(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             <summary>
             Returns all accounts from the underlying cache collection.
             If <paramref name="optionalPartitionKey"/> is specified, returns accounts from that partition only.
@@ -4524,7 +4665,7 @@
             Must be kept immutable
             </remarks>
         </member>
-        <member name="M:Microsoft.Identity.Client.Instance.Authority.CreateAuthorityForRequestAsync(Microsoft.Identity.Client.Internal.RequestContext,Microsoft.Identity.Client.AuthorityInfo,System.String)">
+        <member name="M:Microsoft.Identity.Client.Instance.Authority.CreateAuthorityForRequestAsync(Microsoft.Identity.Client.Internal.RequestContext,Microsoft.Identity.Client.AuthorityInfo,Microsoft.Identity.Client.IAccount)">
              <summary>
              Figures out the authority based on the authority from the config and the authority from the request,
              and optionally the homeAccountTenantId, which has an impact on AcquireTokenSilent
@@ -4583,13 +4724,13 @@
             MSAL must figure out aliasing even if ValidateAuthority is set to false.
             </summary>
         </member>
-        <member name="M:Microsoft.Identity.Client.Instance.Validation.B2CAuthorityValidator.ValidateAuthorityAsync(Microsoft.Identity.Client.AuthorityInfo)">
-            <inheritdoc />
-        </member>
         <member name="M:Microsoft.Identity.Client.Instance.Validation.IAuthorityValidator.ValidateAuthorityAsync(Microsoft.Identity.Client.AuthorityInfo)">
             <summary>
             Validates the authority. This is specific to each authority type.
             </summary>
+        </member>
+        <member name="M:Microsoft.Identity.Client.Instance.Validation.NullAuthorityValidator.ValidateAuthorityAsync(Microsoft.Identity.Client.AuthorityInfo)">
+            <inheritdoc />
         </member>
         <member name="M:Microsoft.Identity.Client.Region.IRegionManager.GetAzureRegionAsync(Microsoft.Identity.Client.Internal.RequestContext)">
             <summary>
@@ -4822,6 +4963,13 @@
             Leave as is / return null otherwise
             </summary>
         </member>
+        <member name="M:Microsoft.Identity.Client.Internal.Requests.RequestBase.CreateRegionDetails(Microsoft.Identity.Client.TelemetryCore.Internal.Events.ApiEvent)">
+            <summary>
+            Creates the region Details
+            </summary>
+            <param name="apiEvent"></param>
+            <returns></returns>
+        </member>
         <member name="T:Microsoft.Identity.Client.Internal.Requests.UsernamePasswordRequest">
             <summary>
                 Handles requests that are non-interactive. Currently MSAL supports Integrated Windows Auth.
@@ -4861,6 +5009,45 @@
             For expensive logging messsages (e.g. when the log message evaluates a variable), 
             it is better to check the log level ahead of time so as not to evaluate the expensive message and then discard it.
             </summary>
+        </member>
+        <member name="T:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException">
+            <summary>
+            This exception is thrown when Intune requires app protection policy.
+            The information in this exception can be used by app to obtain the required 
+            enrollment ID from Mobile App Management (MAM) SDK.
+            See https://aka.ms/msal-net-trueMAM
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException.Upn">
+            <summary>
+            UPN of the user
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException.AccountUserId">
+            <summary>
+            Local account id
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException.TenantId">
+            <summary>
+            Tenant ID of the App
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException.AuthorityUrl">
+            <summary>
+            Authority URL
+            </summary>
+        </member>
+        <member name="M:Microsoft.Identity.Client.IntuneAppProtectionPolicyRequiredException.#ctor(System.String,System.String)">
+            <summary>
+            Initializes a new instance of the exception class with a specified
+            error code and error message.
+            </summary>
+            <param name="errorCode">
+            The error code returned by the service or generated by the client. This is the code you can rely on
+            for exception handling.
+            </param>
+            <param name="errorMessage">The error message that explains the reason for the exception.</param>
         </member>
         <member name="T:Microsoft.Identity.Client.IPublicClientApplication">
             <summary>
@@ -5905,16 +6092,16 @@
         <member name="P:Microsoft.Identity.Client.TokenCacheNotificationArgs.SuggestedCacheKey">
             <summary>
             A suggested token cache key, which can be used with general purpose storage mechanisms that allow 
-            storing key-value pairs and key based retrieval. Useful in applications that store 1 token cache per user, 
+            storing key-value pairs and key based retrieval. Useful in applications that store one token cache per user, 
             the recommended pattern for web apps.
             
             The value is: 
             
             <list type="bullet">
-            <item><description>the homeAccountId for AcquireTokenSilent, GetAccount(homeAccountId), RemoveAccount and when writing tokens on confidential client calls</description></item>
-            <item><description>clientID + "_AppTokenCache" for AcquireTokenForClient</description></item>
-            <item><description>clientID_tenantID + "_AppTokenCache" for AcquireTokenForClient when tenant specific authority</description></item>
-            <item><description>the hash of the original token for AcquireTokenOnBehalfOf</description></item>
+            <item><description><c>homeAccountId</c> for <c>AcquireTokenSilent</c>, <c>GetAccount(homeAccountId)</c>, <c>RemoveAccount</c> and when writing tokens on confidential client calls</description></item>
+            <item><description><c>"{clientId}__AppTokenCache"</c> for <c>AcquireTokenForClient</c></description></item>
+            <item><description><c>"{clientId}_{tenantId}_AppTokenCache"</c> for <c>AcquireTokenForClient</c> when using a tenant specific authority</description></item>
+            <item><description>the hash of the original token for <c>AcquireTokenOnBehalfOf</c></description></item>
             </list>
             </summary>
         </member>
@@ -5961,7 +6148,7 @@
             <list type="bullet">
             <item><description>Contrary to <see cref="T:Microsoft.Identity.Client.ConfidentialClientApplication"/>, public clients are unable to hold configuration time secrets,
             and as a result have no client secret</description></item>
-            <item><description>The redirect URL is pre-proposed by the library. It does not need to be passed in the constructor</description></item>
+            <item><description>The redirect URL is proposed by the library. It does not need to be passed in the constructor</description></item>
             </list>
             </remarks>
         </member>
@@ -6330,27 +6517,32 @@
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplication.IsEmbeddedWebViewAvailable">
             <summary>
-            Returns true if MSAL can use an embedded webview (browser). 
+            Returns true if MSAL can use an embedded web view (browser). 
             </summary>
             <remarks>
-            Currently there are no embedded webviews on Mac and Linux. On Windows, app developers or users should install 
+            Currently there are no embedded web views on Mac and Linux. On Windows, app developers or users should install 
             the WebView2 runtime and this property will inform if the runtime is available, see https://aka.ms/msal-net-webview2
             </remarks>
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplication.IsUserInteractive">
             <summary>
             Returns false when the program runs in headless OS, for example when SSH-ed into a Linux machine.
-            Browsers (webviews) and brokers cannot be used if there is no UI support. Instead, please use <see cref="M:Microsoft.Identity.Client.PublicClientApplication.AcquireTokenWithDeviceCode(System.Collections.Generic.IEnumerable{System.String},System.Func{Microsoft.Identity.Client.DeviceCodeResult,System.Threading.Tasks.Task})"/>
+            Browsers (web views) and brokers cannot be used if there is no UI support. Instead, please use <see cref="M:Microsoft.Identity.Client.PublicClientApplication.AcquireTokenWithDeviceCode(System.Collections.Generic.IEnumerable{System.String},System.Func{Microsoft.Identity.Client.DeviceCodeResult,System.Threading.Tasks.Task})"/>
             </summary>
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplication.IsBrokerAvailable">
             <summary>
-            Returns true if a broker can be used. 
+            Returns <c>true</c> if a broker can be used.
+            This method is only needed to be used in mobile scenarios which support Mobile Application Management. In other supported scenarios, use <c>WithBroker</c> by itself, which will fall back to use a browser if broker is unavailable.
             </summary>
             <remarks>
-            On Windows, the broker (WAM) can be used on Win10 and is always installed.
-            On Mac, Linux and older versions of Windows a broker is not available.
-            On mobile, the device must be Intune joined and Authenticator or Company Portal must be installed.
+            <list type="bullet">
+            <item><description>On Windows, the broker (WAM) can be used on Windows 10 and is always installed. See https://aka.ms/msal-net-wam </description></item>
+            <item><description>On Mac, Linux, and older versions of Windows a broker is not available.</description></item>
+            <item><description>In .NET 5 apps, target <c>net5.0-windows10.0.17763.0</c> for all Windows versions and target <c>net5.0</c> for Linux and Mac.</description></item>
+            <item><description>In .NET classic or .NET Core 3.1 apps, install Microsoft.Identity.Client.Desktop first and call <c>WithDesktopFeatures()</c>.</description></item>
+            <item><description>In mobile apps, the device must be Intune joined and Authenticator or Company Portal must be installed. See https://aka.ms/msal-brokers </description></item>
+            </list>
             </remarks>
         </member>
         <member name="M:Microsoft.Identity.Client.PublicClientApplication.AcquireTokenInteractive(System.Collections.Generic.IEnumerable{System.String})">
@@ -6747,6 +6939,18 @@
         <member name="M:Microsoft.Identity.Client.TokenCache.SetIosKeychainSecurityGroup(System.String)">
             <inheritdoc />
         </member>
+        <member name="M:Microsoft.Identity.Client.TokenCache.DeleteAccessTokensWithIntersectingScopes(Microsoft.Identity.Client.Internal.Requests.AuthenticationRequestParameters,System.Collections.Generic.IEnumerable{System.String},System.String,System.Collections.Generic.HashSet{System.String},System.String,System.String)">
+            <summary>
+            delete all cache entries with intersecting scopes.
+            this should not happen but we have this as a safe guard
+            against multiple matches.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Identity.Client.TokenCache.CalculateSuggestedCacheExpiry(Microsoft.Identity.Client.Cache.ITokenCacheAccessor,Microsoft.Identity.Client.Core.ICoreLogger)">
+            <summary>
+            Important note: we should not be suggesting expiration dates that are in the past, as it breaks some cache implementations.
+            </summary>
+        </member>
         <member name="M:Microsoft.Identity.Client.TokenCache.Microsoft#Identity#Client#ITokenCacheInternal#FindAccessTokenAsync(Microsoft.Identity.Client.Internal.Requests.AuthenticationRequestParameters)">
             <summary>
             IMPORTANT: this class is performance critical; any changes must be benchmarked using Microsoft.Identity.Test.Performace.
@@ -7021,6 +7225,15 @@
             MSAL.NET does not know how to interact with the authority specified when the application was built.
             <para>Mitigation</para>
             Use a different authority
+            </summary>
+        </member>
+        <member name="F:Microsoft.Identity.Client.MsalError.UnauthorizedClient">
+            <summary>
+            The client is unauthorized to access resource.
+            This commonly happens when Mobile App Management (MAM) policies are enabled. MSAL will throw an exception in that case with <c>protection_policy_required</c> sub-error.
+            <para>Mitigation</para>
+            Catch the exception and use the properties in it to obtain the right parameters from Intune SDK.
+            <see href="https://aka.ms/msal-net-trueMAM">IntuneAppProtectionPolicyRequiredException</see>
             </summary>
         </member>
         <member name="F:Microsoft.Identity.Client.MsalError.UnknownError">
@@ -7393,7 +7606,7 @@
             <para>What happens?</para>This error happens when the authorization flow, which collects user credentials, gets redirected 
             to an page that is not supported, for example if the redirect occurs over http. 
             This error does not trigger for the final redirect, which can be http://localhost, but for intermediary redirects.
-            <para>Mitigation</para>This usually happens when using a federated directory which is not setup correctly. 
+            <para>Mitigation</para>This usually happens when using a federated directory which is not setup correctly.
             </summary>
         </member>
         <member name="F:Microsoft.Identity.Client.MsalError.NetworkNotAvailableError">
@@ -7731,6 +7944,24 @@
             or sign your own assertion as described at https://aka.ms/msal-net-signed-assertion
             </summary>
         </member>
+        <member name="F:Microsoft.Identity.Client.MsalError.BrokerDoesNotSupportPop">
+            <summary>
+            <para>What happens?</para>The request has broker enabled and proof of possession configured but the broker does not support proof of possession
+            <para>Mitigation</para>only configure proof of possesion for public clients on windows.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Identity.Client.MsalError.BrokerRequiredForPop">
+            <summary>
+            <para>What happens?</para>The request has proof of possession configured but does not have broker enabled. Broker is required for proof of possession on public clients
+            <para>Mitigation</para>Enable the broker when proof of possession is configured.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Identity.Client.MsalError.NonceRequiredForPopOnPCA">
+            <summary>
+            <para>What happens?</para>The request has proof of possession configured but does not have a nonce configured. A nonce is required for proof of possession on public clients
+            <para>Mitigation</para>Provide a nonce when proof of possession is configured for public clients.
+            </summary>
+        </member>
         <member name="F:Microsoft.Identity.Client.MsalError.WamUiThread">
             <summary>
             When calling AcquireTokenInteractive with the WAM broker, the call must be made from the UI thread.
@@ -7816,6 +8047,11 @@
             matches the <c>longRunningProcessSessionKey</c> passed into <see cref="M:Microsoft.Identity.Client.ILongRunningWebApi.AcquireTokenInLongRunningProcess(System.Collections.Generic.IEnumerable{System.String},System.String)"/>.
             <para>Mitigation</para> Call <see cref="M:Microsoft.Identity.Client.ILongRunningWebApi.InitiateLongRunningProcessInWebApi(System.Collections.Generic.IEnumerable{System.String},System.String,System.String@)"/> with this <c>longRunningProcessSessionKey</c> 
             first or call <see cref="M:Microsoft.Identity.Client.ILongRunningWebApi.AcquireTokenInLongRunningProcess(System.Collections.Generic.IEnumerable{System.String},System.String)"/> with an already used <c>longRunningProcessSessionKey</c>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Identity.Client.MsalError.InvalidTokenProviderResponseValue">
+            <summary>
+            A required value is missing from the token providerresponse
             </summary>
         </member>
         <member name="T:Microsoft.Identity.Client.MsalErrorMessage">
@@ -8517,7 +8753,7 @@
             there are no user accounts in a client credential flow.
             </summary>
         </member>
-        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedAppTokenCacheAccessor.GetAllAccessTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedAppTokenCacheAccessor.GetAllAccessTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             <summary>
             WARNING: if partitonKey = null, this API is slow as it loads all tokens, not just from 1 partition. 
             It should only support external token caching, in the hope that the external token cache is partitioned.
@@ -8531,19 +8767,19 @@
             App metadata collection is not partitioned.
             </summary>
         </member>
-        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllAccessTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllAccessTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             WARNING: if partitionKey is null, this API is slow as it loads all tokens, not just from 1 partition. 
             It should only support external token caching, in the hope that the external token cache is partitioned.
         </member>
-        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllRefreshTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllRefreshTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             WARNING: if partitionKey is null, this API is slow as it loads all tokens, not just from 1 partition. 
             It should only support external token caching, in the hope that the external token cache is partitioned.
         </member>
-        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllIdTokens(System.String)">
+        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllIdTokens(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             WARNING: if partitionKey is null, this API is slow as it loads all tokens, not just from 1 partition. 
             It should only support external token caching, in the hope that the external token cache is partitioned.
         </member>
-        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllAccounts(System.String)">
+        <member name="M:Microsoft.Identity.Client.PlatformsCommon.Shared.InMemoryPartitionedUserTokenCacheAccessor.GetAllAccounts(System.String,Microsoft.Identity.Client.Core.ICoreLogger)">
             WARNING: if partitionKey is null, this API is slow as it loads all tokens, not just from 1 partition. 
             It should only support external token caching, in the hope that the external token cache is partitioned.
         </member>
@@ -8571,6 +8807,7 @@
             <summary>
             Windows OS Version checks
             </summary>
+            <remarks>Do not include this code in UWP, it causes packaging errors</remarks>
         </member>
         <member name="F:Microsoft.Identity.Client.PlatformsCommon.Shared.Win32VersionApi.VER_NT_WORKSTATION">
             <summary>
@@ -8792,6 +9029,37 @@
             <param name="x">first value</param>
             <param name="y">second value</param>
             <returns>true if the objects are not equal</returns>
+        </member>
+        <member name="T:Microsoft.Identity.Client.RegionDetails">
+            <summary>
+            Contains the result of region when MSAL region discovery is used, 
+            published as part of AuthenticationResultMetadata.
+            <see cref="T:Microsoft.Identity.Client.AuthenticationResultMetadata"/> for additional metadata 
+            information of the authentication result.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Identity.Client.RegionDetails.#ctor(Microsoft.Identity.Client.Region.RegionOutcome,System.String,System.String)">
+            <summary>
+            Constructor for RegionDetails
+            </summary>
+            <param name="regionOutcome"></param>
+            <param name="regionUsed"></param>
+            <param name="autoDetectionError "></param>
+        </member>
+        <member name="P:Microsoft.Identity.Client.RegionDetails.RegionOutcome">
+            <summary>
+            Region Outcome based on MSAL region detection
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.RegionDetails.RegionUsed">
+            <summary>
+            Region used to construct /token endpoint to contact ESTS.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Identity.Client.RegionDetails.AutoDetectionError">
+            <summary>
+            Error details when region auto detect fails
+            </summary>
         </member>
         <member name="T:Microsoft.Identity.Client.TelemetryCallback">
             <summary>

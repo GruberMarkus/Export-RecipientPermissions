@@ -161,6 +161,20 @@
           <dev:defaultValue>False</dev:defaultValue>
         </command:parameter>
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+          <maml:name>AccessToken</maml:name>
+          <maml:Description>
+            <maml:para>Note : This parameter is available in version 3.1.0-Preview1 or later of the module.</maml:para>
+            <maml:para>Accepts a JWT OAuth access token that will be used to connect to ExchangeOnline.</maml:para>
+            <maml:para>Either one of the Organization, DelegatedOrganization or UserPrincipalName parameters should be provided with this parameter based on the type of the access token.</maml:para>
+          </maml:Description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Certificate</maml:name>
           <maml:Description>
             <maml:para>The Certificate parameter specifies the certificate that's used for certificate-based authentication (CBA). A valid value is the X509Certificate2 object value of the certificate.</maml:para>
@@ -593,6 +607,20 @@
           <maml:uri />
         </dev:type>
         <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
+        <maml:name>AccessToken</maml:name>
+        <maml:Description>
+          <maml:para>Note : This parameter is available in version 3.1.0-Preview1 or later of the module.</maml:para>
+          <maml:para>Accepts a JWT OAuth access token that will be used to connect to ExchangeOnline.</maml:para>
+          <maml:para>Either one of the Organization, DelegatedOrganization or UserPrincipalName parameters should be provided with this parameter based on the type of the access token.</maml:para>
+        </maml:Description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
       </command:parameter>
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Certificate</maml:name>

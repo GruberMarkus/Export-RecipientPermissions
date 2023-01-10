@@ -100,7 +100,7 @@ $OriginalIdentities = $OriginalIdentities | Where-Object { $_ }
 
 Write-Host
 Write-Host "Export permissions from Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-Write-Host "  Save to 'u:\Export-RecipientPermissions_Result_SIDHistory-Entfernung.csv'"
+Write-Host "  Save to '.\export\Export-RecipientPermissions_Result_SIDHistory-Removal.csv'"
 
 $params = @{
     ExportFromOnPrem          = $true
@@ -108,8 +108,8 @@ $params = @{
     ExchangeConnectionUriList = 'http://server1.example.com/powershell/', 'http://server2.example.com/powershell/'
     GrantorFilter             = ''
     TrusteeFilter             = @"
-if (`$Trustee.PrimarySmtpAddress.address) {
-    $`Trustee.PrimarySmtpAddress.address -iin $('("' + (@($PrimarySMTPs) -join '", "') + '")')
+if (`$Trustee.PrimarySmtpAddress) {
+    $`Trustee.PrimarySmtpAddress -iin $('("' + (@($PrimarySMTPs) -join '", "') + '")')
 } else {
     $`Trustee -iin $('("' + (@($OriginalIdentities) -join '", "') + '")')
 }

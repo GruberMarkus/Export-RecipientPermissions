@@ -4276,6 +4276,14 @@
             Gets or sets the <see cref="T:System.Collections.Generic.IDictionary`2"/> that contains a collection of custom key/value pairs. This allows addition of parameters that could be used in custom token validation scenarios.
             </summary>
         </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.RefreshBeforeValidation">
+            <summary>
+            Gets or sets a boolean to control if configuration required to be refreshed before token validation.
+            </summary>
+            <remarks>
+            The default is <c>false</c>.
+            </remarks>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.RequireAudience">
             <summary>
             Gets or sets a value indicating whether SAML tokens must have at least one AudienceRestriction.
@@ -4422,9 +4430,17 @@
             It is possible that a token issued for the same audience could be from a different tenant. For example an application could accept users from
             contoso.onmicrosoft.com but not fabrikam.onmicrosoft.com, both valid tenants. An application that accepts tokens from fabrikam could forward them
             to the application that accepts tokens for contoso.
-            This boolean only applies to default issuer validation. If <see cref= "P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidator" /> is set, it will be called regardless of whether this
+            This boolean only applies to default issuer validation. If <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidator"/> is set, it will be called regardless of whether this
             property is true or false.
             The default is <c>true</c>.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateWithLKG">
+            <summary>
+            Gets or sets a boolean to control if the LKG configuration will be used for token validation.
+            </summary>
+            <remarks>
+            The default is <c>false</c>.
             </remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateIssuerSigningKey">
@@ -4446,6 +4462,14 @@
             This boolean only applies to default lifetime validation. If <see cref= "P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.LifetimeValidator" /> is set, it will be called regardless of whether this
             property is true or false.
             The default is <c>true</c>.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateSignatureLast">
+            <summary>
+            Gets or sets a boolean that controls if the the vaidation order of the payload and signature during token validation.
+            </summary>
+            <remarks>If <see cref= "P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateSignatureLast" /> is set to ture, it will validate payload ahead of signature .
+            The default is <c>false</c>.
             </remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateTokenReplay">
