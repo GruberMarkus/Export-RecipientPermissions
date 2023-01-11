@@ -22,15 +22,15 @@
 ### Changed
 - **Breaking:** Switching from Remote PowerShell session to local PowerShell session due Microsoft disabling Remote PowerShell in Exchange Online
   - Export-RecipientPermission will require more local resources (CPU, RAM, network) and will take longer to complete because operations previously handled on the server side now need to be handled on the client side
-  - The variables '`$Grantor`' and '`$Trustee`' loose some sub attributes, so you may have to adopt your '`GrantorFilter`' and '`TrusteeFilter`' code 
-    - .RecipientType.Value is now .RecipientType
-    - .RecipientTypeDetails.Value is now .RecipientTypeDetails
-    - .PrimarySmtpAddress no longer has the sub attributes .Local, .Domain and .Address
+  - The variables '`$Grantor`' and '`$Trustee`' lose some sub attributes, so you may have to adopt your '`GrantorFilter`' and '`TrusteeFilter`' code:
+    - '`.RecipientType.Value`' is now '`.RecipientType`'
+    - '`.RecipientTypeDetails.Value`' is now '`.RecipientTypeDetails`'
+    - '`.PrimarySmtpAddress`' no longer has the sub attributes .Local, .Domain and .Address
       - All the data formerly held in the sub attributes is still there, as .PrimarySmtpAddress is in the 'local@domain' format
-    - .EmailAddresses (an array) no longer has the sub attributes .PrefixString, .IsPrimaryAddress, .SmtpAddress and .ProxyAddressString
+    - '`.EmailAddresses`' (an array) no longer has the sub attributes .PrefixString, .IsPrimaryAddress, .SmtpAddress and .ProxyAddressString
       - All the data formerly held in the sub attributes is still there, as .EmailAddress is in the 'prefix:local@domain' format
     - On-prem only:
-      - .Identity is now the canonical name (CN) only and no longer has the sub attributes .DomainId and .Parent
+      - '`.Identity`' is now the canonical name (CN) only and no longer has the sub attributes .DomainId and .Parent
         - All the data formerly held in the sub attributes is still there, as .Identity is in the 'example.com/OU1/OU2/ObjectA' format  
   - Reduced the default value of '`ParallelJobsExchange`' from '`$ExchangeConnectionUriList.count * 3`' to '`$ExchangeConnectionUriList.count`' as local Exchange PowerShell sessions are not as stable as Remote PowerShell sessions 
 - Adopted sample code and documentation to reflect changes in the '`$Grantor`' and '`$Trustee`' variables
