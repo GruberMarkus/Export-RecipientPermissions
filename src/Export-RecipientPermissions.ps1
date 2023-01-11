@@ -1121,7 +1121,7 @@ try {
                     } finally {
                         if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                             Disconnect-ExchangeOnline -Confirm:$false
-                            Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                            # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                         }
 
                         if (($ExportFromOnPrem -eq $true)) {
@@ -1173,14 +1173,14 @@ try {
             $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
             for ($x = $lastCount; $x -le $done; $x++) {
                 if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                     if ($x -eq 0) { Write-Host }
                     $lastCount = $x
                 }
             }
         }
 
-        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
         if ($tempQueue.count -ne 0) {
             Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -1507,39 +1507,32 @@ try {
 
         # Get-EXOMailbox does not support the ForwardingAddress filter, so Get-Mailbox is used
         try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         }
 
         try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         }
 
         try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
-        }
-
-        try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
         }
 
         if ($ExportFromOnPrem) {
             try {
-                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
             } catch {
                 . ([scriptblock]::Create($ConnectExchange))
-                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, DeliverToMailboxAndForward -ErrorAction Stop))
+                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
             }
         }
 
@@ -1562,7 +1555,7 @@ try {
             try {
                 try {
                     $GrantorIndex = $null
-                    $GrantorIndex = $AllRecipientsIdentityGuidToIndex[$($_.Guid.Guid)]
+                    $GrantorIndex = $AllRecipientsIdentityToIndex[$($_.Identity)]
                 } catch {
                 }
 
@@ -1577,14 +1570,19 @@ try {
                         }
 
                         if ($TrusteeIndex -ge 0) {
-                            $AllRecipients[$GrantorIndex].ForwardingAddress = $AllRecipients[$TrusteeIndex].PrimarySmtpAddress
+                            $Grantor.ForwardingAddress = $AllRecipients[$TrusteeIndex].PrimarySmtpAddress
                         } else {
-                            $AllRecipients[$GrantorIndex].ForwardingAddress = $_.ForwardingAddress
+                            $Grantor.ForwardingAddress = $_.ForwardingAddress
                         }
                     }
 
-                    $Grantor.ForwardingSmtpAddress = ($_.ForwardingSmtpAddress -replace '^smtp:', '').ToLower()
-                    $Grantor.DeliverToMailboxAndForward = $_.DeliverToMailboxAndForward
+                    if ($_.ForwardingSmtpAddress) {
+                        $Grantor.ForwardingSmtpAddress = ($_.ForwardingSmtpAddress -replace '^smtp:', '').ToLower()
+                    }
+
+                    if ($_.DeliverToMailboxAndForward) {
+                        $Grantor.DeliverToMailboxAndForward = $_.DeliverToMailboxAndForward
+                    }
                 }
             } catch {
             }
@@ -1737,7 +1735,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -1788,14 +1786,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all databases have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -1960,7 +1958,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -2011,14 +2009,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count * 100))
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2193,14 +2191,14 @@ try {
                                     try {
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
                                             }
                                         )
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
                                             }
                                         )
                                     }
@@ -2252,7 +2250,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -2303,14 +2301,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2447,14 +2445,14 @@ try {
                                     try {
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity
                                             }
                                         )
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity
                                             }
                                         )
                                     }
@@ -2505,7 +2503,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -2556,14 +2554,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2699,14 +2697,14 @@ try {
                                     try {
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
                                             }
                                         )
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
                                             }
                                         )
                                     }
@@ -2757,7 +2755,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -2808,14 +2806,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2978,7 +2976,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -3020,7 +3018,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('    {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -3028,14 +3026,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3078,18 +3076,9 @@ try {
     }
 
 
-
-
-
-
-
-
-
-
-
     # Import LegacyExchangeDN
     Write-Host
-    Write-Host "Import LegacyExchangeDN, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import LegacyExchangeDN, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
     if ($ExportResourceDelegates) {
         $Filters = @()
@@ -3185,14 +3174,14 @@ try {
                                     try {
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, LegacyExchangeDN
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, LegacyExchangeDN
                                             }
                                         )
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
                                         $x = @(
                                             if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])'")) | Select-Object Identity, LegacyExchangeDN
+                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, LegacyExchangeDN
                                             }
                                         )
                                     }
@@ -3243,7 +3232,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -3294,14 +3283,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3368,20 +3357,6 @@ try {
     } else {
         Write-Host '  Not required with current export settings.'
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     # Define Grantors
@@ -3539,7 +3514,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -3589,14 +3564,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3817,7 +3792,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -3867,14 +3842,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -4237,7 +4212,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -4303,14 +4278,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -4719,7 +4694,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -4782,14 +4757,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5247,14 +5222,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5335,7 +5310,6 @@ try {
                             $ExportTrustees,
                             $ErrorFile,
                             $AllRecipientsDnToIndex,
-                            $AllRecipientsIdentityGuidToIndex,
                             $AllRecipientsSmtpToIndex,
                             $DebugFile,
                             $ExportFromOnPrem,
@@ -5616,26 +5590,25 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                    = $AllRecipients
-                        tempQueue                        = $tempQueue
-                        ExportFile                       = $ExportFile
-                        ExportTrustees                   = $ExportTrustees
-                        AllRecipientsIdentityToIndex     = $AllRecipientsIdentityToIndex
-                        AllRecipientsDnToIndex           = $AllRecipientsDnToIndex
-                        AllRecipientsIdentityGuidToIndex = $AllRecipientsIdentityGuidToIndex
-                        AllRecipientsSmtpToIndex         = $AllRecipientsSmtpToIndex
-                        ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFromOnPrem                 = $ExportFromOnPrem
-                        ScriptPath                       = $PSScriptRoot
-                        AllRecipientsSendonbehalf        = $AllRecipientsSendonbehalf
-                        VerbosePreference                = $VerbosePreference
-                        DebugPreference                  = $DebugPreference
-                        TrusteeFilter                    = $TrusteeFilter
-                        UTF8Encoding                     = $UTF8Encoding
-                        ExportFileHeader                 = $ExportFileHeader
-                        ExportFileFilter                 = $ExportFileFilter
-                        ExportGuids                      = $ExportGuids
+                        AllRecipients                = $AllRecipients
+                        tempQueue                    = $tempQueue
+                        ExportFile                   = $ExportFile
+                        ExportTrustees               = $ExportTrustees
+                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
+                        AllRecipientsDnToIndex       = $AllRecipientsDnToIndex
+                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
+                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFromOnPrem             = $ExportFromOnPrem
+                        ScriptPath                   = $PSScriptRoot
+                        AllRecipientsSendonbehalf    = $AllRecipientsSendonbehalf
+                        VerbosePreference            = $VerbosePreference
+                        DebugPreference              = $DebugPreference
+                        TrusteeFilter                = $TrusteeFilter
+                        UTF8Encoding                 = $UTF8Encoding
+                        ExportFileHeader             = $ExportFileHeader
+                        ExportFileFilter             = $ExportFileFilter
+                        ExportGuids                  = $ExportGuids
                     }
                 )
 
@@ -5655,14 +5628,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5961,14 +5934,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -6321,14 +6294,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -6805,7 +6778,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -6870,14 +6843,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -6934,7 +6907,7 @@ try {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
-            if ($x -in $GrantorsToConsider) {
+            if (($x -in $GrantorsToConsider) -and ($AllRecipients[$x].ExternalEmailAddress -or $AllRecipients[$x].ForwardingAddress -or $AllRecipients[$x].ForwardingSmtpAddress)) {
                 $tempQueue.enqueue($x)
             }
         }
@@ -7013,19 +6986,19 @@ try {
 
                                 foreach ($ForwarderType in ('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress')) {
                                     try {
-                                        try {
-                                            $index = $null
-                                            $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType)]
-                                        } catch {
-                                        }
-
-                                        if ($index -ge 0) {
-                                            $Trustee = $AllRecipients[$index]
-                                        } else {
-                                            $Trustee = $Grantor.$ForwarderType
-                                        }
-
                                         if ($Grantor.$ForwarderType) {
+                                            try {
+                                                $index = $null
+                                                $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType)]
+                                            } catch {
+                                            }
+
+                                            if ($index -ge 0) {
+                                                $Trustee = $AllRecipients[$index]
+                                            } else {
+                                                $Trustee = $Grantor.$ForwarderType
+                                            }
+
                                             if ($TrusteeFilter) {
                                                 if ((. ([scriptblock]::Create($TrusteeFilter))) -ne $true) {
                                                     continue
@@ -7039,50 +7012,48 @@ try {
                                                     if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
                                                 }
 
-                                                if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                    if ($ExportGuids) {
-                                                        $ExportFileLines.add(
+                                                if ($ExportGuids) {
+                                                    $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $Grantor.ExchangeGuid.Guid,
-                                                                        $Grantor.Guid.Guid,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $($Grantor.$ForwarderType),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $Trustee.ExchangeGuid.Guid,
-                                                                        $Trustee.Guid.Guid,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    } else {
-                                                        $ExportFileLines.add(
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $Grantor.ExchangeGuid.Guid,
+                                                                    $Grantor.Guid.Guid,
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $($Grantor.$ForwarderType),
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $Trustee.DisplayName,
+                                                                    $Trustee.ExchangeGuid.Guid,
+                                                                    $Trustee.Guid.Guid,
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
+                                                    )
+                                                } else {
+                                                    $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $($Grantor.$ForwarderType),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    }
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $($Grantor.$ForwarderType),
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $Trustee.DisplayName,
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"') + '"')
+                                                    )
                                                 }
                                             }
                                         }
@@ -7188,14 +7159,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -7239,7 +7210,7 @@ try {
     # Get and export moderators
     Write-Host
     Write-Host "Get and export moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if ($ExportForwarders) {
+    if ($ExportModerators) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
@@ -7499,14 +7470,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -7808,14 +7779,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8135,14 +8106,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8433,14 +8404,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8646,7 +8617,7 @@ try {
                         } finally {
                             if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                                 Disconnect-ExchangeOnline -Confirm:$false
-                                Remove-Module -Name 'ExchangeOnlineManagement' -Force
+                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
                             }
 
                             if (($ExportFromOnPrem -eq $true)) {
@@ -8703,14 +8674,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9065,14 +9036,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all management role group members have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9381,7 +9352,6 @@ try {
                 ).AddParameters(
                     @{
                         AllRecipients                          = $AllRecipients
-                        AllRecipientsIdentityGuidToIndex       = $AllRecipientsIdentityGuidToIndex
                         tempQueue                              = $tempQueue
                         ExportFile                             = $ExportFile
                         ExportTrustees                         = $ExportTrustees
@@ -9424,14 +9394,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all distribution groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9736,14 +9706,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`b" * 100) + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10012,14 +9982,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10283,14 +10253,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10548,14 +10518,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all Management Role Groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10774,14 +10744,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`b" * 100) + ('          {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`b" * 100) + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '          Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10833,7 +10803,7 @@ try {
                 Remove-Item -LiteralPath $JobResultFile -Force
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobResultFiles.count)) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                     if ($lastcount -eq $JobResultFiles.count) { Write-Host }
                 }
 
@@ -10868,7 +10838,7 @@ try {
                 Remove-Item -LiteralPath $JobErrorFile -Force
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobErrorFiles.count)) {
-                    Write-Host (("`b" * 100) + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
                     if ($lastcount -eq $JobErrorFiles.count) { Write-Host }
                 }
 
