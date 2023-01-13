@@ -15,6 +15,34 @@
   ### Fixed
 -->
 
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.0" target="_blank">v3.0.0</a> - 2023-01-13
+  _**Breaking:** Microsoft removes support for Remote PowerShell connections to Exchange Online starting June 1, 2023. See https://techcommunity.microsoft.com/t5/exchange-team-blog/announcing-deprecation-of-remote-powershell-rps-protocol-in/ba-p/3695597 for details.  
+  Export-RecipientPermissions no longer uses Remote PowerShell to connect to Exchange Online and to Exchange on-premises. This brings some possibly breaking changes, which are detailed in the following release notes._
+### Changed
+- **Breaking:** Switching from Remote PowerShell session to local PowerShell session due Microsoft disabling Remote PowerShell in Exchange Online
+  - Export-RecipientPermission will require more local resources (CPU, RAM, network) and will take longer to complete because operations previously handled on the server side now need to be handled on the client side
+  - The variables '`$Grantor`' and '`$Trustee`' lose some sub attributes, so you may have to adopt your '`GrantorFilter`' and '`TrusteeFilter`' code:
+    - '`.RecipientType.Value`' is now '`.RecipientType`'
+    - '`.RecipientTypeDetails.Value`' is now '`.RecipientTypeDetails`'
+    - '`.PrimarySmtpAddress`' no longer has the sub attributes .Local, .Domain and .Address
+      - All the data formerly held in the sub attributes is still there, as .PrimarySmtpAddress is in the 'local@domain' format
+    - '`.EmailAddresses`' (an array) no longer has the sub attributes .PrefixString, .IsPrimaryAddress, .SmtpAddress and .ProxyAddressString
+      - All the data formerly held in the sub attributes is still there, as .EmailAddress is in the 'prefix:local@domain' format
+    - On-prem only:
+      - '`.Identity`' is now the canonical name (CN) only and no longer has the sub attributes .DomainId and .Parent
+        - All the data formerly held in the sub attributes is still there, as .Identity is in the 'example.com/OU1/OU2/ObjectA' format  
+  - Reduced the default value of '`ParallelJobsExchange`' from '`$ExchangeConnectionUriList.count * 3`' to '`$ExchangeConnectionUriList.count`' as local Exchange PowerShell sessions are not as stable as Remote PowerShell sessions 
+- Adopted sample code and documentation to reflect changes in the '`$Grantor`' and '`$Trustee`' variables
+- Use Get-EXO* cmdlets in Exchange Online where possible
+- Upgrade to ExchangeOnlineManagement v3.1.0
+### Added
+- New export parameters: '`ExportModerators`', '`ExportRequireAllSendersAreAuthenticated`', '`ExportAcceptMessagesOnlyFrom`', '`ExportResourceDelegates`'. See '`README`' for details.
+- New FAQ in '`README`': 'I receive an error message when connecting to Exchange on premises'
+### Fixed
+- When importing UserFriendlyNames, errors were not written to the error file because of a missing encoding variable
+- Only the first ManagedBy entry for reach recipient was exported correctly, the following entries were missing trustee data 
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v2.3.1" target="_blank">v2.3.1</a> - 2022-11-28
 ### Added
 - New FAQ in '`README`': 'How to export permissions for specific public folders?'

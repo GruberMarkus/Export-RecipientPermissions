@@ -3,14 +3,17 @@
 
 # Features <!-- omit in toc -->
 Document, filter and compare Exchange permissions:
-- mailbox access rights,
+- mailbox access rights
 - mailbox folder permissions
 - public folder permissions
 - send as
 - send on behalf
 - managed by
+- moderated by
 - linked master accounts
 - forwarders
+- sender restrictions
+- resource delegates
 - group members
 - management role group members
 
@@ -52,16 +55,20 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.28. ExportSendAs](#1228-exportsendas)
     - [1.2.29. ExportManagementRoleGroupMembers](#1229-exportmanagementrolegroupmembers)
     - [1.2.30. ExportForwarders](#1230-exportforwarders)
-    - [1.2.31. ExportDistributionGroupMembers](#1231-exportdistributiongroupmembers)
-    - [1.2.32. ExportGroupMembersRecurse](#1232-exportgroupmembersrecurse)
-    - [1.2.33. ExportGuids](#1233-exportguids)
-    - [1.2.34. ExpandGroups](#1234-expandgroups)
-    - [1.2.35. ExportGrantorsWithNoPermissions](#1235-exportgrantorswithnopermissions)
-    - [1.2.36. ExportTrustees](#1236-exporttrustees)
-    - [1.2.37. ExportFile](#1237-exportfile)
-    - [1.2.38. ErrorFile](#1238-errorfile)
-    - [1.2.39. DebugFile](#1239-debugfile)
-    - [1.2.40. UpdateInverval](#1240-updateinverval)
+    - [1.2.31. ExportModerators](#1231-exportmoderators)
+    - [1.2.32. ExportRequireAllSendersAreAuthenticated](#1232-exportrequireallsendersareauthenticated)
+    - [1.2.33. ExportAcceptMessagesOnlyFrom](#1233-exportacceptmessagesonlyfrom)
+    - [1.2.34. ExportResourceDelegates](#1234-exportresourcedelegates)
+    - [1.2.35. ExportDistributionGroupMembers](#1235-exportdistributiongroupmembers)
+    - [1.2.36. ExportGroupMembersRecurse](#1236-exportgroupmembersrecurse)
+    - [1.2.37. ExportGuids](#1237-exportguids)
+    - [1.2.38. ExpandGroups](#1238-expandgroups)
+    - [1.2.39. ExportGrantorsWithNoPermissions](#1239-exportgrantorswithnopermissions)
+    - [1.2.40. ExportTrustees](#1240-exporttrustees)
+    - [1.2.41. ExportFile](#1241-exportfile)
+    - [1.2.42. ErrorFile](#1242-errorfile)
+    - [1.2.43. DebugFile](#1243-debugfile)
+    - [1.2.44. UpdateInverval](#1244-updateinverval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -77,6 +84,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [2.10. Which resources does a particular user or group have access to?](#210-which-resources-does-a-particular-user-or-group-have-access-to)
   - [2.11. How to find distribution lists without members?](#211-how-to-find-distribution-lists-without-members)
     - [2.11.1. How to export permissions for specific public folders?](#2111-how-to-export-permissions-for-specific-public-folders)
+    - [2.11.2. I receive an error message when connecting to Exchange on premises](#2112-i-receive-an-error-message-when-connecting-to-exchange-on-premises)
 - [3. Sample code](#3-sample-code)
   - [3.1. Get-DependentRecipients.ps1](#31-get-dependentrecipientsps1)
   - [3.2. Compare-RecipientPermissions.ps1](#32-compare-recipientpermissionsps1)
@@ -148,9 +156,7 @@ Default:
 ### 1.2.3. ExchangeOnlineConnectionParameters
 This hashtable will be passed as parameter to Connect-ExchangeOnline
 
-Allowed values: AppId, AzureADAuthorizationEndpointUri, BypassMailboxAnchoring, Certificate, CertificateFilePath, CertificatePassword, CertificateThumbprint, Credential, DelegatedOrganization, EnableErrorReporting, ExchangeEnvironmentName, LogDirectoryPath, LogLevel, Organization, PageSize, TrackPerformance, UseMultithreading, UserPrincipalName
-
-Values not in the allow list are removed or replaced with values determined by the script
+All values are allowed, but CommandName and ConnectionUri are set by the script. By default, ShowBanner and ShowProgress are set to $false; SkipLoadingFormatData to $true.
 ### 1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
 
@@ -158,7 +164,13 @@ Username and password are stored as encrypted secure strings, if UseDefaultCrede
 ### 1.2.5. ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
 Maximum Exchange, AD and local sessions/jobs running in parallel.
 
-Watch CPU and RAM usage, and your Exchange throttling policy.
+Watch CPU and RAM usage, and your Exchange throttling policy. Frequent connection errors indicate that the values are set too high.
+
+Default values:
+- ParallelJobsExchange: $ExchangeConnectionUriList.count
+- ParallelJobsAD: 50
+- ParallelJobsLocal: 50
+
 
 ### 1.2.6. RecipientProperties
 Recipient properties to import.
@@ -175,16 +187,17 @@ Only check grantors where the filter criteria matches $true.
 
 The variable $Grantor has all attributes defined by '`RecipientProperties`'. For example:
 - .DistinguishedName
-- .RecipientType.Value, .RecipientTypeDetails.Value
+- .RecipientType, .RecipientTypeDetails
 - .DisplayName
-- .PrimarySmtpAddress: .Local, .Domain, .Address
-- .EmailAddresses: .PrefixString, .IsPrimaryAddress, .SmtpAddress, .ProxyAddressString  
+- .Identity
+- .PrimarySmtpAddress
+- .EmailAddresses  
   This attribute is an array. Code example:
     ```
-    $GrantorFilter = "if ((`$Grantor.EmailAddresses.SmtpAddress -ilike 'AddressA@example.com') -or (`$Grantor.EmailAddresses.SmtpAddress -ilike 'Test*@example.com')) { `$true } else { `$false }"
+    $GrantorFilter = "if ((`$Grantor.EmailAddresses -ilike 'smtp:AddressA@example.com') -or (`$Grantor.EmailAddresses -ilike 'smtp:Test*@example.com')) { `$true } else { `$false }"
     ```
 - .UserFriendlyName: User account holding the mailbox in the '`<NetBIOS domain name>\<sAMAccountName>`' format
-- .ManagedBy: .Rdn, .Parent, .DistinguishedName, .DomainId, .Name
+- .ManagedBy
     This attribute is an array. Code example:
     ```
     $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
@@ -193,14 +206,13 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`'. For
     )) { `$true; break } }"
     ```
   On-prem only:
-    .Identity: .tostring() (CN), .DomainId, .Parent (parent CN)
     .LinkedMasterAccount: Linked Master Account in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 
 Set to \$null or '' to define all recipients as grantors to consider
 
 Example:
 ```
-"`$Grantor.primarysmtpaddress.domain -ieq 'example.com'"
+"`$Grantor.primarysmtpaddress -ilike '*@example.com'"
 ```
 
 Default: $null
@@ -215,7 +227,7 @@ If the trustee does not match a recipient (because it no longer exists, for exam
 
 Example:
 ```
-"`$Trustee.primarysmtpaddress.domain -ieq 'example.com'"
+"`$Trustee.primarysmtpaddress -ieq '*@example.com'"
 ```
 
 Default: $null
@@ -352,7 +364,7 @@ Export forwarders:
   - Medium priority
   - Can be configured for mailboxes and mail-enabled public folders
   - Needs a mail-enabled Object existing in your directory as target (a contact is required to forward to external e-mail addresses)
-  - This property is used when forwarding is configured in the Exchange Control Panel oder the Exchange Admin Center
+  - This property is used when forwarding is configured in the Exchange Control Panel or the Exchange Admin Center
   - '`DeliverToMailboxAndForward`' ('`deliverAndRedirect`' in Active Directory) defines if the e-mail is forwarded only, or forwarded and stored
 - '`ForwardingSmtpAddress`' ('`msExchGenericForwardingAddress`' in Active Directory)
   - Lowest priority
@@ -369,7 +381,42 @@ When forwarders are exported, one or more of the following "virtual" rights are 
 - Forward_ForwardingSmtpAddress_ForwardOnly
 
 Default: $true
-### 1.2.31. ExportDistributionGroupMembers
+### 1.2.31. ExportModerators
+Exports the virtual rights 'ModeratedBy' and 'ModeratedByBypass', listing all users and groups which are configured as moderators for a recipient or can bypass moderation.
+
+Only works for recipients with moderation enabled.
+
+Default: $true
+### 1.2.32. ExportRequireAllSendersAreAuthenticated
+Exports the virtual right 'RequireAllSendersAreAuthenticated' with the trustee 'NT AUTHORITY\Authenticated Users' for each recipient which is configured to only receive messages from authenticated (internal) senders.
+
+Default: $true
+
+### 1.2.33. ExportAcceptMessagesOnlyFrom
+Exports the virtual right 'AcceptMessagesOnlyFrom' for each recipient which is configured to only receive messages from selected (internal) senders.
+
+The attributes 'AcceptMessagesOnlyFrom' and 'AcceptMessagesOnlyFromDLMembers' are exported as the same virtual right 'AcceptMessagesOnlyFrom'.
+
+Default: $true
+
+### 1.2.34. ExportResourceDelegates
+Exports information about who is allowed or denied to book resources (rooms or equipment) and to accept or reject booking requests.
+
+The following virtual rights are exported:
+- ResourceDelegate
+- ResourcePolicyDelegate_AllBookInPolicy
+- ResourcePolicyDelegate_AllRequestInPolicy
+- ResourcePolicyDelegate_AllRequestOutOfPolicy
+- ResourcePolicyDelegate_BookInPolicy
+- ResourcePolicyDelegate_RequestInPolicy
+- ResourcePolicyDelegate_RequestOutOfPolicy
+
+ResourcePolicyDelegate_AllBookInPolicy, ResourcePolicyDelegate_AllRequestinPolicy, ResourcePolicyDelegate_AllRequestOutOfPolicy: 'Everyone' is used as trustee.
+
+ResourcePolicyDelegate_BookInPolicy, ResourcePolicyDelegate_RequestInPolicy, ResourcePolicyDelegate_RequestOutOfPolicy: Each of these virtual rights is reported even when the corresponding 'All'-right is enabled.
+
+Default: $true
+### 1.2.35. ExportDistributionGroupMembers
 Export distribution group members, including nested groups and dynamic groups
 
 The parameter ExpandGroups can be used independently:
@@ -382,17 +429,17 @@ Valid values: 'None', 'All', 'OnlyTrustees'
   'OnlyTrustees': Only export members of those distribution groups that are used as trustees, even when they are excluded via GrantorFilter
 
 Default: 'None'
-### 1.2.32. ExportGroupMembersRecurse
+### 1.2.36. ExportGroupMembersRecurse
 When disabled, only direct members of groups are exported, and the virtual right 'MemberDirect' is used in the export file.
 
 When enabled, recursive members of groups are exported, and the virtual right 'MemberRecurse' is used in the export file.
 
 Default: $false
-### 1.2.33. ExportGuids
+### 1.2.37. ExportGuids
 When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 
 Default: $false
-### 1.2.34. ExpandGroups
+### 1.2.38. ExpandGroups
 Expand groups to their recursive members, including nested groups and dynamic groups
 
 This is useful in cases where users are sent permission reports, as not only permission changes but also changes in the underlying trustee groups are documented and directly associated with a grantor-permission-trustee triplet.  
@@ -416,14 +463,14 @@ TrusteeFilter is applied to trustee groups as well as to their finally expanded 
 - Nested groups are expanded to individual members, but TrusteeFilter is not applied to the nested group
 
 Default value: $false
-### 1.2.35. ExportGrantorsWithNoPermissions
+### 1.2.39. ExportGrantorsWithNoPermissions
 Per default, Export-RecipientPermissions only exports grantors which have set at least one permission for at least one trustee.
 If all grantors should be exported, set this parameter to $true.
 
 If enabled, a grantor that that not grant any permission is included in the list with the following columns: "Grantor Primary SMTP", "Grantor Display Name", "Grantor Recipient Type", "Grantor Environment". The other columns for this recipient are empty.
 
 Default value: $false
-### 1.2.36. ExportTrustees
+### 1.2.40. ExportTrustees
 Include all trustees in permission report file, only valid or only invalid ones
 
 Valid trustees are trustees which can be resolved to an Exchange recipient
@@ -431,23 +478,23 @@ Valid trustees are trustees which can be resolved to an Exchange recipient
 Valid values: 'All', 'OnlyValid', 'OnlyInvalid'
 
 Default: 'All'
-### 1.2.37. ExportFile
+### 1.2.41. ExportFile
 Name (and path) of the permission report file
 
 Default: '.\export\Export-RecipientPermissions_Result.csv'
-### 1.2.38. ErrorFile
+### 1.2.42. ErrorFile
 Name (and path) of the error log file
 
 Set to $null or '' to disable debugging
 
 Default: '.\export\Export-RecipientPermissions_Error.csv',
-### 1.2.39. DebugFile
+### 1.2.43. DebugFile
 Name (and path) of the debug log file
 
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.40. UpdateInverval
+### 1.2.44. UpdateInverval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration
@@ -474,34 +521,44 @@ Per default, the script uses multiple parallel threads, each one consuming one E
 }
 ```
 
-For ideal results, make sure that all Active Directory servers, Exchange servers and the machine the script is executed on are installed in the same language, ideally in English.  
-Language refers to the system language, not just the language of the graphical user interface (for example, a German language pack on an English system is considered English).  
-If languages are different, well-known accounts and groups may be represented in different languages depending if a job is run locally, against Active Directory or against Exchange.  
-Not all queries return language independent identifiers such as SIDs or GUIDs, so the script can not differentiate here. Neither the script nor Windows itself has a translation table from 'NT AUTHORITY\SELF' to 'NT-AUTORITÄT\SELBST'. An example:
-- Mailbox access rights are queried remotely against an Exchange installed in English language, so 'NT AUTHORITY\SELF' is returned
-- Send As rights on-prem are queried against Active Directory but interpreted locally by a client installed in German language. Even after applying an English language pack, 'NT-AUTORITÄT\SELBST' is returned instead of 'NT AUTHORITY\SELF'.
+Windows Powershell 5.1 is supported.  
+For best results, especially when Export-RecipientPermissions is used with Exchange Online, PowerShell 7 (or newer) is recommended.
 # 2. FAQ
 ## 2.1. Which permissions are required?
 Export-RecipientPermissions uses the following Exchange PowerShell cmdlets:
-- '`Get-DistributionGroup`'
-- '`Get-DistributionGroupMember`'
-- '`Get-DynamicDistributionGroup`'
-- '`Get-DynamicDistributionGroupMember`' (this cmdlet is only available in Exchange Online)
-- '`Get-Mailbox`'
-- '`Get-MailboxDatabase`' (this cmdlet is only used on premises)
-- '`Get-MailboxFolderPermission`'
-- '`Get-MailboxFolderStatistics`'
-- '`Get-MailboxPermission`'
-- '`Get-MailPublicFolder`'
-- '`Get-Publicfolder`'
-- '`Get-PublicFolderClientPermission`'
-- '`Get-Recipient`'
-- '`Get-RecipientPermission`'
-- '`Get-RoleGroup`'
-- '`Get-RoleGroupMember`'
-- '`Get-SecurityPrincipal`'
-- '`Get-UnifiedGroup`' (this cmdlet is only available in Exchange Online)
-- '`Get-UnifiedGroupLinks`' (this cmdlet is only available in Exchange Online)
+- 'Get-CASMailbox',
+- 'Get-CalendarProcessing',
+- 'Get-DistributionGroup',
+- 'Get-DynamicDistributionGroup',
+- 'Get-DynamicDistributionGroupMember', # Exchange Online only
+- 'Get-EXOMailbox', # Exchange Online only
+- 'Get-EXOMailboxFolderPermission', # Exchange Online only
+- 'Get-EXOMailboxFolderStatistics', # Exchange Online only
+- 'Get-EXOMailboxPermission', # Exchange Online only
+- 'Get-EXORecipient', # Exchange Online only
+- 'Get-EXORecipientPermission', # Exchange Online only
+- 'Get-Group',
+- 'Get-LinkedUser',
+- 'Get-Mailbox',
+- 'Get-MailboxDatabase', # Exchange on-prem only
+- 'Get-MailboxFolderPermission',
+- 'Get-MailboxFolderStatistics',
+- 'Get-MailboxPermission',
+- 'Get-MailContact',
+- 'Get-MailPublicFolder',
+- 'Get-MailUser',
+- 'Get-Publicfolder',
+- 'Get-PublicFolderClientPermission',
+- 'Get-Recipient',
+- 'Get-RecipientPermission',
+- 'Get-RemoteMailbox', # Exchange on-prem only
+- 'Get-SecurityPrincipal',
+- 'Get-UMMailbox',
+- 'Get-UnifiedGroup', # Exchange Online only
+- 'Get-UnifiedGroupLinks', # Exchange Online only
+- 'Get-User',
+- 'Set-AdServerSettings' # Exchange on-prem only
+
 
 In on-premises environments, membership in the Exchange management role group 'View-Only Organization Management' is sufficient.
 
@@ -514,25 +571,38 @@ You can use the following script to find out which cmdlet is assisgned to which 
 $ExportFile = '.\Required Cmdlets and their management role assignment.csv'
 
 $Cmdlets = (
-    'Get-DistributionGroup',
-    'Get-DistributionGroupMember',
-    'Get-DynamicDistributionGroup',
-    'Get-DynamicDistributionGroupMember', # this cmdlet is only available in Exchange Online
-    'Get-Mailbox',
-    'Get-MailboxDatabase', # this cmdlet is only used on premises
-    'Get-MailboxFolderPermission',
-    'Get-MailboxFolderStatistics',
-    'Get-MailboxPermission',
-    'Get-MailPublicFolder',
-    'Get-Publicfolder',
-    'Get-PublicFolderClientPermission',
-    'Get-Recipient',
-    'Get-RecipientPermission',
-    'Get-RoleGroup',
-    'Get-RoleGroupMember',
-    'Get-SecurityPrincipal',
-    'Get-UnifiedGroup', # this cmdlet is only available in Exchange Online
-    'Get-UnifiedGroupLinks' # this cmdlet is only available in Exchange Online
+        'Get-CASMailbox',
+        'Get-CalendarProcessing',
+        'Get-DistributionGroup',
+        'Get-DynamicDistributionGroup',
+        'Get-DynamicDistributionGroupMember', # Exchange Online only
+        'Get-EXOMailbox', # Exchange Online only
+        'Get-EXOMailboxFolderPermission', # Exchange Online only
+        'Get-EXOMailboxFolderStatistics', # Exchange Online only
+        'Get-EXOMailboxPermission', # Exchange Online only
+        'Get-EXORecipient', # Exchange Online only
+        'Get-EXORecipientPermission', # Exchange Online only
+        'Get-Group',
+        'Get-LinkedUser',
+        'Get-Mailbox',
+        'Get-MailboxDatabase', # Exchange on-prem only
+        'Get-MailboxFolderPermission',
+        'Get-MailboxFolderStatistics',
+        'Get-MailboxPermission',
+        'Get-MailContact',
+        'Get-MailPublicFolder',
+        'Get-MailUser',
+        'Get-Publicfolder',
+        'Get-PublicFolderClientPermission',
+        'Get-Recipient',
+        'Get-RecipientPermission',
+        'Get-RemoteMailbox', # Exchange on-prem only
+        'Get-SecurityPrincipal',
+        'Get-UMMailbox',
+        'Get-UnifiedGroup', # Exchange Online only
+        'Get-UnifiedGroupLinks', # Exchange Online only
+        'Get-User',
+        'Set-AdServerSettings' # Exchange on-prem only
 )
 
 
@@ -682,7 +752,7 @@ $params = @{
     ExportTrustees                              = 'All'
 
     GrantorFilter                               = "
-        if (`$Grantor.RecipientTypeDetails.Value -ilike ""*Group*"")
+        if (`$Grantor.RecipientTypeDetails -ilike ""*Group*"")
         ) {
             `$true
         } else {
@@ -745,7 +815,7 @@ $params = @{
     ExportTrustees                              = 'All'
 
     RecipientProperties                         = @()
-    GrantorFilter                               = "if ( (`$Grantor.RecipientTypeDetails.Value -ieq 'PublicFolderMailbox') ) { `$true } else { `$false }"
+    GrantorFilter                               = "if ( (`$Grantor.RecipientTypeDetails -ieq 'PublicFolderMailbox') ) { `$true } else { `$false }"
     TrusteeFilter                               = $null
     ExportFileFilter                            = "
                                                     if (
@@ -778,6 +848,19 @@ $params = @{
 
 & .\Export-RecipientPermissions\Export-RecipientPermissions.ps1 @params
 ```
+### 2.11.2. I receive an error message when connecting to Exchange on premises
+You receive the following error message when connecting to Exchange on-prem:
+- English: `'Import-PSSession : Index was out of range. Must be non-negative and less than the size of the collection.'`
+- German: `'Import-PSSession : Der Index lag außerhalb des Bereichs. Er darf nicht negativ und kleiner als die Sammlung sein.'`
+
+The error does not come up when creating a Remote PowerShell session, only when creating a local PowerShell connection to Exchange.
+
+The root cause seems to be an AppLocker configuration. I do not yet know which exact setting causes the problem, but the solution consists of the following steps:
+- Configure an AppLocker exclusion that allows you to run programs from a defined local file folder, for example `'C:\AppLockerExclude'`
+- In the PowerShell session you start Export-RecipientPermissions from, set the temp to this folder or a subfolder:  
+  ```
+  $env:tmp = 'c:\AppLockerExclude\PowerShell.temp'
+  ```
 # 3. Sample code
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.

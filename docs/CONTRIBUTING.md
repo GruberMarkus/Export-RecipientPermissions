@@ -13,8 +13,6 @@ I'm not a professional developer - if you are one and you notice something negat
 - [2. Contribution opportunities](#2-contribution-opportunities)
   - [2.1. Sponsoring](#21-sponsoring)
   - [2.2. Code refactoring](#22-code-refactoring)
-  - [2.3. Combine on-prem and cloud results](#23-combine-on-prem-and-cloud-results)
-  - [2.4. Adopt Exchange Online connection method](#24-adopt-exchange-online-connection-method)
 - [3. Branches](#3-branches)
 - [4. Development process](#4-development-process)
 - [5. Commit messages](#5-commit-messages)
@@ -37,16 +35,6 @@ Dear businesses, please don't forget:
 I'm not a professional developer, but a hobbyist scripter, and the code looks like that.
 
 There are optimization opportunities in error handling, de-duplicating code with functions, applying PowerShell best practices, and more.
-## 2.3. Combine on-prem and cloud results
-Currently, Export-RecipientPermissions connects either to an on-prem instance or a cloud instance of Exchange.
-
-A future release will be able to connect to both environments and combine these two data sources.
-## 2.4. Adopt Exchange Online connection method
-The script still connects to Exchange Online by using the classic New-PSSession construct.
-
-Connect-ExchangeOnline clearly is the future. Unfortunately, it's connections to Exchange Online have shown to be error prone when used in parallel jobs, even for small environments.
-
-As soon as these problems are solved, Export-RecipientPermissions will switch to Connect-ExchangeOnline.
 # 3. Branches
 The default branch is named '`main`'. It contains the source of the latest stable release.
 
