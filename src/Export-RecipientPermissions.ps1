@@ -643,18 +643,18 @@ $FilterGetMember = {
             if ($ExportFromOnPrem) {
                 try {
                     $DynamicGroup = Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer
-                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Guid -ErrorAction Stop)
+                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
                 } catch {
                     . ([scriptblock]::Create($ConnectExchange))
                     $DynamicGroup = Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer
-                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Guid -ErrorAction Stop)
+                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
                 }
             } else {
                 try {
-                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Guid -ErrorAction Stop)
+                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
                 } catch {
                     . ([scriptblock]::Create($ConnectExchange))
-                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Guid -ErrorAction Stop)
+                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
                 }
             }
 
@@ -3754,10 +3754,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -8473,7 +8473,7 @@ try {
         # Normal distribution groups and management role groups
         for ($AllGroupsIndex = 0; $AllGroupsIndex -lt $AllGroups.count; $AllGroupsIndex++) {
             try {
-                $AllRecipientsIndex = $AllRecipientsIdentityGuidToIndex[$AllGroups[$AllGroupsIndex].Guid.Guid]
+                $AllRecipientsIndex = $AllRecipientsIdentityToIndex[$AllGroups[$AllGroupsIndex].Identity]
             } catch {
                 $AllRecipientsIndex = $null
             }
@@ -9125,6 +9125,7 @@ try {
                     {
                         param(
                             $AllRecipients,
+                            $AllRecipientsIdentityToIndex,
                             $AllGroups,
                             $AllGroupsIdentityToIndex,
                             $AllGroupMembers,
@@ -9367,6 +9368,7 @@ try {
                         ExportFileFilter                       = $ExportFileFilter
                         AllGroups                              = $AllGroups
                         AllGroupsIdentityToIndex               = $AllGroupsIdentityToIndex
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
                         AllGroupMembers                        = $AllGroupMembers
                         ExportGuids                            = $ExportGuids
                         ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
