@@ -9769,9 +9769,7 @@ try {
 
             foreach ($x in $GrantorsToConsider) {
                 if (($AllRecipients[$x].RecipientTypeDetails -ilike 'Group*') -or ($AllRecipients[$x].RecipientTypeDetails -ilike '*Group')) {
-                    if ($ExportDistributionGroupMembers -ieq 'None') {
-                        # do nothing
-                    } elseif ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') {
+                    if ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') {
                         if ($AllRecipients[$x].IsTrustee -eq $true) {
                             $tempQueue.enqueue($x)
                         }
