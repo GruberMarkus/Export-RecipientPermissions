@@ -16,6 +16,12 @@
 -->
 
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.1" target="_blank">v3.0.1</a> - 2023-01-24
+### Fixed
+- Direct group members were only exported as GUIDs
+- ExportGrantorsWithNoPermissions did not consider all distribution groups
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.0" target="_blank">v3.0.0</a> - 2023-01-13
   _**Breaking:** Microsoft removes support for Remote PowerShell connections to Exchange Online starting June 1, 2023. See https://techcommunity.microsoft.com/t5/exchange-team-blog/announcing-deprecation-of-remote-powershell-rps-protocol-in/ba-p/3695597 for details.  
   Export-RecipientPermissions no longer uses Remote PowerShell to connect to Exchange Online and to Exchange on-premises. This brings some possibly breaking changes, which are detailed in the following release notes._
