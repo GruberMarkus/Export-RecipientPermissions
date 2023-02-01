@@ -9538,7 +9538,7 @@ try {
                                                 foreach ($Member in $Members) {
                                                     $ExportFileLineExpanded = $ExportFileLineOriginal.PSObject.Copy()
 
-                                                    if ($Member.startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
+                                                    if ($Member.ToString().startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
                                                         $Trustee = $Member -replace '^NotARecipient:', ''
                                                     } else {
                                                         $Trustee = $AllRecipients[$Member]

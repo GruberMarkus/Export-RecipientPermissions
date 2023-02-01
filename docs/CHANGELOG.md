@@ -16,6 +16,11 @@
 -->
 
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Fixed
+- ExpandGroups did not work because of assuming a wrong datatype which does not support the StartsWith method
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.1" target="_blank">v3.0.1</a> - 2023-01-24
 ### Fixed
 - Direct group members were only exported as GUIDs
