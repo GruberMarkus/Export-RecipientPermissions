@@ -3458,7 +3458,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3783,7 +3783,7 @@ try {
                                     @(
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                            'Import Recipients',
+                                            'Import direct group membership',
                                             '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
