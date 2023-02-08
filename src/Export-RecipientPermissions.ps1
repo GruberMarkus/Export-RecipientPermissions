@@ -7830,7 +7830,7 @@ try {
     # Get and export ResourceDelegates
     Write-Host
     Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if ($ExportAcceptMessagesOnlyFrom) {
+    if ($ExportResourceDelegates) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
