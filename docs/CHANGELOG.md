@@ -3,17 +3,22 @@
 
 # Changelog
 <!--
-  Sample changelog entry
-  Remove leading spaces after pasting
-  ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
-  _Put Notice here_
-  _**Breaking:** Notice about breaking change_  
-  ### Changed
-  - **Breaking:** XXX
-  ### Added
-  ### Removed
-  ### Fixed
+Sample changelog entry
+Remove leading spaces after pasting
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+_Put Notice here_
+_**Breaking:** Notice about breaking change_  
+### Changed
+- **Breaking:** XXX
+### Added
+### Removed
+### Fixed
 -->
+
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.2" target="_blank">v3.0.2</a> - YYYY-MM-DD
+### Fixed
+- ExportResourceDelegates was triggered by the ExportAcceptMessagesOnlyFrom parameter, not by ExportResourceDelegates
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.1" target="_blank">v3.0.1</a> - 2023-01-24
