@@ -3458,7 +3458,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3783,7 +3783,7 @@ try {
                                     @(
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
-                                            'Import Recipients',
+                                            'Import direct group membership',
                                             '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
@@ -7830,7 +7830,7 @@ try {
     # Get and export ResourceDelegates
     Write-Host
     Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    if ($ExportAcceptMessagesOnlyFrom) {
+    if ($ExportResourceDelegates) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
         foreach ($x in (0..($AllRecipients.count - 1))) {
@@ -9538,7 +9538,7 @@ try {
                                                 foreach ($Member in $Members) {
                                                     $ExportFileLineExpanded = $ExportFileLineOriginal.PSObject.Copy()
 
-                                                    if ($Member.startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
+                                                    if ($Member.ToString().startswith('NotARecipient:', 'CurrentCultureIgnoreCase')) {
                                                         $Trustee = $Member -replace '^NotARecipient:', ''
                                                     } else {
                                                         $Trustee = $AllRecipients[$Member]

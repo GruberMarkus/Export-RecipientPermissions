@@ -16,9 +16,10 @@ _**Breaking:** Notice about breaking change_
 -->
 
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.2" target="_blank">v3.0.2</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.2" target="_blank">v3.0.2</a> - 2023-02-28
 ### Fixed
 - ExportResourceDelegates was triggered by the ExportAcceptMessagesOnlyFrom parameter, not by ExportResourceDelegates
+- ExpandGroups did not work because of assuming a wrong datatype which does not support the StartsWith method
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.1" target="_blank">v3.0.1</a> - 2023-01-24
