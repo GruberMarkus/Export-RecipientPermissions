@@ -726,11 +726,11 @@ try {
 
 
     Clear-Host
-    Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
 
     Write-Host
-    Write-Host "Script notes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Script notes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     Write-Host '  Script : Export-RecipientPermissions'
     Write-Host '  Version: XXXVersionStringXXX'
     Write-Host '  Web    : https://github.com/GruberMarkus/Export-RecipientPermissions'
@@ -738,7 +738,7 @@ try {
 
 
     Write-Host
-    Write-Host "Script environment and parameters @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Script environment and parameters @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     Write-Host "  PowerShell: '$((($($PSVersionTable.PSVersion), $($PSVersionTable.PSEdition), $($PSVersionTable.Platform), $($PSVersionTable.OS)) | Where-Object {$_}) -join "', '")'"
     Write-Host "  PowerShell bitness: $(if ([Environment]::Is64BitProcess -eq $false) {'Non-'})64-bit process on a $(if ([Environment]::Is64OperatingSystem -eq $false) {'Non-'})64-bit operating system"
     Write-Host "  Script path: '$PSCommandPath'"
@@ -934,7 +934,7 @@ try {
 
     # Credentials
     Write-Host
-    Write-Host "Exchange credentials @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Exchange credentials @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if (
         (($ExportFromOnPrem -eq $true) -and ($UseDefaultCredential -eq $false)) -or
@@ -959,13 +959,13 @@ try {
 
     # Connect to Exchange
     Write-Host
-    Write-Host "Connect to Exchange for import operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Connect to Exchange for import operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     . ([scriptblock]::Create($ConnectExchange))
 
 
     # Import recipients
     Write-Host
-    Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     Write-Host '  Enumerate possible RecipientTypeDetails values'
     try {
         # Get-EXORecipient does not (yet) return allowed RecipientTypeDetails,
@@ -988,7 +988,7 @@ try {
         }
     }
 
-    Write-Host "  Default recipients, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Default recipients, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $Filters = @()
 
     foreach ($tempChar in @([char[]](0..255) -clike '[A-Z0-9]')) {
@@ -1056,7 +1056,7 @@ try {
                             $null = Start-Transcript -LiteralPath $DebugFile -Force
                         }
 
-                        Write-Host "Import Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                        Write-Host "Import Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                         . ([scriptblock]::Create($ConnectExchange))
 
@@ -1067,7 +1067,7 @@ try {
                                 continue
                             }
 
-                            Write-Host "RecipientTypeDetails '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "RecipientTypeDetails '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             try {
                                 if ($ExportFromOnPrem) {
@@ -1097,7 +1097,7 @@ try {
                                     '"' + (
                                         @(
                                             (
-                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                 'Import Recipients',
                                                 "RecipientTypeDetails '$($QueueArray[0])', Filter '$($QueueArray[1])'",
                                                 $($_ | Out-String)
@@ -1111,7 +1111,7 @@ try {
                             '"' + (
                                 @(
                                     (
-                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                         'Import Recipients',
                                         '',
                                         $($_ | Out-String)
@@ -1173,14 +1173,14 @@ try {
             $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
             for ($x = $lastCount; $x -le $done; $x++) {
                 if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                     if ($x -eq 0) { Write-Host }
                     $lastCount = $x
                 }
             }
         }
 
-        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
         if ($tempQueue.count -ne 0) {
             Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -1219,8 +1219,8 @@ try {
 
     Write-Host ('    {0:0000000} recipients found' -f $($AllRecipients.count))
 
-    Write-Host "  Additional recipients of specific types @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-    Write-Host "    Single-thread Exchange operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Additional recipients of specific types @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+    Write-Host "    Single-thread Exchange operations @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     Write-Host '      Migration mailboxes'
     # Get-EXOMailbox misses several options (such as -Migration), so Get-Mailbox is still used for Exchange Online sometimes
@@ -1291,7 +1291,7 @@ try {
 
     Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
 
-    Write-Host "  Sort list by PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Sort list by PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipients.TrimToSize()
     $x = @($AllRecipients | Where-Object { $_.PrimarySmtpAddress } | Sort-Object -Property @{Expression = { $_.PrimarySmtpAddress } })
     $AllRecipients.clear()
@@ -1300,7 +1300,7 @@ try {
     $x = $null
 
     Write-Host '  Create lookup hashtables'
-    Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].distinguishedname) {
@@ -1313,7 +1313,7 @@ try {
         }
     }
 
-    Write-Host "    Identity (CanonicalName) to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    Identity (CanonicalName) to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsIdentityToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].identity) {
@@ -1326,7 +1326,7 @@ try {
         }
     }
 
-    Write-Host "    IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    IdentityGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsIdentityGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].Guid.Guid) {
@@ -1339,7 +1339,7 @@ try {
         }
     }
 
-    Write-Host "    ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    ExchangeGuid to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsExchangeGuidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if (($AllRecipients[$x].ExchangeGuid.Guid) -and ($AllRecipients[$x].ExchangeGuid.Guid -ine '00000000-0000-0000-0000-000000000000')) {
@@ -1352,7 +1352,7 @@ try {
         }
     }
 
-    Write-Host "    EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "    EmailAddresses to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].EmailAddresses) {
@@ -1370,7 +1370,7 @@ try {
 
     # Import recipient permissions (SendAs)
     Write-Host
-    Write-Host "Import Send As permissions from Exchange Online @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import Send As permissions from Exchange Online @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if (($ExportFromOnPrem -eq $false) -and ($ExportSendAs -eq $true)) {
         Write-Host '  Single-thread Exchange operation'
         $AllRecipientsSendas = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count * 2))
@@ -1400,12 +1400,12 @@ try {
 
     # Import Send On Behalf from cloud
     Write-Host
-    Write-Host "Import Send On Behalf permissions from Exchange Online @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import Send On Behalf permissions from Exchange Online @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if (($ExportFromOnPrem -eq $false) -and ($ExportSendOnBehalf -eq $true)) {
         Write-Host '  Single-thread Exchange operation'
         $AllRecipientsSendonbehalf = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count * 2))
 
-        Write-Host "  Mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         # Get-EXOMailbox does not support the GrantSendOnBehalfTo filter, so Get-Mailbox is used
         try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-Mailbox -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
@@ -1414,7 +1414,7 @@ try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-Mailbox -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         }
 
-        Write-Host "  Distribution groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Distribution groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         } catch {
@@ -1422,7 +1422,7 @@ try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         }
 
-        Write-Host "  Dynamic Distribution Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Dynamic Distribution Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         } catch {
@@ -1430,7 +1430,7 @@ try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         }
 
-        Write-Host "  Unified Groups (Microsoft 365 Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Unified Groups (Microsoft 365 Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         } catch {
@@ -1438,7 +1438,7 @@ try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         }
 
-        Write-Host "  Mail-enabled Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Mail-enabled Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         try {
             $AllRecipientsSendonbehalf.AddRange(@(Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
         } catch {
@@ -1455,7 +1455,7 @@ try {
 
     # Import mailbox databases
     Write-Host
-    Write-Host "Import mailbox databases @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import mailbox databases @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportFromOnPrem) {
         Write-Host '  Single-thread Exchange operation'
 
@@ -1477,7 +1477,7 @@ try {
 
     # Import Public Folders
     Write-Host
-    Write-Host "Import Public Folders and their content mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import Public Folders and their content mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportPublicFolderPermissions) {
         Write-Host '  Single-thread Exchange operation'
 
@@ -1499,7 +1499,7 @@ try {
 
     # Import additional forwarding addresses
     Write-Host
-    Write-Host "Import additional forwarding addresses @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import additional forwarding addresses @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportForwarders) {
         Write-Host '  Single-thread Exchange operation'
 
@@ -1596,7 +1596,7 @@ try {
 
     # Disconnect from Exchange
     Write-Host
-    Write-Host "Single-thread Exchange operations completed, remove connection to Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Single-thread Exchange operations completed, remove connection to Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
         Disconnect-ExchangeOnline -Confirm:$false
@@ -1614,7 +1614,7 @@ try {
 
     # Import LinkedMasterAccounts
     Write-Host
-    Write-Host "Import LinkedMasterAccounts of each mailbox by database @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import LinkedMasterAccounts of each mailbox by database @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportFromOnPrem) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllMailboxDatabases.count))
@@ -1666,7 +1666,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import LinkedMasterAccounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import LinkedMasterAccounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -1677,7 +1677,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "MailboxDatabaseGuid $($MailboxDatabaseGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "MailboxDatabaseGuid $($MailboxDatabaseGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -1696,7 +1696,7 @@ try {
                                                     '"' + (
                                                         @(
                                                             (
-                                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                                 'Import LinkedMasterAccounts',
                                                                 "Mailbox Identity GUID $($mailbox.Guid.Guid)",
                                                                 $($_ | Out-String)
@@ -1711,7 +1711,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import LinkedMasterAccounts',
                                                     "Mailbox database GUID $(MailboxDatabaseGuid)",
                                                     $($_ | Out-String)
@@ -1725,7 +1725,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import LinkedMasterAccounts',
                                             '',
                                             $($_ | Out-String)
@@ -1786,14 +1786,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all databases have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -1836,7 +1836,7 @@ try {
 
     # Import UserFriendlyNames
     Write-Host
-    Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportMailboxAccessRights -or $ExportSendAs) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -1887,12 +1887,12 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
                             while ($tempQueue.count -gt 0) {
-                                Write-Host "Filter string @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Filter string @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 $dequeued = 0
                                 $filterstring = ''
@@ -1923,7 +1923,7 @@ try {
 
                                     foreach ($securityprincipal in $securityprincipals) {
                                         try {
-                                            Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                            Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
                                             if ($AllRecipientsIdentityGuidToIndex.containskey($securityprincipal.guid.guid)) {
                                                 ($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$($securityprincipal.guid.guid)])]).UserFriendlyName = $securityprincipal.UserFriendlyName
                                             }
@@ -1932,7 +1932,7 @@ try {
                                                 '"' + (
                                                     @(
                                                         (
-                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Import UserFriendlyNames',
                                                             "Security principal GUID $($securityprincipal.guid.guid)",
                                                             $($_ | Out-String)
@@ -1948,7 +1948,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import UserFriendlyNames',
                                             '',
                                             $($_ | Out-String)
@@ -2009,14 +2009,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count * 100))
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2059,9 +2059,9 @@ try {
 
     # Create lookup hashtables for UserFriendlyName and LinkedMasterAccount
     Write-Host
-    Write-Host "Create lookup hashtables for UserFriendlyName and LinkedMasterAccount @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Create lookup hashtables for UserFriendlyName and LinkedMasterAccount @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-    Write-Host "  UserFriendlyName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  UserFriendlyName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         $Recipient = $AllRecipients[$x]
@@ -2078,7 +2078,7 @@ try {
         }
     }
 
-    Write-Host "  LinkedMasterAccount to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  LinkedMasterAccount to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsLinkedmasteraccountToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if (($AllRecipients[$x]).LinkedMasterAccount) {
@@ -2100,7 +2100,7 @@ try {
 
     # Import moderators
     Write-Host
-    Write-Host "Import moderators, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import moderators, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportModerators) {
         $Filters = @()
@@ -2174,7 +2174,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -2185,7 +2185,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -2226,7 +2226,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import moderators',
                                                     "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])'",
                                                     $($_ | Out-String)
@@ -2240,7 +2240,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import moderators',
                                             '',
                                             $($_ | Out-String)
@@ -2301,14 +2301,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2353,7 +2353,7 @@ try {
 
     # Import RequireAllSendersAreAuthenticated
     Write-Host
-    Write-Host "Import RequireAllSendersAreAuthenticated, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import RequireAllSendersAreAuthenticated, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportRequireAllSendersAreAuthenticated) {
         $Filters = @()
@@ -2428,7 +2428,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -2439,7 +2439,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -2479,7 +2479,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import RequireAllSendersAreAuthenticated',
                                                     "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])'",
                                                     $($_ | Out-String)
@@ -2493,7 +2493,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import RequireAllSendersAreAuthenticated',
                                             '',
                                             $($_ | Out-String)
@@ -2554,14 +2554,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2606,7 +2606,7 @@ try {
 
     # Import AcceptMessagesOnlyFrom
     Write-Host
-    Write-Host "Import AcceptMessagesOnlyFrom, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import AcceptMessagesOnlyFrom, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportAcceptMessagesOnlyFrom) {
         $Filters = @()
@@ -2680,7 +2680,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -2691,7 +2691,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -2731,7 +2731,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import AcceptMessagesOnlyFrom',
                                                     "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])'",
                                                     $($_ | Out-String)
@@ -2745,7 +2745,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import AcceptMessagesOnlyFrom',
                                             '',
                                             $($_ | Out-String)
@@ -2806,14 +2806,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -2858,7 +2858,7 @@ try {
 
     # Import ResourceDelegates
     Write-Host
-    Write-Host "Import ResourceDelegates, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import ResourceDelegates, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportResourceDelegates) {
         $Filters = @()
@@ -2915,7 +2915,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -2928,7 +2928,7 @@ try {
 
                                 $Recipient = $AllRecipients[$RecipientID]
 
-                                Write-Host "Recipient $($RecipientID) ($($Recipient.PrimarySmtpAddress)) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Recipient $($RecipientID) ($($Recipient.PrimarySmtpAddress)) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -2952,7 +2952,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import ResourceDelegates',
                                                     "Recipient $($RecipientID) ($($Recipient.PrimarySmtpAddress))",
                                                     $($_ | Out-String)
@@ -2966,7 +2966,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import ResourceDelegates',
                                             '',
                                             $($_ | Out-String)
@@ -3026,14 +3026,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3078,7 +3078,7 @@ try {
 
     # Import LegacyExchangeDN
     Write-Host
-    Write-Host "Import LegacyExchangeDN, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import LegacyExchangeDN, grouped by RecipientTypeDetails and first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportResourceDelegates) {
         $Filters = @()
@@ -3156,7 +3156,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import LegacyExchangeDN @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import LegacyExchangeDN @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3168,7 +3168,7 @@ try {
                                 }
 
 
-                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -3208,7 +3208,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import LegacyExchangeDN',
                                                     "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])'",
                                                     $($_ | Out-String)
@@ -3222,7 +3222,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import LegacyExchangeDN',
                                             '',
                                             $($_ | Out-String)
@@ -3283,14 +3283,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3335,10 +3335,10 @@ try {
 
     # Create lookup hashtable for LegacyExchangeDN
     Write-Host
-    Write-Host "Create lookup hashtable for LegacyExchangeDN @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Create lookup hashtable for LegacyExchangeDN @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportResourceDelegates) {
-        Write-Host "  LegacyExchangeDN to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  LegacyExchangeDN to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllRecipientsLegacyExchangeDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
             $Recipient = $AllRecipients[$x]
@@ -3361,7 +3361,7 @@ try {
 
     # Define Grantors
     Write-Host
-    Write-Host "Define grantors by filtering recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Define grantors by filtering recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     Write-Host "  Filter: { $($GrantorFilter) }"
     $GrantorsToConsider = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
@@ -3384,7 +3384,7 @@ try {
 
     # Import security principals
     Write-Host
-    Write-Host "Import security principals, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import security principals, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if (
         ($ExportMailboxAccessRights) -or
@@ -3458,7 +3458,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3469,7 +3469,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -3490,7 +3490,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import security principals',
                                                     "Filter '$($filter)'",
                                                     $($_ | Out-String)
@@ -3504,7 +3504,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import security principals',
                                             '',
                                             $($_ | Out-String)
@@ -3564,14 +3564,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3612,7 +3612,7 @@ try {
         Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
 
         Write-Host '  Create lookup hashtables'
-        Write-Host "    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -3626,7 +3626,7 @@ try {
             }
         }
 
-        Write-Host "    ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllSecurityPrincipalsObjectguidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -3640,7 +3640,7 @@ try {
             }
         }
 
-        Write-Host "    DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllSecurityPrincipalsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -3654,7 +3654,7 @@ try {
             }
         }
 
-        Write-Host "    UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllSecurityPrincipalsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
@@ -3674,7 +3674,7 @@ try {
 
     # Import direct group membership
     Write-Host
-    Write-Host "Import direct group membership, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Import direct group membership, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
         $AllGroups = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
@@ -3739,7 +3739,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Import direct group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3750,7 +3750,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -3768,7 +3768,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Import direct group membership',
                                                     "Filter '$($filter)'",
                                                     $($_ | Out-String)
@@ -3782,7 +3782,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Import direct group membership',
                                             '',
                                             $($_ | Out-String)
@@ -3842,14 +3842,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -3895,7 +3895,7 @@ try {
 
     # Get and export Mailbox Access Rights
     Write-Host
-    Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportMailboxAccessRights) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
@@ -3965,7 +3965,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -3991,7 +3991,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     foreach ($MailboxPermission in
@@ -4157,7 +4157,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Mailbox Access Rights',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -4202,7 +4202,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Mailbox Access Rights',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -4278,14 +4278,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -4328,7 +4328,7 @@ try {
 
     # Get and export Mailbox Folder permissions
     Write-Host
-    Write-Host "Get and export Mailbox Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Mailbox Folder Permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportMailboxFolderPermissions) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
         for ($x = 0; $x -lt $AllRecipients.count; $x++) {
@@ -4395,7 +4395,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Mailbox Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Mailbox Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -4421,7 +4421,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 if ($ExportFromOnPrem) {
                                     try {
@@ -4446,7 +4446,7 @@ try {
 
                                         if ($Folder.foldertype -ieq 'root') { $Folder.folderpath = '/' }
 
-                                        Write-Host "  Folder '$($folder.folderid)' ('$folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                        Write-Host "  Folder '$($folder.folderid)' ('$folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
@@ -4638,7 +4638,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Mailbox Folder permissions',
                                                         "$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))",
                                                         $($_ | Out-String)
@@ -4684,7 +4684,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Mailbox Folder permissions',
                                             "($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -4757,14 +4757,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantor mailboxes have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -4807,7 +4807,7 @@ try {
 
     # Get and export Send As permissions
     Write-Host
-    Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportSendAs) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -4874,7 +4874,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Send As permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -4898,7 +4898,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5117,7 +5117,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send As permissions',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -5162,7 +5162,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Send As permissions',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -5222,14 +5222,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5272,7 +5272,7 @@ try {
 
     # Get and export Send On Behalf permissions
     Write-Host
-    Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportSendOnBehalf) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -5333,7 +5333,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Send On Behalf permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -5357,7 +5357,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5529,7 +5529,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send On Behalf permissions',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -5574,7 +5574,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Send On Behalf permissions',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -5628,14 +5628,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5678,7 +5678,7 @@ try {
 
     # Get and export Managed By permissions
     Write-Host
-    Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportManagedBy) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -5733,7 +5733,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Managed By permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -5757,7 +5757,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $trustees = [system.collections.arraylist]::new(1000)
@@ -5837,7 +5837,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Managed By permissions',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -5882,7 +5882,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Managed By permissions',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -5934,14 +5934,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -5984,7 +5984,7 @@ try {
 
     # Get and export Linked Master Accounts
     Write-Host
-    Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportLinkedMasterAccount -and $ExportFromOnPrem) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -6048,7 +6048,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Linked Master Accounts @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -6072,7 +6072,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -6191,7 +6191,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Linked Master Accounts',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -6236,7 +6236,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Linked Master Accounts',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -6294,14 +6294,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all grantors have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -6344,7 +6344,7 @@ try {
 
     # Get and export Public Folder permissions
     Write-Host
-    Write-Host "Get and export Public Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Public Folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportPublicFolderPermissions) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllPublicFolders.count))
 
@@ -6428,7 +6428,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Public folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Public folder permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -6474,12 +6474,12 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $folder.folderpath = '/' + $($folder.folderpath -join '/')
 
-                                    Write-Host "  Folder '$($folder.EntryId)' ('$($Folder.Folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                    Write-Host "  Folder '$($folder.EntryId)' ('$($Folder.Folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                     if (-not $folder.folderclass) { $folder.folderclass = $null }
 
@@ -6723,7 +6723,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Public Folder permissions',
                                                     "$($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))",
                                                     $($_ | Out-String)
@@ -6768,7 +6768,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Public Folder permissions',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -6843,14 +6843,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -6902,7 +6902,7 @@ try {
 
     # Get and export Forwarders
     Write-Host
-    Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportForwarders) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -6958,7 +6958,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Forwarders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -6982,7 +6982,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ForwarderType in ('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress')) {
                                     try {
@@ -7062,7 +7062,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Forwarders',
                                                         "$($GrantorPrimarySMTP)",
                                                         $($_ | Out-String)
@@ -7108,7 +7108,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Forwarders',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -7159,14 +7159,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -7209,7 +7209,7 @@ try {
 
     # Get and export moderators
     Write-Host
-    Write-Host "Get and export moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportModerators) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -7266,7 +7266,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export moderators @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -7290,7 +7290,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ModeratorSetting in @('ModeratedBy', 'ModeratedByBypass')) {
                                     foreach ($Moderator in $($Grantor.$ModeratorSetting)) {
@@ -7371,7 +7371,7 @@ try {
                                                 '"' + (
                                                     @(
                                                         (
-                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export moderators',
                                                             "$($GrantorPrimarySMTP)",
                                                             $($_ | Out-String)
@@ -7418,7 +7418,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export moderators',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -7470,14 +7470,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -7520,7 +7520,7 @@ try {
 
     # Get and export AcceptMessagesOnlyFrom
     Write-Host
-    Write-Host "Get and export AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportAcceptMessagesOnlyFrom) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -7577,7 +7577,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export AcceptMessagesOnlyFrom @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -7601,7 +7601,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($AcceptedRecipient in $($Grantor.AcceptMessagesOnlyFromSendersOrMembers)) {
                                     try {
@@ -7681,7 +7681,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export AcceptMessagesOnlyFrom',
                                                         "$($GrantorPrimarySMTP)",
                                                         $($_ | Out-String)
@@ -7727,7 +7727,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export AcceptMessagesOnlyFrom',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -7779,14 +7779,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -7829,7 +7829,7 @@ try {
 
     # Get and export ResourceDelegates
     Write-Host
-    Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportResourceDelegates) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -7887,7 +7887,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export ResourceDelegates @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -7911,7 +7911,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ResourceDelegatesSetting in @('ResourceDelegates', 'AllBookInPolicy', 'BookInPolicy', 'AllRequestInPolicy', 'RequestInPolicy', 'AllRequestOutOfPolicy', 'RequestOutOfPolicy')) {
                                     foreach ($AcceptedRecipient in $($Grantor.$ResourceDelegatesSetting)) {
@@ -8006,7 +8006,7 @@ try {
                                                 '"' + (
                                                     @(
                                                         (
-                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export ResourceDelegates',
                                                             "$($GrantorPrimarySMTP)",
                                                             $($_ | Out-String)
@@ -8053,7 +8053,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export ResourceDelegates',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -8106,14 +8106,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8156,7 +8156,7 @@ try {
 
     # Get and export RequireAllSendersAreAuthenticated
     Write-Host
-    Write-Host "Get and export RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportRequireAllSendersAreAuthenticated) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -8213,7 +8213,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export RequireAllSendersAreAuthenticated @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -8237,7 +8237,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $Trustee = 'NT AUTHORITY\Authenticated Users'
@@ -8306,7 +8306,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export RequireAllSendersAreAuthenticated',
                                                     "$($GrantorPrimarySMTP)",
                                                     $($_ | Out-String)
@@ -8352,7 +8352,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export RequireAllSendersAreAuthenticated',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -8404,14 +8404,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8454,11 +8454,11 @@ try {
 
     # Calculate group membership
     Write-Host
-    Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportManagementRoleGroupMembers -or $ExpandGroups -or ($ExportDistributionGroupMembers -ine 'None')) {
         Write-Host '  Create lookup hashtables'
-        Write-Host "    GroupIdentity to group index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    GroupIdentity to group index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllGroupsIdentityToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
 
         for ($x = 0; $x -lt $AllGroups.Count; $x++) {
@@ -8467,7 +8467,7 @@ try {
             }
         }
 
-        Write-Host "    GroupIdentity to recursive members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "    GroupIdentity to recursive members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $AllGroupMembers = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllGroups.count, [StringComparer]::OrdinalIgnoreCase))
 
         # Normal distribution groups and management role groups
@@ -8566,7 +8566,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Calculate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
@@ -8579,7 +8579,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "Group $($GroupIdentity) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Group $($GroupIdentity) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportGroupMembersRecurse) {
@@ -8593,7 +8593,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Calculate recursive group membership',
                                                     "Group Identity $($GroupIdentity)",
                                                     $($_ | Out-String)
@@ -8607,7 +8607,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Calculate group membership',
                                             '',
                                             $($_ | Out-String)
@@ -8674,14 +8674,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -8724,7 +8724,7 @@ try {
 
     # Get and export Management Role Group Members
     Write-Host
-    Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExportManagementRoleGroupMembers) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllGroups.count))
 
@@ -8788,7 +8788,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Management Role Group members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -8815,7 +8815,7 @@ try {
                                     $GrantorEnvironment = 'Cloud'
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorDisplayName) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorDisplayName) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     foreach ($RoleGroupMember in $RoleGroupMembers) {
@@ -8932,7 +8932,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Management Role Group members',
                                                     "$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))",
                                                     $($_ | Out-String)
@@ -8977,7 +8977,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Management Role Group members',
                                             "$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))",
                                             $($_ | Out-String)
@@ -9036,14 +9036,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all management role group members have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9087,7 +9087,7 @@ try {
     # Get and export Distribution Group Members
     # Must be the last export step because of '(($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -and ($AllRecipients[$x].IsTrustee -eq $true))'
     Write-Host
-    Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if (($ExportDistributionGroupMembers -ieq 'All') -or ($ExportDistributionGroupMembers -ieq 'OnlyTrustees')) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -9160,7 +9160,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Get and export Distribution Group Members @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -9184,7 +9184,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $GrantorMembers = @($AllGroupMembers[$Grantor.Identity])
@@ -9302,7 +9302,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Distribution Group Members',
                                                         "$($GrantorPrimarySMTP)",
                                                         $($_ | Out-String)
@@ -9336,7 +9336,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Distribution Group Members',
                                             "$($GrantorPrimarySMTP)",
                                             $($_ | Out-String)
@@ -9396,14 +9396,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all distribution groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9446,7 +9446,7 @@ try {
 
     # Expand groups in temporary result files
     Write-Host
-    Write-Host "Expand groups in temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Expand groups in temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     if ($ExpandGroups) {
         $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -9509,7 +9509,7 @@ try {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Expand groups in temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                            Write-Host "Expand groups in temporary result files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             while ($tempQueue.count -gt 0) {
                                 try {
@@ -9518,7 +9518,7 @@ try {
                                     continue
                                 }
 
-                                Write-Host "  $($JobResultFile) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "  $($JobResultFile) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $ExportFileLines = [system.collections.arraylist]::new(1000)
@@ -9634,7 +9634,7 @@ try {
                                         '"' + (
                                             @(
                                                 (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Expand groups in temporary result files',
                                                     "$($JobResultFile)",
                                                     $($_ | Out-String)
@@ -9648,7 +9648,7 @@ try {
                                 '"' + (
                                     @(
                                         (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Expand groups in temporary result files',
                                             "$($JobResultFile)",
                                             $($_ | Out-String)
@@ -9708,14 +9708,14 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
                 Write-Host '    Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -9758,12 +9758,12 @@ try {
 
     # Export grantors with no permissions
     Write-Host
-    Write-Host "Export grantors with no permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Export grantors with no permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($ExportGrantorsWithNoPermissions) {
         # Recipients
         if ($GrantorsToConsider) {
-            Write-Host "  Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+            Write-Host "  Recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
             $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
 
@@ -9824,7 +9824,7 @@ try {
                                     $null = Start-Transcript -LiteralPath $DebugFile -Force
                                 }
 
-                                Write-Host "Export grantors with no permissions (recipients) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Export grantors with no permissions (recipients) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 while ($tempQueue.count -gt 0) {
                                     try {
@@ -9852,7 +9852,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -9920,7 +9920,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (recipients)',
                                                         "$($GrantorPrimarySMTP)",
                                                         $($_ | Out-String)
@@ -9934,7 +9934,7 @@ try {
                                     '"' + (
                                         @(
                                             (
-                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                 'Export grantors with no permissions (recipients)',
                                                 '',
                                                 $($_ | Out-String)
@@ -9982,14 +9982,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10030,7 +10030,7 @@ try {
 
         # Public Folders
         if ($ExportPublicFolderPermissions) {
-            Write-Host "  Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+            Write-Host "  Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
             $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllPublicFolders.count))
 
@@ -10082,7 +10082,7 @@ try {
                                     $null = Start-Transcript -LiteralPath $DebugFile -Force
                                 }
 
-                                Write-Host "Export grantors with no permissions (Public Folders) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Export grantors with no permissions (Public Folders) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 while ($tempQueue.count -gt 0) {
                                     try {
@@ -10121,7 +10121,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -10189,7 +10189,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Public Folders)',
                                                         "$($GrantorPrimarySMTP)",
                                                         $($_ | Out-String)
@@ -10203,7 +10203,7 @@ try {
                                     '"' + (
                                         @(
                                             (
-                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                 'Export grantors with no permissions (Public Folders)',
                                                 '',
                                                 $($_ | Out-String)
@@ -10253,14 +10253,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all Public Folders have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10308,7 +10308,7 @@ try {
 
         # Management Role Groups
         if ($ExportManagementRoleGroupMembers) {
-            Write-Host "  Management Role Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+            Write-Host "  Management Role Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
             $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllGroups.count))
 
@@ -10361,7 +10361,7 @@ try {
                                     $null = Start-Transcript -LiteralPath $DebugFile -Force
                                 }
 
-                                Write-Host "Export grantors with no permissions (Management Role Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Export grantors with no permissions (Management Role Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 while ($tempQueue.count -gt 0) {
                                     try {
@@ -10388,7 +10388,7 @@ try {
                                                 $GrantorEnvironment = 'Cloud'
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -10456,7 +10456,7 @@ try {
                                             '"' + (
                                                 @(
                                                     (
-                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                        $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Management Role Groups)',
                                                         "$($GrantorDisplayName)",
                                                         $($_ | Out-String)
@@ -10470,7 +10470,7 @@ try {
                                     '"' + (
                                         @(
                                             (
-                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                 'Export grantors with no permissions (Management Role Groups)',
                                                 '',
                                                 $($_ | Out-String)
@@ -10518,14 +10518,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '      Not all Management Role Groups have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10572,7 +10572,7 @@ try {
         '"' + (
             @(
                 (
-                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                     '',
                     '',
                     $($_ | Out-String)
@@ -10581,7 +10581,7 @@ try {
     ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
 } finally {
     Write-Host
-    Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
         Disconnect-ExchangeOnline -Confirm:$false
@@ -10594,7 +10594,7 @@ try {
         }
     }
 
-    Write-Host "  Runspaces and RunspacePool @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  Runspaces and RunspacePool @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($runspaces) {
         foreach ($runspace in $runspaces) {
@@ -10609,7 +10609,7 @@ try {
     }
 
     if ($ExportFile) {
-        Write-Host "  Combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $JobResultFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
 
         if ($JobResultFiles.count -gt 0) {
@@ -10662,7 +10662,7 @@ try {
                                     $null = Start-Transcript -LiteralPath $DebugFile -Force
                                 }
 
-                                Write-Host "Pre-combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                Write-Host "Pre-combine temporary export files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 while ($tempQueue.count -gt 0) {
                                     try {
@@ -10671,7 +10671,7 @@ try {
                                         continue
                                     }
 
-                                    Write-Host "Target file $($ExportFileArray[0]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                                    Write-Host "Target file $($ExportFileArray[0]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                     if ($ExportFileArray.count -gt 1) {
                                         foreach ($ExportFileTemp in ($ExportFileArray[1..($ExportFileArray.count - 1)])) {
@@ -10685,7 +10685,7 @@ try {
                                                     '"' + (
                                                         @(
                                                             (
-                                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                                 'Pre-combine temporary export files',
                                                                 "$($ExportFileTemp)",
                                                                 $($_ | Out-String)
@@ -10702,7 +10702,7 @@ try {
                                     '"' + (
                                         @(
                                             (
-                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'),
+                                                $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                 'Pre-combine temporary export files',
                                                 '',
                                                 $($_ | Out-String)
@@ -10744,14 +10744,14 @@ try {
                     $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                            Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                            Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                             if ($x -eq 0) { Write-Host }
                             $lastCount = $x
                         }
                     }
                 }
 
-                Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')))
+                Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
                 if ($tempQueue.count -ne 0) {
                     Write-Host '          Not all files have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
@@ -10791,7 +10791,7 @@ try {
             $JobResultFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ExportFile), ('TEMP.*.txt'))))
 
             Write-Host ('    {0:0000000} pre-consolidated files to combine. Done (in steps of {1:0000000}):' -f $JobResultFiles.count, $UpdateInterval)
-            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
+            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))
 
             $lastCount = 1
 
@@ -10803,7 +10803,7 @@ try {
                 Remove-Item -LiteralPath $JobResultFile -Force
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobResultFiles.count)) {
-                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                     if ($lastcount -eq $JobResultFiles.count) { Write-Host }
                 }
 
@@ -10818,14 +10818,14 @@ try {
     }
 
     if ($ErrorFile) {
-        Write-Host "  Sort and combine temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Sort and combine temporary error files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $JobErrorFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))
 
         $x = Import-Csv $errorfile -Delimiter ';' -Encoding $UTF8Encoding
 
         if ($JobErrorFiles.count -gt 0) {
             Write-Host ('    {0:0000000} files to combine. Done (in steps of {1:0000000}):' -f $JobErrorFiles.count, $UpdateInterval)
-            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))
+            Write-Host ('      {0:0000000} @{1}@' -f 0, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))
 
 
             $lastCount = 1
@@ -10838,7 +10838,7 @@ try {
                 Remove-Item -LiteralPath $JobErrorFile -Force
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobErrorFiles.count)) {
-                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+                    Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                     if ($lastcount -eq $JobErrorFiles.count) { Write-Host }
                 }
 
@@ -10857,7 +10857,7 @@ try {
     }
 
     if ($DebugFile) {
-        Write-Host "  Combine temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "  Combine temporary debug files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $JobDebugFiles = @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))
 
         Write-Host ('    {0:0000000} files to combine.' -f $JobDebugFiles.count)
@@ -10867,7 +10867,7 @@ try {
     }
 
     Write-Host
-    Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     if ($DebugFile) {
         $null = Stop-Transcript

@@ -29,11 +29,11 @@ $DNs = (
 Clear-Host
 
 
-Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
 
 Write-Host
-Write-Host "Query AD for data from objects with SIDHistory to remove @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Query AD for data from objects with SIDHistory to remove @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
 
 $PrimarySMTPs = @()
@@ -84,7 +84,7 @@ foreach ($DN in $DNs) {
     $OriginalIdentities += $result.legacyexchangedn
 
     if (($count % 100) -eq 0) {
-        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $count, $DNs.count, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $count, $DNs.count, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
 
         if (($count -eq 0) -or ($count -eq $DNs.count)) {
             Write-Host
@@ -99,7 +99,7 @@ $OriginalIdentities = $OriginalIdentities | Where-Object { $_ }
 
 
 Write-Host
-Write-Host "Export permissions from Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Export permissions from Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  Save to '.\export\Export-RecipientPermissions_Result_SIDHistory-Removal.csv'"
 
 $params = @{

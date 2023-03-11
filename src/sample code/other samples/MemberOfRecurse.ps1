@@ -179,7 +179,7 @@ $Search.PageSize = 1000
 $script:MemberOfRecurse = @()
 
 
-Write-Host "Enumerate domains @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Enumerate domains @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $x = $TrustsToCheckForGroups
 [System.Collections.ArrayList]$TrustsToCheckForGroups = @()
 $LookupDomainsToTrusts = @{}
@@ -343,12 +343,12 @@ try {
 
 
         Write-Host
-        Write-Host "Check trusts for open LDAP port and connectivity @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "Check trusts for open LDAP port and connectivity @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         CheckADConnectivity @(@(@($TrustsToCheckForGroups) + @($LookupDomainsToTrusts.GetEnumerator() | ForEach-Object { $_.Name })) | Select-Object -Unique) 'LDAP' '  ' | Out-Null
 
 
         Write-Host
-        Write-Host "Check trusts for open Global Catalog port and connectivity @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Host "Check trusts for open Global Catalog port and connectivity @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         CheckADConnectivity $TrustsToCheckForGroups 'GC' '  ' | Out-Null
     }
 } catch {
@@ -360,9 +360,9 @@ try {
 
 
 Write-Host
-Write-Host "Enumerate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Enumerate group membership @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 foreach ($AdObjectToCheck in $AdObjectsToCheck) {
-    Write-Host "  '$($AdObjectToCheck)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+    Write-Host "  '$($AdObjectToCheck)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
     try {
         $AdObjectToCheckDn = $null
@@ -385,10 +385,10 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
         $script:SIDsToCheckInTrusts = @()
 
-        Write-Verbose "    $($LookupDomainsToTrusts[$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Verbose "    $($LookupDomainsToTrusts[$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')]) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
         # Security groups, no matter if enabled for mail or not
-        Write-Verbose "      Security groups via LDAP query of tokengroups attribute @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Verbose "      Security groups via LDAP query of tokengroups attribute @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $UserAccount = [ADSI]"LDAP://$($AdObjectToCheckDn)"
         $UserAccount.GetInfoEx(@('tokengroups'), 0)
         foreach ($sidBytes in $UserAccount.Properties.tokengroups) {
@@ -398,7 +398,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         }
 
         # Distribution groups (static only)
-        Write-Verbose "      Distribution groups (static only) via GC query @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Verbose "      Distribution groups (static only) via GC query @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $Search.searchroot = New-Object System.DirectoryServices.DirectoryEntry("GC://$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')")
         $Search.filter = "(&(objectClass=group)(!(groupType:1.2.840.113556.1.4.803:=2147483648))(member:1.2.840.113556.1.4.1941:=$($AdObjectToCheckDn)))"
         foreach ($DistributionGroup in $search.findall()) {
@@ -416,9 +416,9 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         }
 
         # Domain local groups
-        Write-Verbose "      Domain local groups via LDAP query @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+        Write-Verbose "      Domain local groups via LDAP query @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         foreach ($DomainToCheckForDomainLocalGroups in @(($LookupDomainsToTrusts.GetEnumerator() | Where-Object { $_.Value -ieq $LookupDomainsToTrusts[$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')] }).name)) {
-            Write-Verbose "        $($DomainToCheckForDomainLocalGroups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+            Write-Verbose "        $($DomainToCheckForDomainLocalGroups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
             $Search.searchroot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$($DomainToCheckForDomainLocalGroups)")
             $Search.filter = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=4)(member:1.2.840.113556.1.4.1941:=$($AdObjectToCheckDn)))"
             foreach ($LocalGroup in $search.findall()) {
@@ -470,7 +470,7 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
         if ($LdapFilterSids -ilike '*(objectsid=*') {
             # Across each trust, search for all Foreign Security Principals matching a SID from our list
             foreach ($TrustToCheckForFSPs in @(($LookupDomainsToTrusts.GetEnumerator() | Where-Object { $_.Value -ine $LookupDomainsToTrusts[$(($($AdObjectToCheckDn) -split ',DC=')[1..999] -join '.')] }).value | Select-Object -Unique)) {
-                Write-Host "    $($TrustToCheckForFSPs) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+                Write-Host "    $($TrustToCheckForFSPs) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
                 $Search.searchroot = New-Object System.DirectoryServices.DirectoryEntry("GC://$($TrustToCheckForFSPs)")
                 $Search.filter = "(&(objectclass=foreignsecurityprincipal)$LdapFilterSIDs)"
 
@@ -522,13 +522,13 @@ foreach ($AdObjectToCheck in $AdObjectsToCheck) {
 
 
 Write-Host
-Write-Host "Final MemberOfRecurse result @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Final MemberOfRecurse result @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $script:MemberOfRecurse = $script:MemberOfRecurse | Select-Object -Property * -Unique | Sort-Object -Property 'Original object', 'MemberOf recurse group canonicalName', 'MemberOf recurse group objectGUID'
 $script:MemberOfRecurse | Format-Table
 
 
 Write-Host
-Write-Host "Configure and start Export-RecipientPermissions (demo) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Configure and start Export-RecipientPermissions (demo) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $params = @{
     ExportFromOnPrem                            = $true
     UseDefaultCredential                        = $true
@@ -578,4 +578,4 @@ Write-Host "    '& ..\..\Export-RecipientPermissions.ps1 @params'"
 
 
 Write-Host
-Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"

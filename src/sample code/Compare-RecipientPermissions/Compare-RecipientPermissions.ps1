@@ -32,7 +32,7 @@ Param(
 Clear-Host
 
 
-Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Set-Location $PSScriptRoot
 
 if ($PSVersionTable.PSEdition -ieq 'desktop') {
@@ -43,22 +43,22 @@ if ($PSVersionTable.PSEdition -ieq 'desktop') {
 
 
 Write-Host
-Write-Host "Import old CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Import old CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $oldLines = Import-Csv $oldCsv -Delimiter ';' -Encoding $UTF8Encoding
 
 
 Write-Host
-Write-Host "Import new CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Import new CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $newLines = Import-Csv $newCsv -Delimiter ';' -Encoding $UTF8Encoding
 
 
 Write-Host
-Write-Host "Compare CSV files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-Write-Host "  Create compared dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Compare CSV files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+Write-Host "  Create compared dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $Dataset = Compare-Object -ReferenceObject $oldLines -DifferenceObject $newLines -Property $newLines[0].psobject.properties.name -IncludeEqual -PassThru
 $Dataset | Add-Member -MemberType NoteProperty -Name 'Change' -Value $null
 
-Write-Host "  Modify and sort dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "  Modify and sort dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 foreach ($DatasetObject in $Dataset) {
     if ($DatasetObject.sideindicator -ieq '<=') {
         $DatasetObject.'Change' = 'Deleted'
@@ -75,7 +75,7 @@ $Dataset = $Dataset | Sort-Object -Property 'Grantor Primary SMTP', 'Grantor Dis
 
 
 Write-Host
-Write-Host "Display results @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Display results @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 if ($DisplayResults) {
     $GrantorPrimarySmtpOrder = [system.collections.arraylist]::new($Dataset.'Grantor Primary SMTP')
     $GrantorPrimarySmtpReverseOrder = [system.collections.arraylist]::new($GrantorPrimarySmtpOrder.count)
@@ -104,7 +104,7 @@ if ($DisplayResults) {
 
 
 Write-Host
-Write-Host "Create export file showing changes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Create export file showing changes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 if ($ChangeFile) {
     Write-Host "  '$($ChangeFile)'"
     $Dataset | Export-Csv -Path $ChangeFile -Delimiter ';' -Encoding $UTF8Encoding -NoTypeInformation -Force
@@ -114,4 +114,4 @@ if ($ChangeFile) {
 
 
 Write-Host
-Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
