@@ -238,6 +238,20 @@
             </summary>
             <returns>A predicate with all conjuncts AND'd</returns>
         </member>
+        <member name="P:Microsoft.OData.Client.ApplyQueryOptionExpression.GroupingExpressions">
+            <summary>
+            The individual expressions that make up the GroupBy selector.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.ApplyQueryOptionExpression.KeySelectorMap">
+            <summary>
+            Gets a mapping of member names in the GroupBy key selector to their respective expressions.
+            </summary>
+            <remarks>
+            This property will contain a mapping of the member {Name} to the expression {d1.Product.Category.Name} given the following GroupBy expression:
+            dsc.CreateQuery&lt;Sale&gt;("Sales").GroupBy(d1 => d1.Product.Category.Name, (d2, d3) => new { CategoryName = d2, AverageAmount = d3.Average(d4 => d4.Amount) })
+            </remarks>
+        </member>
         <member name="T:Microsoft.OData.Client.ApplyQueryOptionExpression.Aggregation">
             <summary>
             Structure for an aggregation. Holds lambda expression plus enum indicating aggregation method
@@ -1038,6 +1052,129 @@
             </summary>
             <returns>A predicate with all Conjuncts AND'ed</returns>
         </member>
+        <member name="T:Microsoft.OData.Client.GroupByAnalyzer">
+            <summary>
+            Analyzes an expression to check whether it can be satisfied with $apply.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.Analyze(System.Linq.Expressions.MethodCallExpression,Microsoft.OData.Client.QueryableResourceExpression,Microsoft.OData.Client.ResourceExpression)">
+            <summary>
+            Analyzes <paramref name="methodCallExpr"/> to check whether it can be satisfied with $apply.
+            The Projection property of <paramref name="resourceExpr"/> is set
+            when <paramref name="methodCallExpr"/> is analyzed successfully.
+            </summary>
+            <param name="methodCallExpr">Expression to analyze.</param>
+            <param name="source">The resource set expression (source) for the GroupBy.</param>
+            <param name="resourceExpr">The resource expression in scope.</param>
+            <returns>true if <paramref name="methodCallExpr"/> can be satisfied with $apply; false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.AnalyzeGroupByKeySelector(Microsoft.OData.Client.QueryableResourceExpression,System.Linq.Expressions.LambdaExpression)">
+            <summary>
+            Analyzes a GroupBy key selector for property/ies that the input sequence is grouped by.
+            </summary>
+            <param name="input">The resource set expression (source) for the GroupBy.</param>
+            <param name="keySelector">Key selector expression to analyze.</param>
+            <returns>true if analyzed successfully; false otherwise</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.EnsureApplyInitialized(Microsoft.OData.Client.QueryableResourceExpression)">
+            <summary>
+            Ensure apply query option for the resource set is initialized
+            </summary>
+            <param name="input">The resource set expression (source) for the GroupBy.</param>
+        </member>
+        <member name="T:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer">
+            <summary>
+            Analyzes a GroupBy key selector for property or properties that the input sequence is grouped by.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.input">
+            <summary>The input resource, as a queryable resource.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.lambdaParameter">
+            <summary>The key selector lambda parameter.</summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.#ctor(Microsoft.OData.Client.QueryableResourceExpression,System.Linq.Expressions.ParameterExpression)">
+            <summary>
+            Creates an <see cref="T:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer"/> expression.
+            </summary>
+            <param name="source">The source expression.</param>
+            <param name="paramExpr">The parameter of the key selector expression, e.g., d1 => new { d1.ProductId, d1.CustomerId }.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.Analyze(Microsoft.OData.Client.QueryableResourceExpression,System.Linq.Expressions.LambdaExpression)">
+            <summary>
+            Analyzes a GroupBy key selector for property or properties that the input sequence is grouped by. 
+            </summary>
+            <param name="input">The resource set expression (source) for the GroupBy.</param>
+            <param name="keySelector">Key selector expression to analyze.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.VisitNew(System.Linq.Expressions.NewExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.VisitMemberAssignment(System.Linq.Expressions.MemberAssignment)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByKeySelectorAnalyzer.VisitMemberAccess(System.Linq.Expressions.MemberExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer">
+            <summary>
+            Analyzes expression for aggregate expressions in the GroupBy result selector.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.input">
+            <summary>The input resource, as a queryable resource</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.resultSelectorMap">
+            <summary>
+            Mapping of expressions in the GroupBy result selector to a key-value pair
+            of the respective member name and type.
+            </summary>
+            <remarks>
+            This property will contain a mapping of the expression {d3.Average(d4 => d4.Amount)} to a key-value pair
+            of the respective member name {AverageAmount} and type {decimal} given the following GroupBy expression:
+            dsc.CreateQuery&lt;Sale&gt;("Sales").GroupBy(d1 => d1.Product.Category.Name, (d2, d3) => new { CategoryName = d2, AverageAmount = d3.Average(d4 => d4.Amount) })
+            </remarks>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.memberInScope">
+            <summary>Tracks the member a method call is mapped to when analyzing the GroupBy result selector.</summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.#ctor(Microsoft.OData.Client.QueryableResourceExpression)">
+            <summary>
+            Creates an <see cref="T:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer"/> expression.
+            </summary>
+            <param name="input">The resource set expression (source) for the GroupBy.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.Analyze(Microsoft.OData.Client.QueryableResourceExpression,System.Linq.Expressions.LambdaExpression)">
+            <summary>
+            Analyzes expression for aggregate expressions in the GroupBy result selector.
+            </summary>
+            <param name="input">The resource set expression (source) for the GroupBy.</param>
+            <param name="resultSelector">Result selector expression to analyze.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.VisitNew(System.Linq.Expressions.NewExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.VisitMemberAssignment(System.Linq.Expressions.MemberAssignment)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.VisitMethodCall(System.Linq.Expressions.MethodCallExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.AnalyzeAggregation(System.Linq.Expressions.MethodCallExpression,Microsoft.OData.UriParser.Aggregation.AggregationMethod)">
+            <summary>
+            Analyzes an aggregation expression.
+            </summary>
+            <param name="methodCallExpr">Expression to analyze.</param>
+            <param name="aggregationMethod">The aggregation method.</param>
+            <returns>The analyzed aggregate expression.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByAnalyzer.GroupByResultSelectorAnalyzer.AddAggregation(System.Linq.Expressions.Expression,Microsoft.OData.UriParser.Aggregation.AggregationMethod)">
+            <summary>
+            Adds aggregation to $apply aggregations.
+            </summary>
+            <param name="selector">The selector.</param>
+            <param name="aggregationMethod">The aggregation method.</param>
+        </member>
         <member name="T:Microsoft.OData.Client.InputBinder">
             <summary>
             Replaces references to resources - represented as either ParameterExpressions or one or more
@@ -1685,6 +1822,20 @@
             </summary>
             <param name="predicateConjuncts">The predicate conjuncts.</param>
         </member>
+        <member name="M:Microsoft.OData.Client.QueryableResourceExpression.AddAggregation(System.Linq.Expressions.Expression,Microsoft.OData.UriParser.Aggregation.AggregationMethod,System.String)">
+            <summary>
+            Adds an aggregation expression to the $apply expression of this resource expression.
+            If the resource expression already contains a $filter expression, 
+            the predicate conjuncts of the $filter expression are moved
+            to the predicate conjuncts of the $apply expression and 
+            the $filter expression removed.
+            The predicate conjuncts in the $apply expression are used to generate 
+            a filter transformation used to restrict the set of data to be aggregated.
+            </summary>
+            <param name="aggregationExpr">The aggregation expression.</param>
+            <param name="aggregationMethod">The aggregation method.</param>
+            <param name="aggregationAlias">The aggregation alias.</param>
+        </member>
         <member name="M:Microsoft.OData.Client.QueryableResourceExpression.AddSequenceQueryOption(Microsoft.OData.Client.QueryOptionExpression)">
             <summary>
             Add query option to resource expression
@@ -1891,6 +2042,15 @@
         <member name="P:Microsoft.OData.Client.QueryComponents.Uri">
             <summary>Gets or sets the URI for a query, possibly with query options added to the cached URI.</summary>
             <value> URI with additional query options added if required. </value>
+        </member>
+        <member name="P:Microsoft.OData.Client.QueryComponents.GroupByKeySelectorMap">
+            <summary>
+            Gets or sets a mapping of member names in the GroupBy key selector to their respective expressions.
+            </summary>
+            <remarks>
+            This property will contain a mapping of the member {Name} to the expression {d1.Product.Category.Name} given the following GroupBy expression:
+            dsc.CreateQuery&lt;Sale&gt;("Sales").GroupBy(d1 => d1.Product.Category.Name, (d2, d3) => new { CategoryName = d2, AverageAmount = d3.Average(d4 => d4.Amount) })
+            </remarks>
         </member>
         <member name="M:Microsoft.OData.Client.QueryComponents.ContainsSelectQueryOption(System.String)">
             <summary>
@@ -2146,6 +2306,18 @@
             <param name="aggregationExpr">The aggregation expression.</param>
             <param name="aggregationMethod">The aggregation method.</param>
             <returns>The resource expression if successful; aggregation expression otherwise</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.ResourceBinder.AnalyzeGroupBy(System.Linq.Expressions.MethodCallExpression,System.Linq.Expressions.Expression@)">
+            <summary>
+            Analyzes a GroupBy(source, keySelector, resultSelector) method expression to 
+            determine whether it can be satisfied with $apply.
+            </summary>
+            <param name="methodCallExpr">Expression to analyze.</param>
+            <param name="expr">
+            <paramref name="methodCallExpr"/>, or a new resource set expression
+            for the target resource in the analyzed expression.
+            </param>
+            <returns>true if <paramref name="methodCallExpr"/> can be satisfied with $apply; false otherwise.</returns>
         </member>
         <member name="M:Microsoft.OData.Client.ResourceBinder.LimitCardinality(System.Linq.Expressions.MethodCallExpression,System.Int32)">
             <summary>Ensures that there's a limit on the cardinality of a query.</summary>
@@ -2626,6 +2798,12 @@
             Neither is `Sales.Count` where `Sales` is a collection property. 
             </summary>
             <param name="expr">The aggregate expression</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.ResourceBinder.ValidationRules.ValidateGroupingExpression(System.Linq.Expressions.Expression)">
+            <summary>
+            Checks whether the specified <paramref name="expr"/> is a valid grouping expression.
+            </summary>
+            <param name="expr">The grouping expression</param>
         </member>
         <member name="T:Microsoft.OData.Client.ResourceBinder.PropertyInfoEqualityComparer">
             <summary>
@@ -3814,6 +3992,14 @@
             <param name="aggregations">List of aggregations.</param>
             <returns>The aggregate tranformation.</returns>
         </member>
+        <member name="M:Microsoft.OData.Client.UriWriter.ConstructGroupingExpression(System.Collections.Generic.IList{System.Linq.Expressions.Expression})">
+            <summary>
+            Constructs a $apply grouping expression.
+            E.g. (Prop1, Prop2, ..., PropN)
+            </summary>
+            <param name="groupingExpressions">List of grouping expressions.</param>
+            <returns>The grouping expression.</returns>
+        </member>
         <member name="M:Microsoft.OData.Client.UriWriter.AddAsCachedQueryOption(System.String,System.String)">
             <summary>
             Caches query option to be grouped
@@ -4217,13 +4403,19 @@
         <member name="F:Microsoft.OData.Client.AtomMaterializerLog.insertRefreshObject">
             <summary>Target instance to refresh.</summary>
         </member>
-        <member name="M:Microsoft.OData.Client.AtomMaterializerLog.#ctor(Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.EntityTrackerBase)">
+        <member name="F:Microsoft.OData.Client.AtomMaterializerLog.materializerContext">
+            <summary>
+            The materializer context.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.AtomMaterializerLog.#ctor(Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.EntityTrackerBase,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new <see cref="T:Microsoft.OData.Client.AtomMaterializerLog"/> instance.
             </summary>
             <param name="mergeOption">The merge option for the log.</param>
             <param name="model">The model for the log.</param>
             <param name="entityTracker">The entity tracker for the log.</param>
+            <param name="materializerContext">The materializer context.</param>
             <remarks>
             Note that the merge option can't be changed.
             </remarks>
@@ -4485,6 +4677,11 @@
             <param name="method">async method name on source object</param>
             <param name="callback">user callback to invoke when complete</param>
             <param name="state">user state</param>
+        </member>
+        <member name="P:Microsoft.OData.Client.BaseAsyncResult.MaterializerCache">
+            <summary>
+            Cache used to store temporary metadata used for materialization of OData items.
+            </summary>
         </member>
         <member name="T:Microsoft.OData.Client.BaseAsyncResult.AsyncAction">
             <summary>
@@ -7905,6 +8102,17 @@
             <param name="usePostTunneling">True if the request message must use POST verb for the request and pass the actual verb in X-HTTP-Method header, otherwise false.</param>
             <param name="headers">The set of headers for the request.</param>
         </member>
+        <member name="M:Microsoft.OData.Client.DataServiceClientRequestMessageArgs.#ctor(System.String,System.Uri,System.Boolean,System.Boolean,System.Collections.Generic.IDictionary{System.String,System.String},Microsoft.OData.Client.IHttpClientHandlerProvider)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.OData.Client.DataServiceClientRequestMessageArgs"/> class.
+            </summary>
+            <param name="method">Method of the request.</param>
+            <param name="requestUri">The Request Uri.</param>
+            <param name="useDefaultCredentials">True if the default credentials need to be sent with the request. Otherwise false.</param>
+            <param name="usePostTunneling">True if the request message must use POST verb for the request and pass the actual verb in X-HTTP-Method header, otherwise false.</param>
+            <param name="headers">The set of headers for the request.</param>
+            <param name="httpClientHandlerProvider">The <see cref="T:Microsoft.OData.Client.IHttpClientHandlerProvider"/> that provides the <see cref="T:System.Net.Http.HttpClientHandler"/> that should be used to send the request message.</param>
+        </member>
         <member name="P:Microsoft.OData.Client.DataServiceClientRequestMessageArgs.Method">
             <summary>
             Gets the method.
@@ -7933,6 +8141,12 @@
         <member name="P:Microsoft.OData.Client.DataServiceClientRequestMessageArgs.UseDefaultCredentials">
             <summary>
             Gets a System.Boolean value that controls whether default credentials are sent with requests.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.DataServiceClientRequestMessageArgs.HttpClientHandlerProvider">
+            <summary>
+            Gets the <see cref="T:Microsoft.OData.Client.IHttpClientHandlerProvider"/> that provides the <see cref="T:System.Net.Http.HttpClientHandler"/>
+            that should be used to send the request message.
             </summary>
         </member>
         <member name="T:Microsoft.OData.Client.DataServiceClientRequestPipelineConfiguration">
@@ -8535,6 +8749,14 @@
             <summary>Gets a value that indicates whether the <see cref="T:Microsoft.OData.Client.DataServiceContext" /> is currently applying changes to tracked objects.</summary>
             <returns>Returns true when changes are currently being applied; otherwise returns false.</returns>
         </member>
+        <member name="P:Microsoft.OData.Client.DataServiceContext.AutoNullPropagation">
+             <summary>
+             Gets or sets whether query projection will handle null propagation automatically. If set to true null propagation checks can be omitted from queries.
+            </summary>
+             <remarks>
+             Default is false.
+             </remarks>
+        </member>
         <member name="P:Microsoft.OData.Client.DataServiceContext.ResolveName">
             <summary>Gets or sets a function to override the default type resolution strategy used by the client library when you send entities to a data service.</summary>
             <returns>Returns a string that contains the name of the <see cref="T:Microsoft.OData.Client.DataServiceContext" />.</returns>
@@ -8651,9 +8873,19 @@
             <summary>Gets or sets the HttpRequest mode to use in making Http Requests.</summary>
             <returns>HttpRequestTransportMode.</returns>
         </member>
+        <member name="P:Microsoft.OData.Client.DataServiceContext.HttpClientHandlerProvider">
+            <summary>
+            Gets or sets the <see cref="T:Microsoft.OData.Client.IHttpClientHandlerProvider"/> that provides the <see cref="T:System.Net.Http.HttpClientHandler"/> to use when making a request
+            under the <see cref="F:Microsoft.OData.Client.HttpRequestTransportMode.HttpClient"/>.
+            If <see cref="P:Microsoft.OData.Client.DataServiceContext.HttpClientHandlerProvider"/> is null, a new <see cref="T:System.Net.Http.HttpClientHandler"/> instance will be created for each request.
+            </summary>
+            <remarks>
+            This setting is ignored if the request transport mode is not <see cref="F:Microsoft.OData.Client.HttpRequestTransportMode.HttpClient"/>.
+            </remarks>
+        </member>
         <member name="P:Microsoft.OData.Client.DataServiceContext.RequestMessageFactory">
-            <summary>Gets or sets the HttpRequest mode to use in making Http Requests.</summary>
-            <returns>TransportModeFactory.</returns>
+            <summary>Gets or sets the <see cref="T:Microsoft.OData.Client.IDataServiceRequestMessageFactory"/> used to build request messages.</summary>
+            <returns>RequestMessageFactory</returns>
         </member>
         <member name="P:Microsoft.OData.Client.DataServiceContext.UseDefaultCredentials">
             <summary>
@@ -10742,7 +10974,7 @@
         <member name="P:Microsoft.OData.Client.DataServiceRequest.PayloadKind">
             <summary>Gets or sets the payload kind for this request.</summary>
         </member>
-        <member name="M:Microsoft.OData.Client.DataServiceRequest.Materialize(Microsoft.OData.Client.ResponseInfo,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,System.String,Microsoft.OData.IODataResponseMessage,Microsoft.OData.ODataPayloadKind)">
+        <member name="M:Microsoft.OData.Client.DataServiceRequest.Materialize(Microsoft.OData.Client.ResponseInfo,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,System.String,Microsoft.OData.IODataResponseMessage,Microsoft.OData.ODataPayloadKind,Microsoft.OData.Client.Materialization.MaterializerCache)">
             <summary>
             get an enumerable materializes the objects the response
             </summary>
@@ -10752,6 +10984,7 @@
             <param name="contentType">contentType</param>
             <param name="message">the message</param>
             <param name="expectedPayloadKind">expected payload kind.</param>
+            <param name="materializerCache">Cache used to store temporary metadata used for materialization of OData items.</param>
             <returns>atom materializer</returns>
         </member>
         <member name="M:Microsoft.OData.Client.DataServiceRequest.GetInstance(System.Type,System.Uri)">
@@ -12294,6 +12527,241 @@
             </summary>
             <param name="asyncResult">The async result associated with the HttpWebRequest operation.</param>
         </member>
+        <member name="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler">
+            <summary>
+            Use this class to create a <see cref="T:Microsoft.OData.Client.ProjectionPlan"/> for a given projection lambda.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.dynamicProxyMethodGenerator">
+            <summary>Creates dynamic methods that wrap calls to internal methods.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.annotations">
+            <summary>Annotations being tracked on this tree.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.materializerExpression">
+            <summary>Expression that refers to the materializer.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.normalizerRewrites">
+            <summary>Tracks rewrite-to-source rewrites introduced by expression normalizer.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.identifierId">
+            <summary>Number to suffix to identifiers to help with debugging.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.pathBuilder">
+            <summary>Path builder used to help with tracking state while compiling.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.topLevelProjectionFound">
+            <summary>Whether the top level projection has been found.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.resultSelectorMap">
+            <summary>Mapping of expressions in the GroupBy result selector to info required during projection plan compilation.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.keySelectorMap">
+            <summary>Mapping of member names in the GroupBy key selector to their respective expressions.</summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.#ctor(System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression},System.Collections.Generic.Dictionary{System.String,System.Linq.Expressions.Expression})">
+            <summary>
+            Initializes a new <see cref="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler"/> instance.
+            </summary>
+            <param name="normalizerRewrites">Rewrites introduced by normalizer.</param>
+            <param name="keySelectorMap">Mapping of member names in the GroupBy key selector to their respective expressions.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.CompilePlan(System.Linq.Expressions.LambdaExpression,System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression},System.Collections.Generic.Dictionary{System.String,System.Linq.Expressions.Expression})">
+            <summary>Creates a projection plan from the specified <paramref name="projection"/>.</summary>
+            <param name="projection">Projection expression.</param>
+            <param name="normalizerRewrites">Tracks rewrite-to-source rewrites introduced by expression normalizer.</param>
+            <param name="keySelectorMap">Mapping of member names in the GroupBy key selector to their respective expressions.</param>
+            <returns>A new <see cref="T:Microsoft.OData.Client.ProjectionPlan"/> instance.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.VisitMemberAccess(System.Linq.Expressions.MemberExpression)">
+            <summary>
+            MemberExpression visit method
+            </summary>
+            <param name="m">The MemberExpression expression to visit</param>
+            <returns>The visited MemberExpression expression </returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.VisitParameter(System.Linq.Expressions.ParameterExpression)">
+            <summary>Parameter visit method.</summary>
+            <param name="p">Parameter to visit.</param>
+            <returns>Resulting expression.</returns>
+            <remarks>
+            The parameter may get rewritten as a materializing projection if
+            it refers to an entity outside of member binding. In this case,
+            it becomes a standalone tracked entity.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.VisitMethodCall(System.Linq.Expressions.MethodCallExpression)">
+            <summary>Visits a method call expression.</summary>
+            <param name="m">Expression to visit.</param>
+            <returns>A (possibly rewritten) expression for <paramref name="m"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.Visit(System.Linq.Expressions.Expression)">
+            <summary>
+            Visit
+            </summary>
+            <param name="exp">Expression to visit</param>
+            <returns>an expression </returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.VisitLambda(System.Linq.Expressions.LambdaExpression)">
+            <summary>LambdaExpression visit method.</summary>
+            <param name="lambda">The LambdaExpression to visit</param>
+            <returns>The visited LambdaExpression</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.CallMaterializer(System.String,System.Linq.Expressions.Expression[])">
+            <summary>Generates a call to a static method on AtomMaterializer.</summary>
+            <param name="methodName">Name of method to invoke.</param>
+            <param name="arguments">Arguments to pass to method.</param>
+            <returns>The constructed expression.</returns>
+            <remarks>
+            There is no support for overload resolution - method names in AtomMaterializer
+            must be unique.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.CallMaterializerWithType(System.String,System.Type[],System.Linq.Expressions.Expression[])">
+            <summary>Generates a call to a static method on AtomMaterializer.</summary>
+            <param name="methodName">Name of method to invoke.</param>
+            <param name="typeArguments">Type arguments for method (possibly null).</param>
+            <param name="arguments">Arguments to pass to method.</param>
+            <returns>The constructed expression.</returns>
+            <remarks>
+            There is no support for overload resolution - method names in AtomMaterializer
+            must be unique.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.CallValueForPath(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,Microsoft.OData.Client.ProjectionPath)">
+            <summary>Creates an expression that calls ProjectionValueForPath.</summary>
+            <param name="entry">Expression for root entry for paths.</param>
+            <param name="entryType">Expression for expected type for entry.</param>
+            <param name="path">Path to pull value from.</param>
+            <returns>A new expression with the call instance.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.CallValueForPathWithType(System.Linq.Expressions.Expression,System.Linq.Expressions.Expression,Microsoft.OData.Client.ProjectionPath,System.Type)">
+            <summary>Creates an expression that calls ProjectionValueForPath.</summary>
+            <param name="entry">Expression for root entry for paths.</param>
+            <param name="entryType">Expression for expected type for entry.</param>
+            <param name="path">Path to pull value from.</param>
+            <param name="type">Path to convert result for.</param>
+            <returns>A new expression with the call instance.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GetExpressionBeforeNormalization(System.Linq.Expressions.Expression)">
+            <summary>Gets an expression before its rewrite.</summary>
+            <param name="expression">Expression to check.</param>
+            <returns>The expression before normalization.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.RebindParameter(System.Linq.Expressions.Expression,Microsoft.OData.Client.GroupByProjectionPlanCompiler.ExpressionAnnotation)">
+            <summary>Rebinds the specified parameter expression as a path-based access.</summary>
+            <param name="expression">Expression to rebind.</param>
+            <param name='annotation'>Annotation for the expression to rebind.</param>
+            <returns>The rebound expression.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.RebindMemberAccess(System.Linq.Expressions.MemberExpression,Microsoft.OData.Client.GroupByProjectionPlanCompiler.ExpressionAnnotation)">
+            <summary>Rebinds the specified member access expression into a path-based value retrieval method call.</summary>
+            <param name='m'>Member expression.</param>
+            <param name='baseAnnotation'>Annotation for the base portion of the expression.</param>
+            <returns>A rebound expression.</returns>
+        </member>
+        <member name="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler.ExpressionAnnotation">
+            <summary>Annotates an expression, typically from the target tree.</summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.GroupByProjectionPlanCompiler.ExpressionAnnotation.Segment">
+            <summary>Segment that marks the path found to an expression.</summary>
+        </member>
+        <member name="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer">
+            <summary>
+            This class analyzes the GroupBy result selector to establish a mapping between 
+            the expressions and the property they correspond to in the JSON response.
+            </summary>
+            <remarks>
+            For example,
+                CategoryName corresponds to Product/Category/Name,
+                YearStr corresponds to Time/Year,
+                d3.Average(d4 => d4.Amount) corresponds to AverageAmount,
+                d3.Sum(d4 => d4.Amount) corresponds to SumAmount,
+            in the following GroupBy expression:
+                dataServiceContext.Sales.GroupBy(
+                    d1 => new { CategoryName = d1.Product.Category.Name, d1.Time.Year },
+                    (d2, d3) => new
+                    {
+                        CategoryName = d2.CategoryName,
+                        YearStr = d2.Year.ToString(),
+                        AverageAmount = d3.Average(d4 => d4.Amount).ToString(),
+                        SumAmount = d4.Sum(d4 => d4.Amount)
+                    });
+            </remarks>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.#ctor">
+            <summary>
+            Initializes a new <see cref="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer"/> instance.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.Analyze(Microsoft.OData.Client.GroupByProjectionPlanCompiler,System.Linq.Expressions.LambdaExpression)">
+            <summary>
+            Analyzes the GroupBy result selector to establish a mapping between 
+            the expressions and the property they correspond to in the JSON response.
+            </summary>
+            <param name="compiler">The parent <see cref="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler"/> instance.</param>
+            <param name="resultSelector">The lambda expression to analyze.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.VisitMemberAccess(System.Linq.Expressions.MemberExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.VisitParameter(System.Linq.Expressions.ParameterExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.VisitMethodCall(System.Linq.Expressions.MethodCallExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.VisitNew(System.Linq.Expressions.NewExpression)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionAnalyzer.VisitMemberAssignment(System.Linq.Expressions.MemberAssignment)">
+            <inheritdoc/>
+        </member>
+        <member name="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder">
+            <summary>
+            Use this class to help keep track of projection paths built
+            while compiling a projection-based materialization plan.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.parameterExpressions">
+            <summary>Stack of lambda expressions in scope.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.parameterExpressionTypes">
+            <summary>
+            Stack of expected type expression for <fieldref name="parameterExpressions"/>.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.parameterEntries">
+            <summary>Stack of 'entry' parameter expressions.</summary>
+        </member>
+        <member name="F:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.parameterProjectionTypes">
+            <summary>Stack of projection (target-tree) types for parameters.</summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.#ctor">
+            <summary>Initializes a new <see cref="T:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder"/> instance.</summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.ExpectedParamTypeInScope">
+            <summary>Expression for the expected type parameter.</summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.LambdaParameterInScope">
+            <summary>Expression for the entity parameter in the source tree lambda.</summary>
+        </member>
+        <member name="P:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.ParameterEntryInScope">
+            <summary>Expression for the entry parameter in the target tree.</summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.ToString">
+            <summary>Provides a string representation of this object.</summary>
+            <returns>String representation of this object.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.EnterLambdaScope(System.Linq.Expressions.LambdaExpression,System.Linq.Expressions.Expression,System.Linq.Expressions.Expression)">
+            <summary>Records that a lambda scope has been entered when visiting a projection.</summary>
+            <param name="lambda">Lambda being visited.</param>
+            <param name="entry">Expression to the entry parameter from the target tree.</param>
+            <param name="expectedType">Expression to the entry-expected-type from the target tree.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.GroupByProjectionPlanCompiler.GroupByProjectionPathBuilder.LeaveLambdaScope">
+            <summary>Records that a lambda scope has been left when visiting a projection.</summary>
+        </member>
         <member name="T:Microsoft.OData.Client.HeaderCollection">
             <summary>
             Collection for header name/value pairs which is known to be case insensitive.
@@ -12444,6 +12912,24 @@
             <summary>
             Entity descriptor containing entity stream links.
             </summary>
+        </member>
+        <member name="T:Microsoft.OData.Client.IHttpClientHandlerProvider">
+            <summary>
+            Provides the <see cref="T:System.Net.Http.HttpClientHandler"/> instance(s) used by OData Client
+            to execute requests.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.IHttpClientHandlerProvider.GetHttpClientHandler">
+            <summary>
+            Returns an <see cref="T:System.Net.Http.HttpClientHandler"/> instance that OData Client should
+            used to execute a request. This method is called per request.
+            </summary>
+            <returns>The <see cref="T:System.Net.Http.HttpClientHandler"/> instance that will be used to execute the request.</returns>
+            <remarks>
+            It's possible that the returned <see cref="T:System.Net.Http.HttpClientHandler"/> may be mutated inside a request hook
+            e.g. via <see cref="P:Microsoft.OData.Client.HttpClientRequestMessage.Credentials"/>.
+            OData Client does not dispose the <see cref="T:System.Net.Http.HttpClientHandler"/> instance.
+            </remarks>
         </member>
         <member name="T:Microsoft.OData.Client.InternalODataRequestMessage">
             <summary>
@@ -12784,7 +13270,7 @@
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.CollectionValueMaterializationPolicy" /> class.
             </summary>
-            <param name="context">The context.</param>
+            <param name="materializerContext">The context.</param>
             <param name="primitivePolicy">The primitive policy.</param>
         </member>
         <member name="P:Microsoft.OData.Client.Materialization.CollectionValueMaterializationPolicy.InstanceAnnotationMaterializationPolicy">
@@ -12860,7 +13346,7 @@
         <member name="F:Microsoft.OData.Client.Materialization.EntityTrackingAdapter.targetInstance">
             <summary>Target instance that the materializer expects to update.</summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.EntityTrackingAdapter.#ctor(Microsoft.OData.Client.EntityTrackerBase,Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.DataServiceContext)">
+        <member name="M:Microsoft.OData.Client.Materialization.EntityTrackingAdapter.#ctor(Microsoft.OData.Client.EntityTrackerBase,Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.DataServiceContext,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.EntityTrackingAdapter" /> class.
             </summary>
@@ -12868,6 +13354,7 @@
             <param name="mergeOption">The merge option.</param>
             <param name="model">The model.</param>
             <param name="context">The context.</param>
+            <param name="materializerContext">The materialization context used to retrieve materialization related information.</param>
         </member>
         <member name="P:Microsoft.OData.Client.Materialization.EntityTrackingAdapter.MergeOption">
             <summary>
@@ -12949,7 +13436,7 @@
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.EntryValueMaterializationPolicy" /> class.
             </summary>
-            <param name="context">The context.</param>
+            <param name="materializerContext">The context.</param>
             <param name="entityTrackingAdapter">The entity tracking adapter.</param>
             <param name="lazyPrimitivePropertyConverter">The lazy primitive property converter.</param>
             <param name="nextLinkTable">The next link table.</param>
@@ -13096,14 +13583,14 @@
             Creates a policy that is used for materializing Enum values
             </summary>
         </member>
-        <member name="F:Microsoft.OData.Client.Materialization.EnumValueMaterializationPolicy.context">
+        <member name="F:Microsoft.OData.Client.Materialization.EnumValueMaterializationPolicy.materializerContext">
             <summary> MaterializerContext used to resolve types for materialization. </summary>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.EnumValueMaterializationPolicy.#ctor(Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.EnumValueMaterializationPolicy" /> class.
             </summary>
-            <param name="context">The context.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.EnumValueMaterializationPolicy.MaterializeEnumTypeProperty(System.Type,Microsoft.OData.ODataProperty)">
             <summary>
@@ -13162,7 +13649,12 @@
         <member name="F:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.currentEntry">
             <summary>The current entry.</summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.#ctor(Microsoft.OData.ODataMessageReader,Microsoft.OData.Client.Materialization.ODataReaderWrapper,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.MergeOption)">
+        <member name="F:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.materializerContext">
+            <summary>
+            The materializer context.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.#ctor(Microsoft.OData.ODataMessageReader,Microsoft.OData.Client.Materialization.ODataReaderWrapper,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter"/> class.
             </summary>
@@ -13170,8 +13662,9 @@
             <param name="reader">The reader.</param>
             <param name="model">The model.</param>
             <param name="mergeOption">The mergeOption.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.#ctor(Microsoft.OData.ODataFormat,Microsoft.OData.Client.Materialization.ODataReaderWrapper,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.MergeOption)">
+        <member name="M:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.#ctor(Microsoft.OData.ODataFormat,Microsoft.OData.Client.Materialization.ODataReaderWrapper,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.MergeOption,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter"/> class. Used for tests so no ODataMessageReader is required
             </summary>
@@ -13179,6 +13672,7 @@
             <param name="reader">The reader.</param>
             <param name="model">The model.</param>
             <param name="mergeOption">The mergeOption.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
         <member name="P:Microsoft.OData.Client.Materialization.FeedAndEntryMaterializerAdapter.CurrentFeed">
             <summary>
@@ -13442,6 +13936,12 @@
             <param name="clientClrType">The client side CLR type.</param>
             <returns>The resolved EDM type to provide to ODataLib.</returns>
         </member>
+        <!-- Badly formed XML comment ignored for member "P:Microsoft.OData.Client.Materialization.IODataMaterializerContext.MaterializerCache" -->
+        <member name="P:Microsoft.OData.Client.Materialization.IODataMaterializerContext.AutoNullPropagation">
+            <summary>
+            Specifies whether query projection will handle null propagation automatically.
+            </summary>
+        </member>
         <member name="T:Microsoft.OData.Client.Materialization.MaterializationPolicy">
             <summary>
             Class responsible for materializing from OData to Objects
@@ -13455,6 +13955,44 @@
             <param name="type">The type.</param>
             <remarks>In the future this class will have Materialize and Update will be adding this in upcoming changes</remarks>
             <returns>A created object</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "T:Microsoft.OData.Client.Materialization.MaterializerCache" -->
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerCache.SetAnnotation``1(Microsoft.OData.ODataAnnotatable,``0)">
+            <summary>
+            Adds an entry to the cache with the <paramref name="annotatable"/>
+            set as key.
+            </summary>
+            <typeparam name="T">The type of the value.</typeparam>
+            <param name="annotatable">The key of the entry.</param>
+            <param name="value">The value to associate with the key.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerCache.GetAnnotation``1(Microsoft.OData.ODataAnnotatable)">
+            <summary>
+            Retrieves the value associated with the specified <paramref name="annotatable"/>.
+            Returns null if the cache does not contain an entry with the specified key.
+            </summary>
+            <typeparam name="T">The expected type of the value.</typeparam>
+            <param name="annotatable">The key of the entry.</param>
+            <returns>The value associated with the specified <paramref name="annotatable"/> if the entry exists; otherwise null.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerContextExtensions.SetAnnotation``1(Microsoft.OData.Client.Materialization.IODataMaterializerContext,Microsoft.OData.ODataAnnotatable,``0)">
+            <summary>
+            Associates the specified <paramref name="value"/> with the specified
+            <paramref name="annotatable"/> to store metadata used for materialization.
+            </summary>
+            <typeparam name="T">The type of the value.</typeparam>
+            <param name="materializerContext">The materializer context.</param>
+            <param name="annotatable">The item to annotate.</param>
+            <param name="value">The annotation value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerContextExtensions.GetAnnotation``1(Microsoft.OData.Client.Materialization.IODataMaterializerContext,Microsoft.OData.ODataAnnotatable)">
+            <summary>
+            Retrieves the value associated with the specified <paramref name="annotatable"/>.
+            </summary>
+            <typeparam name="T">The expected type of the annotation value.</typeparam>
+            <param name="materializerContext">The materializer context.</param>
+            <param name="annotatable">The item for which to retrieve the annotation.</param>
+            <returns>The annotation value associated with the <paramref name="annotatable"/> if it exists, or null otherwise.</returns>
         </member>
         <member name="T:Microsoft.OData.Client.Materialization.MaterializerEntry">
             <summary>
@@ -13581,7 +14119,7 @@
             </summary>
             <returns>An empty entry.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.CreateEntry(Microsoft.OData.ODataResource,Microsoft.OData.ODataFormat,System.Boolean,Microsoft.OData.Client.ClientEdmModel)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.CreateEntry(Microsoft.OData.ODataResource,Microsoft.OData.ODataFormat,System.Boolean,Microsoft.OData.Client.ClientEdmModel,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Creates the materializer entry.
             </summary>
@@ -13589,6 +14127,7 @@
             <param name="format">The format the entry was read in.</param>
             <param name="isTracking">True if the contents of the entry will be tracked in the context, otherwise False.</param>
             <param name="model">The client model.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>A new materializer entry.</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.CreateEntryForLoadProperty(Microsoft.OData.Client.EntityDescriptor,Microsoft.OData.ODataFormat,System.Boolean)">
@@ -13600,11 +14139,12 @@
             <param name="isTracking">True if the contents of the entry will be tracked in the context, otherwise False.</param>
             <returns>A new materializer entry.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.GetEntry(Microsoft.OData.ODataResource)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.GetEntry(Microsoft.OData.ODataResource,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Gets an entry for a given ODataResource.
             </summary>
             <param name="entry">The ODataResource.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer entry</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.MaterializerEntry.AddNestedResourceInfo(Microsoft.OData.ODataNestedResourceInfo)">
@@ -13661,19 +14201,21 @@
             URI representing the next page link.
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerFeed.CreateFeed(Microsoft.OData.ODataResourceSet,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource})">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerFeed.CreateFeed(Microsoft.OData.ODataResourceSet,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource},Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Creates the materializer feed.
             </summary>
             <param name="feed">The feed.</param>
             <param name="entries">The entries.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer feed.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerFeed.GetFeed(Microsoft.OData.ODataResourceSet)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerFeed.GetFeed(Microsoft.OData.ODataResourceSet,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Gets the materializer feed.
             </summary>
             <param name="feed">The feed.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer feed.</returns>
         </member>
         <member name="T:Microsoft.OData.Client.Materialization.MaterializerNavigationLink">
@@ -13709,27 +14251,30 @@
             Gets the feed.
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.CreateLink(Microsoft.OData.ODataNestedResourceInfo,Microsoft.OData.Client.Materialization.MaterializerEntry)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.CreateLink(Microsoft.OData.ODataNestedResourceInfo,Microsoft.OData.Client.Materialization.MaterializerEntry,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Creates the materializer link with an entry.
             </summary>
             <param name="link">The link.</param>
             <param name="entry">The entry.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer link.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.CreateLink(Microsoft.OData.ODataNestedResourceInfo,Microsoft.OData.ODataResourceSet)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.CreateLink(Microsoft.OData.ODataNestedResourceInfo,Microsoft.OData.ODataResourceSet,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Creates the materializer link with a resource set.
             </summary>
             <param name="link">The link.</param>
             <param name="resourceSet">The resource set.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer link.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.GetLink(Microsoft.OData.ODataNestedResourceInfo)">
+        <member name="M:Microsoft.OData.Client.Materialization.MaterializerNavigationLink.GetLink(Microsoft.OData.ODataNestedResourceInfo,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Gets the materializer link.
             </summary>
             <param name="link">The link.</param>
+            <param name="materializerContext">The current materializer context.</param>
             <returns>The materializer link.</returns>
         </member>
         <member name="T:Microsoft.OData.Client.Materialization.ODataCollectionMaterializer">
@@ -13904,11 +14449,12 @@
             <param name="lastSegmentType">Segment type for the entry to materialize (typically last of URI in query).</param>
             <returns>A payload-driven materialization plan.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionCheckValueForPathIsNull(Microsoft.OData.Client.Materialization.MaterializerEntry,System.Type,Microsoft.OData.Client.ProjectionPath)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionCheckValueForPathIsNull(Microsoft.OData.Client.Materialization.MaterializerEntry,System.Type,Microsoft.OData.Client.ProjectionPath,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Checks whether the entity on the specified <paramref name="path"/> is null.</summary>
             <param name="entry">Root entry for paths.</param>
             <param name="expectedType">Expected type for <paramref name="entry"/>.</param>
             <param name="path">Path to pull value for.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns>Whether the specified <paramref name="path"/> is null.</returns>
             <remarks>
             This method will not instantiate entity types on the path.
@@ -13927,11 +14473,12 @@
             <param name="selector">Selector callback.</param>
             <returns>An enumerable with the select results.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionGetEntry(Microsoft.OData.Client.Materialization.MaterializerEntry,System.String)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionGetEntry(Microsoft.OData.Client.Materialization.MaterializerEntry,System.String,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Provides support for getting payload entries during projections.</summary>
             <param name="entry">Entry to get sub-entry from.</param>
             <param name="name">Name of sub-entry.</param>
-            <returns>The sub-entry (never null).</returns>
+            <param name="materializerContext">The materializer context.</param>
+            <returns>The sub-entry (or null if materializerContext.AutoNullPropagation is true).</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionInitializeEntity(Microsoft.OData.Client.Materialization.ODataEntityMaterializer,Microsoft.OData.Client.Materialization.MaterializerEntry,System.Type,System.Type,System.String[],System.Func{System.Object,System.Object,System.Type,System.Object}[])">
             <summary>Initializes a projection-driven entry (with a specific type and specific properties).</summary>
@@ -13982,6 +14529,17 @@
             for payload-driven feeds or leaf entities.
             </remarks>
         </member>
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ProjectionDynamicValueForPath(Microsoft.OData.Client.Materialization.MaterializerEntry,System.Type,Microsoft.OData.Client.ProjectionPath)">
+            <summary>Projects a simple dynamic value from the specified <paramref name="path"/>.</summary>
+            <param name="entry">Root entry for paths.</param>
+            <param name="expectedPropertyType">Expected type for the dynamic property value.</param>
+            <param name="path">Path to pull value for.</param>
+            <returns>The value for the specified <paramref name="path"/>.</returns>
+            <remarks>
+            This method will not instantiate entity types, except to satisfy requests
+            for payload-driven feeds or leaf entities.
+            </remarks>
+        </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.ClearLog">
             <summary>Clears the materialization log of activity.</summary>
         </member>
@@ -14015,12 +14573,12 @@
             <param name="entry">Entry to check.</param>
             <param name="name">Name of entry being accessed.</param>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.CreatePlan(Microsoft.OData.Client.QueryComponents)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.CreatePlan(Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Creates an entry materialization plan for a given projection.</summary>
             <param name="queryComponents">Query components for plan to materialize.</param>
             <returns>A materialization plan.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.MaterializeToList(Microsoft.OData.Client.Materialization.ODataEntityMaterializer,System.Collections.IEnumerable,System.Type,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource})">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.MaterializeToList(Microsoft.OData.Client.Materialization.ODataEntityMaterializer,System.Collections.IEnumerable,System.Type,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource},Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Materializes the result of a projection into a list.</summary>
             <param name="materializer">Materializer to use for the operation.</param>
             <param name="list">Target list.</param>
@@ -14031,7 +14589,7 @@
             materialization of entities.
             </remarks>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.GetPropertyOrThrow(System.Collections.Generic.IEnumerable{Microsoft.OData.ODataNestedResourceInfo},System.String)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializer.GetPropertyOrThrow(System.Collections.Generic.IEnumerable{Microsoft.OData.ODataNestedResourceInfo},System.String,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Gets a property from the specified <paramref name="links"/> list, throwing if not found.</summary>
             <param name="links">List to get value from.</param>
             <param name="propertyName">Property name to look up.</param>
@@ -14084,11 +14642,12 @@
             This method should be unnecessary with .NET 4.0 covariance support.
             </remarks>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionCheckValueForPathIsNull(System.Object,System.Type,System.Object)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionCheckValueForPathIsNull(System.Object,System.Type,System.Object,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Checks whether the entity on the specified <paramref name="path"/> is null.</summary>
             <param name="entry">Root entry for paths.</param>
             <param name="expectedType">Expected type for <paramref name="entry"/>.</param>
             <param name="path">Path to pull value for.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns>Whether the specified <paramref name="path"/> is null.</returns>
             <remarks>
             This method will not instantiate entity types on the path.
@@ -14104,11 +14663,12 @@
             <param name="selector">Selector callback.</param>
             <returns>An enumerable with the select results.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionGetEntry(System.Object,System.String)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionGetEntry(System.Object,System.String,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Provides support for getting payload entries during projections.</summary>
             <param name="entry">Entry to get sub-entry from.</param>
             <param name="name">Name of sub-entry.</param>
-            <returns>The sub-entry (never null).</returns>
+            <param name="materializerContext">The materializer context.</param>
+            <returns>The sub-entry (or null if materializerContext.AutoNullPropagation is true).</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionInitializeEntity(System.Object,System.Object,System.Type,System.Type,System.String[],System.Func{System.Object,System.Object,System.Type,System.Object}[])">
             <summary>Initializes a projection-driven entry (with a specific type and specific properties).</summary>
@@ -14125,6 +14685,18 @@
             <param name="materializer">Materializer under which projection is taking place.</param>
             <param name="entry">Root entry for paths.</param>
             <param name="expectedType">Expected type for <paramref name="entry"/>.</param>
+            <param name="path">Path to pull value for.</param>
+            <returns>The value for the specified <paramref name="path"/>.</returns>
+            <remarks>
+            This method will not instantiate entity types, except to satisfy requests
+            for payload-driven feeds or leaf entities.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.OData.Client.Materialization.ODataEntityMaterializerInvoker.ProjectionDynamicValueForPath(System.Object,System.Object,System.Type,System.Object)">
+            <summary>Projects a simple dynamic value from the specified <paramref name="path"/>.</summary>
+            <param name="materializer">Materializer under which projection is taking place.</param>
+            <param name="entry">Root entry for paths.</param>
+            <param name="expectedType">Expected type for dynamic value.</param>
             <param name="path">Path to pull value for.</param>
             <returns>The value for the specified <paramref name="path"/>.</returns>
             <remarks>
@@ -14226,47 +14798,53 @@
             Extension methods for ODataItems
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.GetMaterializedValue(Microsoft.OData.ODataProperty)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.GetMaterializedValue(Microsoft.OData.ODataProperty,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Gets the materialized value.
             </summary>
             <param name="property">The property.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns>The materialized value.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.HasMaterializedValue(Microsoft.OData.ODataProperty)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.HasMaterializedValue(Microsoft.OData.ODataProperty,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Determines whether a value has been materialized.
             </summary>
             <param name="property">The property.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns><c>true</c> if the value has been materialized; otherwise, <c>false</c>.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.SetMaterializedValue(Microsoft.OData.ODataProperty,System.Object)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.SetMaterializedValue(Microsoft.OData.ODataProperty,System.Object,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Sets the materialized value.
             </summary>
             <param name="property">The property.</param>
-            <param name="materializedValue">The materialized value.</param>
+            <param name="materializedValue">The materializer value.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.GetMaterializedValueCore(Microsoft.OData.ODataAnnotatable)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.GetMaterializedValueCore(Microsoft.OData.ODataAnnotatable,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Gets the materialized value.
             </summary>
             <param name="annotatableObject">The annotatable object.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns>The materialized value</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.HasMaterializedValueCore(Microsoft.OData.ODataAnnotatable)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.HasMaterializedValueCore(Microsoft.OData.ODataAnnotatable,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Determines whether a value has been materialized.
             </summary>
             <param name="annotatableObject">The annotatable object.</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns><c>true</c> if the value has been materialized; otherwise, <c>false</c>.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.SetMaterializedValueCore(Microsoft.OData.ODataAnnotatable,System.Object)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataItemExtensions.SetMaterializedValueCore(Microsoft.OData.ODataAnnotatable,System.Object,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Sets the materialized value.
             </summary>
             <param name="annotatableObject">The annotatable object.</param>
             <param name="materializedValue">The materialized value.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
         <member name="T:Microsoft.OData.Client.Materialization.ODataItemExtensions.MaterializerPropertyValue">
             <summary>
@@ -14489,7 +15067,7 @@
             The format of the response being materialized.
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializer.CreateMaterializerForMessage(Microsoft.OData.IODataResponseMessage,Microsoft.OData.Client.ResponseInfo,System.Type,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,Microsoft.OData.ODataPayloadKind)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializer.CreateMaterializerForMessage(Microsoft.OData.IODataResponseMessage,Microsoft.OData.Client.ResponseInfo,System.Type,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,Microsoft.OData.ODataPayloadKind,Microsoft.OData.Client.Materialization.MaterializerCache)">
             <summary>
             Creates an <see cref="T:Microsoft.OData.Client.Materialization.ODataMaterializer"/> for a response.
             </summary>
@@ -14499,6 +15077,7 @@
             <param name="queryComponents">The query components for the request.</param>
             <param name="plan">The projection plan.</param>
             <param name="payloadKind">expected payload kind.</param>
+            <param name="materializerCache">The materializer cache.</param>
             <returns>A materializer specialized for the given response.</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializer.Read">
@@ -14552,11 +15131,12 @@
             Contains state and methods required to materialize odata collection, complex and primitive values
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializerContext.#ctor(Microsoft.OData.Client.ResponseInfo)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializerContext.#ctor(Microsoft.OData.Client.ResponseInfo,Microsoft.OData.Client.Materialization.MaterializerCache)">
             <summary>
             Initializes a materializer context
             </summary>
             <param name="responseInfo">Response information used to initialize with the materializer</param>
+            <param name="materializerCache">The materializer cache.</param>
         </member>
         <member name="P:Microsoft.OData.Client.Materialization.ODataMaterializerContext.Context">
             <summary>
@@ -14583,6 +15163,11 @@
             Gets the Response information that backs the information on the context
             </summary>
         </member>
+        <member name="P:Microsoft.OData.Client.Materialization.ODataMaterializerContext.AutoNullPropagation">
+            <summary>
+            Specifies whether query projection will handle null propagation automatically.
+            </summary>
+        </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataMaterializerContext.ResolveTypeForMaterialization(System.Type,System.String)">
             <summary>
             Resolved the given edm type to clr type.
@@ -14597,6 +15182,9 @@
             </summary>
             <param name="expectedType">The client side CLR type.</param>
             <returns>The resolved EDM type.</returns>
+        </member>
+        <member name="P:Microsoft.OData.Client.Materialization.ODataMaterializerContext.MaterializerCache">
+            <inheritdoc/>
         </member>
         <member name="T:Microsoft.OData.Client.Materialization.ODataMessageReaderMaterializer">
             <summary>
@@ -14617,7 +15205,7 @@
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.ODataMessageReaderMaterializer"/> class.
             </summary>
             <param name="reader">The reader.</param>
-            <param name="context">The materializer context.</param>
+            <param name="materializerContext">The materializer context.</param>
             <param name="expectedType">The expected type.</param>
             <param name="singleResult">The single result.</param>
         </member>
@@ -14771,7 +15359,7 @@
             The format of the response being materialized.
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.Materialization.ODataReaderEntityMaterializer.ParseSingleEntityPayload(Microsoft.OData.IODataResponseMessage,Microsoft.OData.Client.ResponseInfo,System.Type)">
+        <member name="M:Microsoft.OData.Client.Materialization.ODataReaderEntityMaterializer.ParseSingleEntityPayload(Microsoft.OData.IODataResponseMessage,Microsoft.OData.Client.ResponseInfo,System.Type,Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             This method is for parsing CUD operation payloads which should contain
             1 a single entry
@@ -14780,6 +15368,7 @@
             <param name="message">the message for the payload</param>
             <param name="responseInfo">The current ResponseInfo object</param>
             <param name="expectedType">The expected type</param>
+            <param name="materializerContext">The materializer context.</param>
             <returns>the MaterializerEntry that was read</returns>
         </member>
         <member name="M:Microsoft.OData.Client.Materialization.ODataReaderEntityMaterializer.OnDispose">
@@ -14934,7 +15523,7 @@
             Creates a policy that is used for materializing Primitive values
             </summary>
         </member>
-        <member name="F:Microsoft.OData.Client.Materialization.PrimitiveValueMaterializationPolicy.context">
+        <member name="F:Microsoft.OData.Client.Materialization.PrimitiveValueMaterializationPolicy.materializerContext">
             <summary> MaterializerContext used to resolve types for materialization. </summary>
         </member>
         <member name="F:Microsoft.OData.Client.Materialization.PrimitiveValueMaterializationPolicy.lazyPrimitivePropertyConverter">
@@ -14945,7 +15534,7 @@
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.OData.Client.Materialization.PrimitiveValueMaterializationPolicy" /> class.
             </summary>
-            <param name="context">The context.</param>
+            <param name="materializerContext">The context.</param>
             <param name="lazyPrimitivePropertyConverter">The lazy primitive property converter.</param>
         </member>
         <member name="P:Microsoft.OData.Client.Materialization.PrimitiveValueMaterializationPolicy.PrimitivePropertyConverter">
@@ -15221,7 +15810,7 @@
             output writer, set using reflection
             </summary>
         </member>
-        <member name="M:Microsoft.OData.Client.MaterializeAtom.#ctor(Microsoft.OData.Client.ResponseInfo,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,Microsoft.OData.IODataResponseMessage,Microsoft.OData.ODataPayloadKind)">
+        <member name="M:Microsoft.OData.Client.MaterializeAtom.#ctor(Microsoft.OData.Client.ResponseInfo,Microsoft.OData.Client.QueryComponents,Microsoft.OData.Client.ProjectionPlan,Microsoft.OData.IODataResponseMessage,Microsoft.OData.ODataPayloadKind,Microsoft.OData.Client.Materialization.MaterializerCache)">
             <summary>
             constructor
             </summary>
@@ -15230,8 +15819,9 @@
             <param name="plan">Projection plan (if compiled in an earlier query).</param>
             <param name="responseMessage">responseMessage</param>
             <param name="payloadKind">The kind of the payload to materialize.</param>
+            <param name="materializerCache">Cache used to store temporary metadata used for materialization of OData items.</param>
         </member>
-        <member name="M:Microsoft.OData.Client.MaterializeAtom.#ctor(Microsoft.OData.Client.ResponseInfo,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource},System.Type,Microsoft.OData.ODataFormat)">
+        <member name="M:Microsoft.OData.Client.MaterializeAtom.#ctor(Microsoft.OData.Client.ResponseInfo,System.Collections.Generic.IEnumerable{Microsoft.OData.ODataResource},System.Type,Microsoft.OData.ODataFormat,Microsoft.OData.Client.Materialization.MaterializerCache)">
             <summary>
             constructor
             </summary>
@@ -15239,6 +15829,7 @@
             <param name="entries">entries that needs to be materialized.</param>
             <param name="elementType">result type.</param>
             <param name="format">The format of the response being materialized from.</param>
+            <param name="materializerCache">Cache used to store temporary metadata used for materialization of OData items.</param>
         </member>
         <member name="M:Microsoft.OData.Client.MaterializeAtom.#ctor">
             <summary>
@@ -16269,17 +16860,35 @@
             <param name="propertyInfo">The property to check.</param>
             <returns>true if <paramref name="propertyInfo"/> overrides a property on a base types; otherwise false.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Metadata.ClientTypeUtil.TryResolveType(System.String,System.String,System.String,System.Type@)">
+        <member name="M:Microsoft.OData.Client.Metadata.ClientTypeUtil.TryResolveType(System.Reflection.Assembly,System.String,System.String,System.String,System.Type@)">
             <summary>
-            Tries to resolve a type with specified name from the loaded assemblies.
+            Tries to resolve a type with specified name, first from the specified assembly and then from other loaded assemblies.
             </summary>
+            <param name="targetAssembly">Assembly expected to contain the proxy classes.</param>
             <param name="typeName">Name of the type to resolve.</param>
             <param name="fullNamespace">Namespace of the type.</param>
             <param name="languageDependentNamespace">Namespace that the resolved type is expected to be.
             Usually same as <paramref name="fullNamespace"/> but can be different
             where namespace for client types does not match namespace in service types.</param>
             <param name="matchedType">The resolved type.</param>
-            <returns>true if type was successfully resolved; otherwise false.</returns>
+            <returns>true if a type with the specified name is successfully resolved; otherwise false.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.Metadata.ClientTypeUtil.FindType(System.Reflection.Assembly,System.String,System.String,System.String)">
+            <summary>
+            Searches for a type that matches the specified type name from the specified assembly.
+            </summary>
+            <param name="assembly">Assembly that the specified type is expected to be.</param>
+            <param name="qualifiedTypeName">The namespace-qualified name of the type.</param>
+            <param name="serverDefinedName">The namespace-qualified name of corresponding server type.</param>
+            <param name="languageDependentNamespace">Namespace that the specified type is expected to be.</param>
+            <returns>The type if found in the specified assembly; otherwise null.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Client.Metadata.ClientTypeUtil.SkipAssembly(System.Reflection.Assembly)">
+            <summary>
+            Checks whether to skip the assembly when trying to find a type to be used for materialization.
+            </summary>
+            <param name="assembly">The assembly to check.</param>
+            <returns>true to skip the assembly; otherwise false.</returns>
         </member>
         <member name="T:Microsoft.OData.Client.Metadata.ODataTypeInfo">
             <summary>
@@ -16331,7 +16940,7 @@
             <param name="undeclaredPropertyBehavior">Flag to support untyped properties.</param>
             <returns>Client PropertyInfo, or null if the method is not found or throws exception if undeclaredPropertyBehavior is ThrowException.</returns>
         </member>
-        <member name="M:Microsoft.OData.Client.Metadata.ODataTypeInfo.IsKeyProperty(System.Reflection.PropertyInfo,Microsoft.OData.Client.KeyAttribute)">
+        <member name="M:Microsoft.OData.Client.Metadata.ODataTypeInfo.IsKeyProperty(System.Reflection.PropertyInfo,Microsoft.OData.Client.KeyAttribute,System.Int32@)">
             <summary>
             Returns the KeyKind if <paramref name="propertyInfo"/> is declared as a key in <paramref name="dataServiceKeyAttribute"/> or it follows the key naming convention.
             </summary>
@@ -17857,6 +18466,16 @@
             A string like "The expression '{0}' is not a valid aggregate expression. The aggregate expression must evaluate to a single-valued property path to an aggregatable property."
             </summary>
         </member>
+        <member name="M:Microsoft.OData.Client.Strings.ALinq_InvalidGroupingExpression(System.Object)">
+            <summary>
+            A string like "The expression '{0}' is not a valid expression for grouping. The grouping expression must evaluate to a single-valued property path, i.e., a path ending in a single-valued primitive."
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.Strings.ALinq_InvalidGroupByKeySelector(System.Object)">
+            <summary>
+            A string like "The expression '{0}' in the GroupBy key selector is not supported."
+            </summary>
+        </member>
         <member name="P:Microsoft.OData.Client.Strings.DSKAttribute_MustSpecifyAtleastOnePropertyName">
             <summary>
             A string like "DataServiceKey attribute must specify at least one property name."
@@ -18408,13 +19027,19 @@
         <member name="F:Microsoft.OData.Client.ProjectionPlanCompiler.topLevelProjectionFound">
             <summary>Whether the top level projection has been found.</summary>
         </member>
-        <member name="M:Microsoft.OData.Client.ProjectionPlanCompiler.#ctor(System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression})">
+        <member name="F:Microsoft.OData.Client.ProjectionPlanCompiler.materializerContext">
+            <summary>
+            The materializer context.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Client.ProjectionPlanCompiler.#ctor(System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression},Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>
             Initializes a new <see cref="T:Microsoft.OData.Client.ProjectionPlanCompiler"/> instance.
             </summary>
             <param name="normalizerRewrites">Rewrites introduces by normalizer.</param>
+            <param name="materializerContext">The materializer context.</param>
         </member>
-        <member name="M:Microsoft.OData.Client.ProjectionPlanCompiler.CompilePlan(System.Linq.Expressions.LambdaExpression,System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression})">
+        <member name="M:Microsoft.OData.Client.ProjectionPlanCompiler.CompilePlan(System.Linq.Expressions.LambdaExpression,System.Collections.Generic.Dictionary{System.Linq.Expressions.Expression,System.Linq.Expressions.Expression},Microsoft.OData.Client.Materialization.IODataMaterializerContext)">
             <summary>Creates a projection plan from the specified <paramref name="projection"/>.</summary>
             <param name="projection">Projection expression.</param>
             <param name="normalizerRewrites">Tracks rewrite-to-source rewrites introduced by expression normalizer.</param>
@@ -19366,6 +19991,11 @@
         <member name="P:Microsoft.OData.Client.ResponseInfo.MergeOption">
             <summary>MergeOption to use to merge the entities from the response and one present in the client.</summary>
         </member>
+        <member name="P:Microsoft.OData.Client.ResponseInfo.AutoNullPropagation">
+            <summary>
+            Specifies whether query projection will handle null propagation automatically.
+            </summary>
+        </member>
         <member name="P:Microsoft.OData.Client.ResponseInfo.ThrowOnUndeclaredPropertyForNonOpenType">
             <summary>
             Returns whether ThrowOnUndeclaredPropertyForNonOpenType validation setting is enabled.
@@ -19925,7 +20555,14 @@
         <member name="F:Microsoft.OData.Client.HttpClientRequestMessage.inSendingRequest2Event">
             <summary>True if SendingRequest2Event is currently invoked, otherwise false.</summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "M:Microsoft.OData.Client.HttpClientRequestMessage.#ctor(Microsoft.OData.Client.DataServiceClientRequestMessageArgs)" -->
+        <member name="M:Microsoft.OData.Client.HttpClientRequestMessage.#ctor(Microsoft.OData.Client.DataServiceClientRequestMessageArgs)">
+            <summary>
+            Constructor for HttpClientRequestMessage.
+            Initializes the <see cref="T:Microsoft.OData.Client.HttpClientRequestMessage"/> class.
+            The args.ActualMethod is the actual method. In post tunneling situations method will be POST instead of the specified verb method.
+            The args.method is the specified verb method
+            </summary>
+        </member>
         <member name="P:Microsoft.OData.Client.HttpClientRequestMessage.Headers">
             <summary>
             Returns the collection of request headers.

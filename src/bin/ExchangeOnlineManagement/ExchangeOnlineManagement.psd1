@@ -8,7 +8,7 @@ else # Desktop
     '.\netFramework\ExchangeOnlineManagement.psm1'
 }
 FunctionsToExport = @('Connect-ExchangeOnline', 'Connect-IPPSSession', 'Disconnect-ExchangeOnline')
-ModuleVersion = '3.1.0'
+ModuleVersion = '3.2.0'
 GUID = 'B5ECED50-AFA4-455B-847A-D8FB64140A22'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -17,10 +17,12 @@ Description = 'This is a General Availability (GA) release of the Exchange Onlin
 Please check the documentation here - https://aka.ms/exov3-module.
 For issues related to the module, contact Microsoft support.'
 PowerShellVersion = '3.0'
-CmdletsToExport = @('Get-ConnectionInformation','Get-EXOCasMailbox','Get-EXOMailbox','Get-EXOMailboxFolderPermission','Get-EXOMailboxFolderStatistics','Get-EXOMailboxPermission','Get-EXOMailboxStatistics','Get-EXOMobileDeviceStatistics','Get-EXORecipient','Get-EXORecipientPermission','Get-MyAnalyticsFeatureConfig','Get-UserBriefingConfig','Get-VivaInsightsSettings','Set-MyAnalyticsFeatureConfig','Set-UserBriefingConfig','Set-VivaInsightsSettings')
+CmdletsToExport = @('Add-VivaModuleFeaturePolicy','Get-ConnectionInformation','Get-DefaultTenantBriefingConfig','Get-DefaultTenantMyAnalyticsFeatureConfig','Get-EXOCasMailbox','Get-EXOMailbox','Get-EXOMailboxFolderPermission','Get-EXOMailboxFolderStatistics','Get-EXOMailboxPermission','Get-EXOMailboxStatistics','Get-EXOMobileDeviceStatistics','Get-EXORecipient','Get-EXORecipientPermission','Get-MyAnalyticsFeatureConfig','Get-UserBriefingConfig','Get-VivaInsightsSettings','Get-VivaModuleFeature','Get-VivaModuleFeatureEnablement','Get-VivaModuleFeaturePolicy','Remove-VivaModuleFeaturePolicy','Set-DefaultTenantBriefingConfig','Set-DefaultTenantMyAnalyticsFeatureConfig','Set-MyAnalyticsFeatureConfig','Set-UserBriefingConfig','Set-VivaInsightsSettings','Update-VivaModuleFeaturePolicy')
 FileList = if($PSEdition -eq 'Core')
 {
-    @('.\netCore\Microsoft.Bcl.AsyncInterfaces.dll',
+    @('.\netCore\Azure.Core.dll',
+        '.\netCore\Microsoft.Bcl.AsyncInterfaces.dll',
+        '.\netCore\Microsoft.Bcl.HashCode.dll',
         '.\netCore\Microsoft.Exchange.Management.AdminApiProvider.dll',
         '.\netCore\Microsoft.Exchange.Management.ExoPowershellGalleryModule.dll',
         '.\netCore\Microsoft.Exchange.Management.RestApiClient.dll',
@@ -35,7 +37,9 @@ FileList = if($PSEdition -eq 'Core')
         '.\netCore\Microsoft.Online.CSE.RestApiPowerShellModule.Instrumentation.dll',
         '.\netCore\Microsoft.Spatial.dll',
         '.\netCore\Microsoft.Win32.Registry.AccessControl.dll',
+        '.\netCore\Microsoft.Win32.Registry.dll',
         '.\netCore\Microsoft.Win32.SystemEvents.dll',
+        '.\netCore\msvcp140.dll',
         '.\netCore\Newtonsoft.Json.dll',
         '.\netCore\System.CodeDom.dll',
         '.\netCore\System.Configuration.ConfigurationManager.dll',
@@ -43,14 +47,17 @@ FileList = if($PSEdition -eq 'Core')
         '.\netCore\System.DirectoryServices.dll',
         '.\netCore\System.Drawing.Common.dll',
         '.\netCore\System.IdentityModel.Tokens.Jwt.dll',
-        '.\netCore\System.IO.Abstractions.dll',
-        '.\netCore\System.Management.Automation.dll',
         '.\netCore\System.Management.dll',
+        '.\netCore\System.Memory.Data.dll',
+        '.\netCore\System.Security.AccessControl.dll',
         '.\netCore\System.Security.Cryptography.Pkcs.dll',
         '.\netCore\System.Security.Cryptography.ProtectedData.dll',
         '.\netCore\System.Security.Permissions.dll',
+        '.\netCore\System.Security.Principal.Windows.dll',
         '.\netCore\System.Text.Encodings.Web.dll',
         '.\netCore\System.Windows.Extensions.dll',
+        '.\netCore\vcruntime140_1.dll',
+        '.\netCore\vcruntime140.dll',
         '.\license.txt')
 }
 else # Desktop
@@ -71,8 +78,6 @@ else # Desktop
         '.\netFramework\Microsoft.Spatial.dll',
         '.\netFramework\Newtonsoft.Json.dll',
         '.\netFramework\System.IdentityModel.Tokens.Jwt.dll',
-        '.\netFramework\System.IO.Abstractions.dll',
-        '.\netFramework\System.Management.Automation.dll',
         '.\license.txt')
 }
 
@@ -84,13 +89,30 @@ PrivateData = @{
 ---------------------------------------------------------------------------------------------
 What is new in this release:
 
+v3.2.0 :
+    1.  General Availability of new cmdlets:
+        -  Updating Briefing Email Settings of a tenant (Get-DefaultTenantBriefingConfig and Set-DefaultTenantBriefingConfig)
+        -  Updating Viva Insights Feature Settings of a tenant (Get-DefaultTenantMyAnalyticsFeatureConfig and Set-DefaultTenantMyAnalyticsFeatureConfig)
+        -  View the features in Viva that support setting access management policies (Get-VivaModuleFeature)
+        -  Create and manage Viva app feature policies
+           -  Get-VivaModuleFeaturePolicy
+           -  Add-VivaModuleFeaturePolicy
+           -  Remove-VivaModuleFeaturePolicy
+           -  Update-VivaModuleFeaturePolicy
+        -  View whether or not a Viva feature is enabled for a specific user/group (Get-VivaModuleFeatureEnablement)
+
+    2.  General Availability of REST based cmdlets for Security and Compliance PowerShell.
+    3.  Support to get REST connection informations from Get-ConnectionInformation cmdlet and disconnect REST connections using Disconnect-ExchangeOnline cmdlet for specific connection(s).
+    4.  Support to sign the temporary generated module with a client certificate to use the module in all PowerShell execution policies.
+    5.  Bug fixes in Connect-ExchangeOnline.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
+
 v3.1.0 :
     1.  Support for providing an Access Token with Connect-ExchangeOnline.
     2.  Bug fixes in Connect-ExchangeOnline and Get-ConnectionInformation.
     3.  Bug fix in Connect-IPPSSession for connecting to Security and Compliance PowerShell using Certificate Thumbprint.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v3.0.0 :
     1.  General Availability of REST-backed cmdlets for Exchange Online which do not require WinRM Basic Authentication to be enabled.
