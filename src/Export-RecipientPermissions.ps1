@@ -1079,10 +1079,10 @@ try {
                                     }
                                 } else {
                                     try {
-                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
+                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
+                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
                                     }
                                 }
 
@@ -1274,18 +1274,18 @@ try {
     } else {
         Write-Host '      Inactive mailboxes'
         try {
-            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -propertysets All -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
+            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -propertysets All -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
+            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
         }
 
         Write-Host '      Softdeleted mailboxes'
         try {
-            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -propertysets All -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
+            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
         } catch {
             . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -propertysets All -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
+            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
         }
     }
 
@@ -1384,10 +1384,10 @@ try {
             }
         } else {
             try {
-                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
+                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
             } catch {
                 . ([scriptblock]::Create($ConnectExchange))
-                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
+                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
             }
         }
 
@@ -2133,7 +2133,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -2293,7 +2293,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -2301,17 +2301,17 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2345,7 +2345,7 @@ try {
             [GC]::Collect(); Start-Sleep -Seconds 1
         }
 
-        Write-Host ('    {0:0000000} recipients with moderation settings found' -f $(($AllRecipients | Where-Object { $_.Moderatedby -or $_.BypassModerationFromSendersOrMembers }).count))
+        Write-Host ('  {0:0000000} recipients with moderation settings found' -f $(($AllRecipients | Where-Object { $_.Moderatedby -or $_.BypassModerationFromSendersOrMembers }).count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -2387,7 +2387,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -2546,7 +2546,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -2554,17 +2554,17 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2598,7 +2598,7 @@ try {
             [GC]::Collect(); Start-Sleep -Seconds 1
         }
 
-        Write-Host ('    {0:0000000} recipients with RequireAllSendersAreAuthenticated found' -f $(($AllRecipients | Where-Object { $_.RequireAllSendersAreAuthenticated }).count))
+        Write-Host ('  {0:0000000} recipients with RequireAllSendersAreAuthenticated found' -f $(($AllRecipients | Where-Object { $_.RequireAllSendersAreAuthenticated }).count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -2639,7 +2639,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -2798,7 +2798,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -2806,17 +2806,17 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '  Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2850,7 +2850,7 @@ try {
             [GC]::Collect(); Start-Sleep -Seconds 1
         }
 
-        Write-Host ('    {0:0000000} recipients with AcceptMessagesOnlyFrom found' -f $(($AllRecipients | Where-Object { $_.AcceptMessagesOnlyFromSendersOrMembers }).count))
+        Write-Host ('  {0:0000000} recipients with AcceptMessagesOnlyFrom found' -f $(($AllRecipients | Where-Object { $_.AcceptMessagesOnlyFromSendersOrMembers }).count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -2875,7 +2875,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -3018,7 +3018,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -3033,10 +3033,10 @@ try {
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -3070,7 +3070,7 @@ try {
             [GC]::Collect(); Start-Sleep -Seconds 1
         }
 
-        Write-Host ('    {0:0000000} recipients with ResourceDelegates found' -f $(($AllRecipients | Where-Object { $_.ResourceDelegates -or $_.AllBookInPolicy -or $_.BookInPolicy -or $_.AllRequestInPolicy -or $_.RequestInPolicy -or $_.AllRequestOutOfPolicy -or $_.RequestOutOfPolicy }).count))
+        Write-Host ('  {0:0000000} recipients with ResourceDelegates found' -f $(($AllRecipients | Where-Object { $_.ResourceDelegates -or $_.AllBookInPolicy -or $_.BookInPolicy -or $_.AllRequestInPolicy -or $_.RequestInPolicy -or $_.AllRequestOutOfPolicy -or $_.RequestOutOfPolicy }).count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -3115,7 +3115,7 @@ try {
 
         $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
-        Write-Host "    Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
+        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
         if ($ParallelJobsNeeded -ge 1) {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
@@ -3275,7 +3275,7 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('    {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
@@ -3283,17 +3283,17 @@ try {
                 $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
+                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
                         if ($x -eq 0) { Write-Host }
                         $lastCount = $x
                     }
                 }
             }
 
-            Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
+            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '      Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '  Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -3327,7 +3327,7 @@ try {
             [GC]::Collect(); Start-Sleep -Seconds 1
         }
 
-        Write-Host ('    {0:0000000} recipients with LegacyExchangeDN found' -f $(($AllRecipients | Where-Object { $_.LegacyExchangeDN }).count))
+        Write-Host ('  {0:0000000} recipients with LegacyExchangeDN found' -f $(($AllRecipients | Where-Object { $_.LegacyExchangeDN }).count))
     } else {
         Write-Host '  Not required with current export settings.'
     }
@@ -4009,20 +4009,20 @@ try {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
                                                         if ($Grantor.WhenSoftDeleted) {
                                                             try {
-                                                                Get-EXOMailboxPermission -identity $GrantorPrimarySMTP -SoftDeletedMailbox -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
                                                                 $UFNSelf = 'NT AUTHORITY\SELF'
                                                             } catch {
                                                                 . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxPermission -identity $GrantorPrimarySMTP -SoftDeletedMailbox -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
                                                                 $UFNSelf = 'NT AUTHORITY\SELF'
                                                             }
                                                         } else {
                                                             try {
-                                                                Get-EXOMailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
                                                                 $UFNSelf = 'NT AUTHORITY\SELF'
                                                             } catch {
                                                                 . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
+                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
                                                                 $UFNSelf = 'NT AUTHORITY\SELF'
                                                             }
                                                         }
@@ -4432,10 +4432,10 @@ try {
                                     }
                                 } else {
                                     try {
-                                        $Folders = Get-EXOMailboxFolderStatistics -identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
+                                        $Folders = Get-EXOMailboxFolderStatistics -Identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $Folders = Get-EXOMailboxFolderStatistics -identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
+                                        $Folders = Get-EXOMailboxFolderStatistics -Identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
                                     }
                                 }
                                 foreach ($Folder in $Folders) {
@@ -4459,17 +4459,17 @@ try {
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
                                                             try {
-                                                                Get-EXOMailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -groupmailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
+                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
                                                             } catch {
                                                                 . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -groupmailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
+                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
                                                             }
                                                         } else {
                                                             try {
-                                                                Get-EXOMailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
+                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
                                                             } catch {
                                                                 . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
+                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
                                                             }
                                                         }
                                                     }
