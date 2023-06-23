@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>ExchangeOnlineManagement</id>
-    <version>3.1.0</version>
+    <version>3.2.0</version>
     <authors>Microsoft Corporation</authors>
     <owners>Microsoft Corporation</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -13,13 +13,30 @@ For issues related to the module, contact Microsoft support.</description>
     <releaseNotes>---------------------------------------------------------------------------------------------
 What is new in this release:
 
+v3.2.0 :
+    1.  General Availability of new cmdlets:
+        -  Updating Briefing Email Settings of a tenant (Get-DefaultTenantBriefingConfig and Set-DefaultTenantBriefingConfig)
+        -  Updating Viva Insights Feature Settings of a tenant (Get-DefaultTenantMyAnalyticsFeatureConfig and Set-DefaultTenantMyAnalyticsFeatureConfig)
+        -  View the features in Viva that support setting access management policies (Get-VivaModuleFeature)
+        -  Create and manage Viva app feature policies
+           -  Get-VivaModuleFeaturePolicy
+           -  Add-VivaModuleFeaturePolicy
+           -  Remove-VivaModuleFeaturePolicy
+           -  Update-VivaModuleFeaturePolicy
+        -  View whether or not a Viva feature is enabled for a specific user/group (Get-VivaModuleFeatureEnablement)
+
+    2.  General Availability of REST based cmdlets for Security and Compliance PowerShell.
+    3.  Support to get REST connection informations from Get-ConnectionInformation cmdlet and disconnect REST connections using Disconnect-ExchangeOnline cmdlet for specific connection(s).
+    4.  Support to sign the temporary generated module with a client certificate to use the module in all PowerShell execution policies.
+    5.  Bug fixes in Connect-ExchangeOnline.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
+
 v3.1.0 :
     1.  Support for providing an Access Token with Connect-ExchangeOnline.
     2.  Bug fixes in Connect-ExchangeOnline and Get-ConnectionInformation.
     3.  Bug fix in Connect-IPPSSession for connecting to Security and Compliance PowerShell using Certificate Thumbprint.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v3.0.0 :
     1.  General Availability of REST-backed cmdlets for Exchange Online which do not require WinRM Basic Authentication to be enabled.
@@ -60,6 +77,6 @@ v1.0.1 :
  
 ---------------------------------------------------------------------------------------------</releaseNotes>
     <copyright>(c) 2021 Microsoft. All rights reserved.</copyright>
-    <tags>Exchange ExchangeOnline EXO EXOV2 EXOV3 Mailbox Management PSModule PSIncludes_Cmdlet PSCmdlet_Get-ConnectionInformation PSCmdlet_Get-EXOCasMailbox PSCmdlet_Get-EXOMailbox PSCmdlet_Get-EXOMailboxFolderPermission PSCmdlet_Get-EXOMailboxFolderStatistics PSCmdlet_Get-EXOMailboxPermission PSCmdlet_Get-EXOMailboxStatistics PSCmdlet_Get-EXOMobileDeviceStatistics PSCmdlet_Get-EXORecipient PSCmdlet_Get-EXORecipientPermission PSCmdlet_Get-MyAnalyticsFeatureConfig PSCmdlet_Get-UserBriefingConfig PSCmdlet_Get-VivaInsightsSettings PSCmdlet_Set-MyAnalyticsFeatureConfig PSCmdlet_Set-UserBriefingConfig PSCmdlet_Set-VivaInsightsSettings PSIncludes_Function PSFunction_Connect-ExchangeOnline PSFunction_Connect-IPPSSession PSFunction_Disconnect-ExchangeOnline PSCommand_Get-ConnectionInformation PSCommand_Get-EXOCasMailbox PSCommand_Get-EXOMailbox PSCommand_Get-EXOMailboxFolderPermission PSCommand_Get-EXOMailboxFolderStatistics PSCommand_Get-EXOMailboxPermission PSCommand_Get-EXOMailboxStatistics PSCommand_Get-EXOMobileDeviceStatistics PSCommand_Get-EXORecipient PSCommand_Get-EXORecipientPermission PSCommand_Get-MyAnalyticsFeatureConfig PSCommand_Get-UserBriefingConfig PSCommand_Get-VivaInsightsSettings PSCommand_Set-MyAnalyticsFeatureConfig PSCommand_Set-UserBriefingConfig PSCommand_Set-VivaInsightsSettings PSCommand_Connect-ExchangeOnline PSCommand_Connect-IPPSSession PSCommand_Disconnect-ExchangeOnline</tags>
+    <tags>Exchange ExchangeOnline EXO EXOV2 EXOV3 Mailbox Management PSModule PSIncludes_Cmdlet PSCmdlet_Add-VivaModuleFeaturePolicy PSCmdlet_Get-ConnectionInformation PSCmdlet_Get-DefaultTenantBriefingConfig PSCmdlet_Get-DefaultTenantMyAnalyticsFeatureConfig PSCmdlet_Get-EXOCasMailbox PSCmdlet_Get-EXOMailbox PSCmdlet_Get-EXOMailboxFolderPermission PSCmdlet_Get-EXOMailboxFolderStatistics PSCmdlet_Get-EXOMailboxPermission PSCmdlet_Get-EXOMailboxStatistics PSCmdlet_Get-EXOMobileDeviceStatistics PSCmdlet_Get-EXORecipient PSCmdlet_Get-EXORecipientPermission PSCmdlet_Get-MyAnalyticsFeatureConfig PSCmdlet_Get-UserBriefingConfig PSCmdlet_Get-VivaInsightsSettings PSCmdlet_Get-VivaModuleFeature PSCmdlet_Get-VivaModuleFeatureEnablement PSCmdlet_Get-VivaModuleFeaturePolicy PSCmdlet_Remove-VivaModuleFeaturePolicy PSCmdlet_Set-DefaultTenantBriefingConfig PSCmdlet_Set-DefaultTenantMyAnalyticsFeatureConfig PSCmdlet_Set-MyAnalyticsFeatureConfig PSCmdlet_Set-UserBriefingConfig PSCmdlet_Set-VivaInsightsSettings PSCmdlet_Update-VivaModuleFeaturePolicy PSIncludes_Function PSFunction_Connect-ExchangeOnline PSFunction_Connect-IPPSSession PSFunction_Disconnect-ExchangeOnline PSCommand_Add-VivaModuleFeaturePolicy PSCommand_Get-ConnectionInformation PSCommand_Get-DefaultTenantBriefingConfig PSCommand_Get-DefaultTenantMyAnalyticsFeatureConfig PSCommand_Get-EXOCasMailbox PSCommand_Get-EXOMailbox PSCommand_Get-EXOMailboxFolderPermission PSCommand_Get-EXOMailboxFolderStatistics PSCommand_Get-EXOMailboxPermission PSCommand_Get-EXOMailboxStatistics PSCommand_Get-EXOMobileDeviceStatistics PSCommand_Get-EXORecipient PSCommand_Get-EXORecipientPermission PSCommand_Get-MyAnalyticsFeatureConfig PSCommand_Get-UserBriefingConfig PSCommand_Get-VivaInsightsSettings PSCommand_Get-VivaModuleFeature PSCommand_Get-VivaModuleFeatureEnablement PSCommand_Get-VivaModuleFeaturePolicy PSCommand_Remove-VivaModuleFeaturePolicy PSCommand_Set-DefaultTenantBriefingConfig PSCommand_Set-DefaultTenantMyAnalyticsFeatureConfig PSCommand_Set-MyAnalyticsFeatureConfig PSCommand_Set-UserBriefingConfig PSCommand_Set-VivaInsightsSettings PSCommand_Update-VivaModuleFeaturePolicy PSCommand_Connect-ExchangeOnline PSCommand_Connect-IPPSSession PSCommand_Disconnect-ExchangeOnline</tags>
   </metadata>
 </package>

@@ -4886,18 +4886,6 @@
                     string s = TextRes.GetString(TextRes.MyIdentifier);
              </summary>
         </member>
-        <member name="T:Microsoft.Spatial.OrcasExtensions">
-            <summary>
-            This class holds extension methods for objects that have new capabilities
-            in newer versions of .net, and this lets us make the calls look the same and reduces the #if noise
-            </summary>
-        </member>
-        <member name="M:Microsoft.Spatial.OrcasExtensions.Clear(System.Text.StringBuilder)">
-            <summary>
-            StringBuilder didn't have a clear method in Orcas, so we added and extension method to give it one.
-            </summary>
-            <param name="builder">The StringBuilder instance to clear.</param>
-        </member>
         <member name="T:Microsoft.Spatial.Strings">
             <summary>
                Strongly-typed and parameterized string resources.

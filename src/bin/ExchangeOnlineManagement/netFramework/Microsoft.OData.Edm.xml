@@ -41,6 +41,92 @@
             The local name of the annotation that stores EDMX version of a model.
             </summary>
         </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings">
+            <summary>
+            Settings used when parsing CSDL-JSON document.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.#ctor">
+            <summary>
+            Initializes a new instance of <see cref="T:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings"/> class.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.ReferencedModels">
+            <summary>
+            Gets/sets the referened models.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.JsonSchemaReaderFactory">
+            <summary>
+            Gets/sets a call back to provide the JSON reader for referenced CSDL-JSON.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.IncludeDefaultVocabularies">
+            <summary>
+            Gets/sets a boolean value indicating whether include the default vocabularies Edm model.
+            By default, it's true.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.IgnoreUnexpectedJsonElements">
+            <summary>
+            Gets/sets a boolean value indicating whether ignore the unexpected JSON elements.
+            By default, it's true.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings.IsBracketNotation">
+            <summary>
+            Gets/sets a boolean value indicating the format of the JSON path.
+            If true: $['store']['book'][0]['title']
+            If false: $.store.book[0].title
+            By default, it's false.
+            </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.CsdlJsonWriter">
+            <summary>
+            Provides CSDL JSON serialization for EDM models.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonWriter.#ctor(Microsoft.OData.Edm.IEdmModel,System.Text.Json.Utf8JsonWriter,Microsoft.OData.Edm.Csdl.CsdlJsonWriterSettings,System.Version)">
+            <summary>
+            Initializes a new instance of <see cref="T:Microsoft.OData.Edm.Csdl.CsdlJsonWriter"/> class.
+            </summary>
+            <param name="model">The Edm model.</param>
+            <param name="writer">The JSON writer.</param>
+            <param name="settings">The CSDL JSON writer settings.</param>
+            <param name="edmxVersion">The Edmx version.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonWriter.WriteCsdl">
+            <summary>
+            Write the JSON CSDL.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonWriter.WriteCsdlStart">
+            <summary>
+            CSDL JSON Document Object
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonWriter.WriteReferenceElements">
+            <summary>
+            $Reference Object
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlJsonWriter.WriteSchemata">
+            <summary>
+            Schema Object.
+            </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.CsdlJsonWriterSettings">
+            <summary>
+            The options/setting for CSDL writer
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.CsdlJsonWriterSettings.IsIeee754Compatible">
+            <summary>
+            Gets/sets a value indicating whether the writer write large integers as strings.
+            The IEEE754Compatible=true parameter indicates that the service MUST serialize Edm.Int64 and Edm.Decimal numbers as strings.
+            This is in conformance with [RFC7493]. If not specified, or specified as IEEE754Compatible=false, all numbers MUST be serialized as JSON numbers.
+            </summary>
+        </member>
         <member name="T:Microsoft.OData.Edm.Csdl.CsdlLocation">
             <summary>
             Defines a location in a CSDL file.
@@ -80,6 +166,9 @@
         <member name="T:Microsoft.OData.Edm.Csdl.CsdlReader">
             <summary>
             Provides CSDL parsing services for EDM models.
+            </summary>
+            <summary>
+            Provides CSDL-JSON parsing services for EDM models.
             </summary>
         </member>
         <member name="F:Microsoft.OData.Edm.Csdl.CsdlReader.targetParsed">
@@ -255,6 +344,58 @@
             Parse one Edm reference using CsdlReferenceParser
             </summary>
         </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlReader.TryParse(System.Text.Json.Utf8JsonReader@,Microsoft.OData.Edm.IEdmModel@,System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.Validation.EdmError}@)">
+            <summary>
+            Tries parsing the given CSDL-JSON artifact for an IEdmModel.
+            </summary>
+            <param name="reader">The given JSON reader containing the CSDL artifact.</param>
+            <param name="model">The model generated by parsing</param>
+            <param name="errors">Errors reported while parsing.</param>
+            <returns>Success of the parse operation.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlReader.TryParse(System.Text.Json.Utf8JsonReader@,Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings,Microsoft.OData.Edm.IEdmModel@,System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.Validation.EdmError}@)">
+            <summary>
+            Tries parsing the given CSDL-JSON artifact for an IEdmModel.
+            </summary>
+            <param name="reader">The given JSON reader containing the CSDL artifact.</param>
+            <param name="settings">CSDL-JSON reader settings for current parser.</param>
+            <param name="model">The model generated by parsing</param>
+            <param name="errors">Errors reported while parsing.</param>
+            <returns>Success of the parse operation.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlReader.Parse(System.Text.Json.Utf8JsonReader@)">
+            <summary>
+            Returns an IEdmModel for the given CSDL-JSON artifact.
+            </summary>
+            <param name="reader">The given JSON reader containing the CSDL artifact.</param>
+            <returns>The model generated by parsing.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlReader.Parse(System.Text.Json.Utf8JsonReader@,Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings)">
+            <summary>
+            Returns an IEdmModel for the given CSDL-JSON artifact.
+            </summary>
+            <param name="reader">The given JSON reader containing the CSDL artifact.</param>
+            <param name="settings">The CSDL-JSON reader settings.</param>
+            <returns>The model generated by parsing.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlReader.LoadReferencedCsdl(Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlModel,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Load and parse the referenced model but ignored any further referenced model.
+            </summary>
+            <param name="csdlModel">The main CSDL model.</param>
+            <param name="context">The parser context.</param>
+            <returns>A list of CsdlModel (no semantics) of the referenced models.</returns>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.CsdlJsonReaderFactory">
+            <summary>
+            A delegate used to retrieve a reader for referenced JSON CSDL schemas.
+            Utf8JsonReader is a ref struct, we can't distiguish which Uri want to parse, which Uri want to skip.
+            So, use an out boolean value to indicate whether to skip parsing the input reference Uri.
+            </summary>
+            <param name="uri">The reference Uri.</param>
+            <param name="skip">out a boolean value that indicates whether to skip parsing the input uri.</param>
+            <returns>The corresponding <see cref="T:System.Text.Json.Utf8JsonReader"/>.</returns>
+        </member>
         <member name="T:Microsoft.OData.Edm.Csdl.CsdlReaderSettingsBase">
             <summary>
             The base setting for CSDL reader
@@ -302,6 +443,25 @@
             </summary>
             <param name="model">The Edm model.</param>
             <param name="edmxVersion">The Edmx version.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlWriter.TryWriteCsdl(Microsoft.OData.Edm.IEdmModel,System.Text.Json.Utf8JsonWriter,System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.Validation.EdmError}@)">
+            <summary>
+            Outputs a CSDL JSON artifact to the provided <see cref="T:System.Text.Json.Utf8JsonWriter"/>.
+            </summary>
+            <param name="model">The Edm model to be written.</param>
+            <param name="writer">JSON writer the generated CSDL will be written to.</param>
+            <param name="errors">Errors that prevented successful serialization, or no errors if serialization was successful. </param>
+            <returns>A value indicating whether serialization was successful.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.CsdlWriter.TryWriteCsdl(Microsoft.OData.Edm.IEdmModel,System.Text.Json.Utf8JsonWriter,Microsoft.OData.Edm.Csdl.CsdlJsonWriterSettings,System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.Validation.EdmError}@)">
+            <summary>
+            Outputs a CSDL JSON artifact to the provided <see cref="T:System.Text.Json.Utf8JsonWriter"/> using the settings.
+            </summary>
+            <param name="model">The Edm model to be written.</param>
+            <param name="writer">JSON writer the generated CSDL will be written to.</param>
+            <param name="settings">The CSDL writer settings.</param>
+            <param name="errors">Errors that prevented successful serialization, or no errors if serialization was successful. </param>
+            <returns>A value indicating whether serialization was successful.</returns>
         </member>
         <member name="M:Microsoft.OData.Edm.Csdl.CsdlWriter.TryWriteCsdl(Microsoft.OData.Edm.IEdmModel,System.Xml.XmlWriter,Microsoft.OData.Edm.Csdl.CsdlTarget,System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.Validation.EdmError}@)">
             <summary>
@@ -640,6 +800,132 @@
             </summary>
             <param name="uri">The value to convert.</param>
             <returns>A string representation of the Uri.</returns>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser">
+            <summary>
+            Provides functionalities for parsing CSDL-JSON annotations.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseCsdlAnnotation(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlAnnotation@)">
+            <summary>
+            Try to parse the input json value <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlAnnotation"/>.
+            </summary>
+            <param name="annotionName">The input annotation name, annotation name should start with '@'.</param>
+            <param name="element">The JSON value to parse.</param>
+            <param name="context">The parser context.</param>
+            <param name="csdlAnnotation">The built CSDL annotation.</param>
+            <returns>true/false.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.ParseExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/> from the <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">JSON value to parse.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.ParseNumberExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the JSON number to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/>.
+            </summary>
+            <param name="element">The JSON value to parse.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.ParseObjectExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the JSON object to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/>.
+            We don't know the object type, so try it one by one using the keyword, for example $Cast for Cast expression.
+            </summary>
+            <param name="element">The JSON value to parse.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionBase"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseValuePathExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlPathExpression@)">
+            <summary>
+            Parse an instance path with a Value path.
+            An instance path is on object with a "$Path" member.
+            "@UI.DisplayName#second": {
+              "$Path": "@vCard.Address#work/FullName"
+            }
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="pathExp">The built path expression.</param>
+            <returns>true/false.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseCastExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlCastExpression@)">
+            <summary>
+            Parse the Cast expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="castExp">The built cast expression.</param>
+            <returns>true/false.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseApplyExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlApplyExpression@)">
+            <summary>
+            Parse the Apply expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="applyExp">The built apply expression.</param>
+            <returns>true/false.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseIfExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlIfExpression@)">
+            <summary>
+            Parse the If expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="ifExp">The built if expression.</param>
+            <returns>true/false</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.BuildIsOfExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlIsTypeExpression@)">
+            <summary>
+            Parse the IsOf expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="isOfExp">The built IsOf expression.</param>
+            <returns>true/false</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseLabeledElementExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlLabeledExpression@)">
+            <summary>
+            Parse the Labeled Element expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="labeledExp">The built labeled element expression.</param>
+            <returns>true/false</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.TryParseLabeledElementReferenceExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext,Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlLabeledExpressionReferenceExpression@)">
+            <summary>
+            Parse the Labeled Element Reference expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <param name="labeledReferenceExp">The built Labeled Element Reference expression.</param>
+            <returns>true/false</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.ParseRecordExpression(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the record expression expression using <see cref="T:System.Text.Json.JsonElement"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <returns>the built record expression.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.AnnotationJsonParser.ParseAnnotationName(System.String,System.String@,System.String@)">
+            <summary>
+            Parse the input string to see whether it's a valid annotation name.
+            If it's valid, seperate string into term name or optional qualifier name.
+            It it's not valid, return false
+            </summary>
+            <param name="annotationName">The input annotation name.</param>
+            <param name="term">The output term string.</param>
+            <param name="qualifier">The output qualified string.</param>
+            <returns>true/false.</returns>
         </member>
         <member name="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlAbstractNavigationSource">
             <summary>
@@ -1027,6 +1313,13 @@
             of <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlExpressionTypeReference"/> - these types are handled in <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlNamedTypeReference"/>.
             </summary>
         </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.Common.EdmXmlDocumentParser`1.OptionalScale(System.String)">
+            <summary>
+            Parses the scale attribute if it's set.
+            </summary>
+            <param name="attributeName">The name of the attribute.</param>
+            <returns>The parsed scale value.</returns>
+        </member>
         <member name="T:Microsoft.OData.Edm.Csdl.Parsing.Common.XmlDocumentParser">
             <summary>
             Base class for parsers of XML documents
@@ -1042,6 +1335,59 @@
             CSDL document xml base parser, mainly for annotation value and type parser.
             </summary>
         </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser">
+            <summary>
+            Parse one CSDL-JSON into CSDL model.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser.ParseCsdlDocument(System.Text.Json.Utf8JsonReader@,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse CSDL-JSON doc into CsdlModel, error messages are stored in <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext"/>
+            </summary>
+            <param name="jsonReader">The JSON reader.</param>
+            <param name="context">The parser context.</param>
+            <returns>Null or parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlModel"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser.ParseReferences(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Build the JSON value <see cref="T:System.Text.Json.JsonElement"/> to collection of <see cref="T:Microsoft.OData.Edm.IEdmReference"/>.
+            It's weird that we parse it into IEdmReference, not CsdlReference.
+            It is because CsdlModel needs "IEdmReference". :-(
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="jsonPath">The parser context.</param>
+            <returns>null or parsed collection of <see cref="T:Microsoft.OData.Edm.IEdmReference"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser.ParseReference(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to a <see cref="T:Microsoft.OData.Edm.IEdmReference"/>.
+            </summary>
+            <param name="url">The reference Url string.</param>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or parsed <see cref="T:Microsoft.OData.Edm.IEdmReference"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser.ParseInclude(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to a <see cref="T:Microsoft.OData.Edm.IEdmInclude"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or parsed <see cref="T:Microsoft.OData.Edm.IEdmInclude"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParser.ParseIncludeAnnotations(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to a <see cref="T:Microsoft.OData.Edm.IEdmIncludeAnnotations"/>.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or parsed <see cref="T:Microsoft.OData.Edm.IEdmIncludeAnnotations"/>.</returns>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Parsing.CsdlJsonParseHelper">
+            <summary>
+            Provides functionalities for parsing Schema JSON to Csdl elements.
+            </summary>
+        </member>
         <member name="T:Microsoft.OData.Edm.Csdl.Parsing.CsdlParser">
             <summary>
             Provides for the loading and conversion of one or more CSDL XML readers into Entity Data Model.
@@ -1051,6 +1397,272 @@
             <summary>
             CSDL document (Edm reference) parser.
             </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext">
+            <summary>
+            Provides for the loading and conversion of one or more CSDL XML readers into Entity Data Model.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext._dirty">
+            <summary>
+            a value indicating whether this JSON path is changed outside.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext._jsonPath">
+            <summary>
+            a value caching the calcuated path.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext._nodes">
+            <summary>
+            It's only include "string" for property, and Int32 for the index of array
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.#ctor(Microsoft.OData.Edm.Csdl.CsdlJsonReaderSettings,System.String)">
+            <summary>
+            Initializes a new instance of <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext"/> class.
+            </summary>
+            <param name="settings">The CSDL-JSON reader settings.</param>
+            <param name="source">The parsing source.</param>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.Source">
+            <summary>
+            Gets the parsing source.
+            </summary>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.Settings">
+            <summary>
+            Gets the CSDL-JSON reader settings.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.EnterScope(System.String)">
+            <summary>
+            Enter a JSON property scope.
+            </summary>
+            <param name="propertyName">The property name.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.LeaveScope">
+            <summary>
+            Leave a JSON property/index scope.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.LeaveScope(System.String)">
+            <summary>
+            Leave a JSON property scope.
+            </summary>
+            <param name="propertyName">The property name.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.EnterScope(System.Int32)">
+            <summary>
+            Entry an array index scope
+            </summary>
+            <param name="index">The array index.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.LeaveScope(System.Int32)">
+            <summary>
+            Leave a JSON array index scope.
+            </summary>
+            <param name="index">The array index.</param>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.Path">
+            <summary>
+            Gets current JSON path string
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.Location">
+            <summary>
+            Gets current CsdlLocation.
+            </summary>
+            <returns>The built CsdlLocation.</returns>
+        </member>
+        <member name="P:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.Errors">
+            <summary>
+            Gets all parsing errors
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.ReportError(Microsoft.OData.Edm.Validation.EdmErrorCode,System.String)">
+            <summary>
+            Reports a certain parsing error.
+            </summary>
+            <param name="errorCode">The Edm Error Code.</param>
+            <param name="errorMessage">The Error message.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.IsSucceeded">
+            <summary>
+            Check parsing status.
+            </summary>
+            <returns>True/false</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.HasIntolerableError">
+            <summary>
+            Determine if there is any error that could not be ignored.
+            </summary>
+            <returns>True if there is any error that could not be ignored.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.AddRange(System.Collections.Generic.IList{Microsoft.OData.Edm.Validation.EdmError})">
+            <summary>
+            Add a range of errors.
+            </summary>
+            <param name="errors">The input errors.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext.BuildJsonPath">
+            <summary>
+            Construct the json path string
+            </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser">
+            <summary>
+            Provides for the loading and conversion of one or more CSDL XML readers into Entity Data Model.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlSchema(System.String,System.Version,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the input <see cref="T:System.Text.Json.JsonElement"/> to the <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlSchema"/>.
+            </summary>
+            <param name="schemaNamespace">The namespace of the schema.</param>
+            <param name="version">The CSDL version.</param>
+            <param name="element">The json element to parse from.</param>
+            <param name="context">The parser context.</param>
+            <returns>The parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlSchema"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlOutOfLineAnnotations(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+             <summary>
+                     * "org.example": {
+              "$Alias": "self",
+              "$Annotations": {
+                "self.Person": {
+                  "@Core.Description#Tablet": "Dummy",
+                  …
+                }
+              }
+            }
+             </summary>
+             <param name="name">The annotation name.</param>
+             <param name="element">The json element to parse from.</param>
+             <param name="context">The parser context.</param>
+             <returns>The collection of CSDL annotation.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlEntityContainer(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the input <see cref="T:System.Text.Json.JsonElement"/> to the <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlEntityContainer"/>.
+            </summary>
+            <param name="name">The entity container unqualified name.</param>
+            <param name="containerObject">The json value to parse from.</param>
+            <param name="context">The parser context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlEntityContainer"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlEntityType(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the input <see cref="T:System.Text.Json.JsonElement"/> to the <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlEntityType"/>.
+            </summary>
+            <param name="name">the unqualified name of the entity type.</param>
+            <param name="entityObject">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlEntityType"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlComplexType(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the input <see cref="T:System.Text.Json.JsonElement"/> to the <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlComplexType"/>.
+            </summary>
+            <param name="name">the unqualified name of the complex type.</param>
+            <param name="complexObject">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns>null or the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlComplexType"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlKey(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlKey"/>.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="keyArray">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns>the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlKey"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlProperty(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlProperty"/>.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="propertyObject">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns>the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlProperty"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlNavigationProperty(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlNavigationProperty"/>.
+            </summary>
+            <param name="name">The name.</param>
+            <param name="navObject">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns>the parsed <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlNavigationProperty"/>.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlEnumType(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlEnumType"/>.
+            The enumeration type object MUST contain the member $Kind with a string value of EnumType.
+            It MAY contain the members $UnderlyingType and $IsFlags.
+            The enumeration type object MUST contain members representing the enumeration type members.
+            The enumeration type object MAY contain annotations.
+            </summary>
+            <param name="name">The nnum type name.</param>
+            <param name="enumObject">The json value to parse from.</param>
+            <param name="context">The enum type json path.</param>
+            <returns>the parsed csdl enum type.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlTermType(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlTerm"/>.
+            </summary>
+            <param name="name">The type definition name.</param>
+            <param name="element">The json value to parse from.</param>
+            <param name="context">The parser context.</param>
+            <returns>the parsed csdl term.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlTypeDefinition(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlTypeDefinition"/>.
+            </summary>
+            <param name="name">The type definition name.</param>
+            <param name="element">The json value to parse from.</param>
+            <param name="context">The enum type json path.</param>
+            <returns>the parsed csdl type definition.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlOperation(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Parse the <see cref="T:System.Text.Json.JsonElement"/> to a list of <see cref="T:Microsoft.OData.Edm.Csdl.Parsing.Ast.CsdlOperation"/>.
+            </summary>
+            <param name="name">The operation name.</param>
+            <param name="element">The json value to parse from.</param>
+            <param name="context">The parse context.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.ParseCsdlOperationReturn(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            The value of $ReturnType is an object.
+            </summary>
+            <param name="name">The operation return name.</param>
+            <param name="element">The json value to parse from</param>
+            <param name="context">The parse context.</param>
+            <returns>The built CSDL operation return.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.TryParseSchemaElement(System.String,System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            The schema object MAY contain members representing:
+            entity types, complex types, enumeration types, type definitions, actions, functions, terms, and an entity container.
+            This method trys to build the JSON value as one of the above member.
+            </summary>
+            <param name="name">The name of the schema member.</param>
+            <param name="element">The schema member json value.</param>
+            <param name="context">The parse context.</param>
+            <returns>Null or the built element.</returns>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Parsing.SchemaJsonParser.GetKind(System.Text.Json.JsonElement,Microsoft.OData.Edm.Csdl.Parsing.JsonParserContext)">
+            <summary>
+            Get Kind property value if existing.
+            </summary>
+            <param name="element">The input JSON element.</param>
+            <param name="context">The parser context.</param>
+            <returns>Null or the kind string.</returns>
         </member>
         <member name="T:Microsoft.OData.Edm.Csdl.SchemaReader">
             <summary>
@@ -1796,6 +2408,188 @@
             <param name="model">The IEdmModel.</param>
             <returns>The namespaces in all schemas having alias.</returns>
         </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter">
+            <summary>
+            OData Common Schema Definition Language (CSDL) JSON writer
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.#ctor(Microsoft.OData.Edm.IEdmModel,System.Text.Json.Utf8JsonWriter,System.Version)">
+            <summary>
+            Initializes a new instance of <see cref="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter"/> class.
+            </summary>
+            <param name="model">The Edm model.</param>
+            <param name="writer">The JSON writer.</param>
+            <param name="edmVersion">The Edm version.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.#ctor(Microsoft.OData.Edm.IEdmModel,System.Text.Json.Utf8JsonWriter,System.Version,Microsoft.OData.Edm.Csdl.CsdlJsonWriterSettings)">
+            <summary>
+            Initializes a new instance of <see cref="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter"/> class.
+            </summary>
+            <param name="model">The Edm model.</param>
+            <param name="writer">The JSON writer.</param>
+            <param name="edmVersion">The Edm version.</param>
+            <param name="options">The CSDL serializer options.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteTermElementHeader(Microsoft.OData.Edm.Vocabularies.IEdmTerm,System.Boolean)">
+            <summary>
+            Write Term Object header
+            </summary>
+            <param name="term">The Edm Term</param>
+            <param name="inlineType">Is inline type or not.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEntityTypeElementHeader(Microsoft.OData.Edm.IEdmEntityType)">
+            <summary>
+            Write Entity Type object
+            </summary>
+            <param name="entityType">The Edm entity type.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteComplexTypeElementHeader(Microsoft.OData.Edm.IEdmComplexType)">
+            <summary>
+            Write Complex Type Object
+            </summary>
+            <param name="complexType">The Edm complex type.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteDeclaredKeyPropertiesElementHeader">
+            <summary>
+            Write $Key
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WritePropertyRefElement(Microsoft.OData.Edm.IEdmStructuralProperty)">
+            <summary>
+            Write the Key property
+            </summary>
+            <param name="property"></param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteNavigationPropertyElementHeader(Microsoft.OData.Edm.IEdmNavigationProperty)">
+            <summary>
+            Write Navigation Property Object
+            </summary>
+            <param name="property">The Edm navigation property.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteSchemaElementHeader(Microsoft.OData.Edm.Csdl.Serialization.EdmSchema,System.String,System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Write Schema Object
+            </summary>
+            <param name="schema">The Schema</param>
+            <param name="alias">The alias</param>
+            <param name="mappings">The namespace prefix mapping. It's used in XML, Not apply for JSON.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteOutOfLineAnnotationsBegin(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.Collections.Generic.List{Microsoft.OData.Edm.Vocabularies.IEdmVocabularyAnnotation}}})">
+            <summary>
+            Write $Annotations : {
+            </summary>
+            <param name="outOfLineAnnotations">The total out of line annotations.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteAnnotationsElementHeader(System.Collections.Generic.KeyValuePair{System.String,System.Collections.Generic.List{Microsoft.OData.Edm.Vocabularies.IEdmVocabularyAnnotation}})">
+            <summary>
+            Write Annotations with External Targeting.
+            </summary>
+            <param name="annotationsForTarget">The annotation.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteOutOfLineAnnotationsEnd(System.Collections.Generic.IEnumerable{System.Collections.Generic.KeyValuePair{System.String,System.Collections.Generic.List{Microsoft.OData.Edm.Vocabularies.IEdmVocabularyAnnotation}}})">
+            <summary>
+            Write $Annotations End: }
+            </summary>
+            <param name="outOfLineAnnotations">The total out of line annotations.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteStructuralPropertyElementHeader(Microsoft.OData.Edm.IEdmStructuralProperty,System.Boolean)">
+            <summary>
+            Write structural property object.
+            </summary>
+            <param name="property">The Edm structural property.</param>
+            <param name="inlineType">Is line type or not.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEnumTypeElementHeader(Microsoft.OData.Edm.IEdmEnumType)">
+            <summary>
+            Write enumeration type object header
+            </summary>
+            <param name="enumType">The given enumeration type.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEnumTypeElementEnd(Microsoft.OData.Edm.IEdmEnumType)">
+            <summary>
+            Write enumeration type object end
+            </summary>
+            <param name="enumType">The given enumeration type.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEnumMemberElementHeader(Microsoft.OData.Edm.IEdmEnumMember)">
+            <summary>
+            Write Enumeration Member Object start
+            </summary>
+            <param name="member">The Edm Enum member.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteNullableAttribute(Microsoft.OData.Edm.IEdmTypeReference)">
+            <summary>
+            7.2.1 Nullable, A Boolean value specifying whether a value is required for the property.
+            </summary>
+            <param name="reference">The Edm type reference.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEntityContainerElementHeader(Microsoft.OData.Edm.IEdmEntityContainer)">
+            <summary>
+            Write Entity Container Object
+            </summary>
+            <param name="container">The Edm entity container.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEntitySetElementHeader(Microsoft.OData.Edm.IEdmEntitySet)">
+            <summary>
+            Write Entity Set object
+            </summary>
+            <param name="entitySet">The Edm entity set.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteSingletonElementHeader(Microsoft.OData.Edm.IEdmSingleton)">
+            <summary>
+            Write Singleton object
+            </summary>
+            <param name="singleton">The Edm singleton.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteActionImportElementHeader(Microsoft.OData.Edm.IEdmActionImport)">
+            <summary>
+            Write Action Import Object
+            </summary>
+            <param name="actionImport">The Edm action import.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteFunctionImportElementHeader(Microsoft.OData.Edm.IEdmFunctionImport)">
+            <summary>
+            Write Function Import Object
+            </summary>
+            <param name="functionImport">The Edm function import.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteCastExpressionElementHeader(Microsoft.OData.Edm.Vocabularies.IEdmCastExpression,System.Boolean)">
+            <summary>
+            Cast
+            </summary>
+            <param name="expression">The cast expression</param>
+            <param name="inlineType">Is inline type.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteEnumMemberExpressionElement(Microsoft.OData.Edm.Vocabularies.IEdmEnumMemberExpression)">
+            <summary>
+            Enumeration Member Expression
+            </summary>
+            <param name="expression">The Edm enum member expression.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteTypeDefinitionElementHeader(Microsoft.OData.Edm.IEdmTypeDefinition)">
+            <summary>
+            Write Type Definition Object
+            </summary>
+            <param name="typeDefinition">The Edm type definition.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteNavigationPropertyBindingsBegin(System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.IEdmNavigationPropertyBinding})">
+            <summary>
+            Start $NavigationPropertyBinding
+            </summary>
+            <param name="bindings">The collection the bindings.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteNavigationPropertyBindingsEnd(System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.IEdmNavigationPropertyBinding})">
+            <summary>
+            End $NavigationPropertyBinding
+            </summary>
+            <param name="bindings">The collection the bindings.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaJsonWriter.WriteNavigationPropertyBinding(Microsoft.OData.Edm.IEdmNavigationPropertyBinding)">
+            <summary>
+            Write the navigation property binding member in $NavigationPropertyBinding object.
+            </summary>
+            <param name="binding"></param>
+        </member>
         <!-- Badly formed XML comment ignored for member "T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaWriter" -->
         <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaWriter.#ctor(Microsoft.OData.Edm.IEdmModel,System.Version)">
             <summary>
@@ -1822,6 +2616,16 @@
         <member name="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelCsdlSchemaXmlWriter">
             <summary>
             OData Common Schema Definition Language (CSDL) XML writer
+            </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelReferenceElementsJsonVisitor">
+            <summary>
+            The visitor for outputting Edm reference elements for referenced model.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Serialization.EdmModelReferenceElementsJsonVisitor.WriteIncludeAnnotations(System.Collections.Generic.IEnumerable{Microsoft.OData.Edm.IEdmIncludeAnnotations})">
+            <summary>
+            $IncludeAnnotations Array.
             </summary>
         </member>
         <member name="T:Microsoft.OData.Edm.Csdl.Serialization.EdmModelReferenceElementsXmlVisitor">
@@ -1866,6 +2670,105 @@
             <summary>
             Validates that vocabulary annotations have a serializable term name.
             </summary>
+        </member>
+        <member name="T:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions">
+            <summary>
+            Extensions for <see cref="T:System.Text.Json.Utf8JsonWriter"/>.
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteRequiredProperty(System.Text.Json.Utf8JsonWriter,System.String,System.String)">
+            <summary>
+            Write the required property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteRequiredProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Int64)">
+            <summary>
+            Write the required property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteRequiredProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Boolean)">
+            <summary>
+            Write the required property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteRequiredProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Decimal)">
+            <summary>
+            Write the required property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteRequiredProperty``1(System.Text.Json.Utf8JsonWriter,System.String,``0,System.Func{``0,System.String})">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <typeparam name="T">The value type.</typeparam>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+            <param name="getStringFunc">The value to string Func.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Nullable{System.Int32})">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Nullable{System.Int32},System.Int32)">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+            <param name="defaultValue">The default value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Boolean,System.Boolean)">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+            <param name="defaultValue">The default value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty(System.Text.Json.Utf8JsonWriter,System.String,System.Nullable{System.Boolean},System.Boolean)">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+            <param name="defaultValue">The default value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty(System.Text.Json.Utf8JsonWriter,System.String,System.String)">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Csdl.Utf8JsonWriterExtensions.WriteOptionalProperty``1(System.Text.Json.Utf8JsonWriter,System.String,``0,System.Func{``0,System.String})">
+            <summary>
+            Write the optional property (name/value).
+            </summary>
+            <param name="writer">The JSON writer.</param>
+            <param name="name">The property name.</param>
+            <param name="value">The property value.</param>
+            <param name="getStringFunc">The value to string func.</param>
         </member>
         <member name="T:Microsoft.OData.Edm.EdmLocation">
             <summary>
@@ -3339,6 +4242,13 @@
             <param name="container">Reference to the calling object.</param>
             <returns>Operation imports belonging to an IEdmEntityContainer.</returns>
         </member>
+        <member name="M:Microsoft.OData.Edm.ExtensionMethods.GetNavigationPropertyBindings(Microsoft.OData.Edm.IEdmEntityContainer)">
+            <summary>
+            Returns navigation property bindings with their corresponding container elements (entity set or singleton)
+            </summary>
+            <param name="container">Reference to the calling object.</param>
+            <returns>Collection of pairs of container element and navigation property bindings.</returns>
+        </member>
         <member name="M:Microsoft.OData.Edm.ExtensionMethods.TypeKind(Microsoft.OData.Edm.IEdmTypeReference)">
             <summary>
             Gets the type kind of the type references definition.
@@ -3556,13 +4466,16 @@
             <param name="type">Reference to the calling object.</param>
             <returns>Alternate Keys of this type.</returns>
         </member>
-        <member name="M:Microsoft.OData.Edm.ExtensionMethods.AddAlternateKeyAnnotation(Microsoft.OData.Edm.EdmModel,Microsoft.OData.Edm.IEdmEntityType,System.Collections.Generic.IDictionary{System.String,Microsoft.OData.Edm.IEdmProperty})">
+        <member name="M:Microsoft.OData.Edm.ExtensionMethods.AddAlternateKeyAnnotation(Microsoft.OData.Edm.EdmModel,Microsoft.OData.Edm.IEdmEntityType,System.Collections.Generic.IDictionary{System.String,Microsoft.OData.Edm.IEdmProperty},System.Boolean)">
             <summary>
             Adds the alternate keys to this entity type.
             </summary>
             <param name="model">The model to be used.</param>
             <param name="type">Reference to the calling object.</param>
             <param name="alternateKey">Dictionary of alias and structural properties for the alternate key.</param>
+            <param name="useCore">A flag to indicate which alternate term to use.
+            If ture, 'Org.OData.Core.V1.AlternateKeys' is used, otherwise, 'OData.Community.Keys.V1.AlternateKeys' is used.
+            </param>
         </member>
         <member name="M:Microsoft.OData.Edm.ExtensionMethods.HasDeclaredKeyProperty(Microsoft.OData.Edm.IEdmEntityType,Microsoft.OData.Edm.IEdmProperty)">
             <summary>
@@ -4585,6 +5498,11 @@
         <member name="M:Microsoft.OData.Edm.Strings.EdmModel_Validator_Semantic_NavigationPropertyWithRecursiveContainmentTargetMustBeOptional(System.Object)">
             <summary>
             A string like "The target multiplicity of the navigation property '{0}' is invalid. If a navigation property has 'ContainsTarget' set to true and declaring entity type of the property is the same or inherits from the target entity type, then the property represents a recursive containment and it must have an optional target represented by a collection or a nullable entity type."
+            </summary>
+        </member>
+        <member name="M:Microsoft.OData.Edm.Strings.EdmModel_Validator_Semantic_RecursiveComplexTypedPropertyMustBeOptional(System.Object)">
+            <summary>
+            A string like "The nullability of the property '{0}' is invalid. If a complex typed property is of the same type (or base type) as its declaring type, then the property represents a recursive containment and the given property must be optional."
             </summary>
         </member>
         <member name="M:Microsoft.OData.Edm.Strings.EdmModel_Validator_Semantic_NavigationPropertyWithRecursiveContainmentSourceMustBeFromZeroOrOne(System.Object)">
@@ -12216,6 +13134,11 @@
             A property is required in an object
             </summary>
         </member>
+        <member name="F:Microsoft.OData.Edm.Validation.EdmErrorCode.RecursiveComplexTypedPropertyMustBeOptional">
+            <summary>
+            A recursive complex-typed property must be optional.
+            </summary>
+        </member>
         <member name="T:Microsoft.OData.Edm.Validation.EdmValidator">
             <summary>
             Collection of validation methods.
@@ -12601,9 +13524,17 @@
             Validates that a key is not defined if there is already a key in the base type.
             </summary>
         </member>
+        <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.EntityTypeInvalidKeyKeyDefinedInAncestor">
+            <summary>
+            Validates that a key is not more than once in a type hierarchy
+            </summary>
+        </member>
         <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.EntityTypeKeyMissingOnEntityType">
             <summary>
             Validates that the entity type has a key.
+            This rule is deprecated as non-abstract entity types no longer require keys if they are only used in singletons
+            or single-valued navigation properties.  Use NavigationSourceTypeHasNoKeys to validate that
+            any entity type used in a collection has an entity key defined.
             </summary>
         </member>
         <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.EntityTypeKeyPropertyMustBelongToEntity">
@@ -12644,6 +13575,12 @@
         <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.StructuralPropertyInvalidPropertyType">
             <summary>
             Validates that the property is of an allowed type.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.RecursiveComplexTypedPropertyMustBeOptional">
+            <summary>
+            Validates that if a complex-typed property has a type or base type that is the same as
+            the complex type, then the complex type is nullable.
             </summary>
         </member>
         <member name="F:Microsoft.OData.Edm.Validation.ValidationRules.NavigationPropertyInvalidOperationMultipleEndsInAssociatedNavigationProperties">
@@ -13734,6 +14671,9 @@
         <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyConstants.Revisions">
             <summary>Org.OData.Core.V1.Revisions</summary>
         </member>
+        <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyConstants.AlternateKeys">
+            <summary>Org.OData.Core.V1.AlternateKeys</summary>
+        </member>
         <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyConstants.VocabularyUrlSuffix">
             <summary>Org.OData.Core.V1.xml file suffix</summary>
         </member>
@@ -13830,6 +14770,21 @@
         <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyModel.PermissionsTerm">
             <summary>
             The Permissions Term.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyModel.AlternateKeysTerm">
+            <summary>
+            The AlternateKeys term.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyModel.AlternateKeyType">
+            <summary>
+            The AlternateKey ComplexType.
+            </summary>
+        </member>
+        <member name="F:Microsoft.OData.Edm.Vocabularies.V1.CoreVocabularyModel.PropertyRefType">
+            <summary>
+            The PropertyRef ComplexType.
             </summary>
         </member>
         <member name="T:Microsoft.OData.Edm.Vocabularies.V1.ValidationVocabularyModel">

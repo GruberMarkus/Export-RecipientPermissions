@@ -16,6 +16,13 @@ _**Breaking:** Notice about breaking change_
 -->
 
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.3" target="_blank">v3.0.3</a> - 2023-06-23
+### Changed
+- Update ExchangeOnlineManagement module to v3.2.0
+### Fixed
+- Indent of script output was not consistent across all tasks
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.2" target="_blank">v3.0.2</a> - 2023-02-28
 ### Fixed
 - ExportResourceDelegates was triggered by the ExportAcceptMessagesOnlyFrom parameter, not by ExportResourceDelegates

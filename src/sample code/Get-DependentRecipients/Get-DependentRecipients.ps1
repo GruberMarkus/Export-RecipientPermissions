@@ -35,7 +35,7 @@ param (
 
 Clear-Host
 
-Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
 Set-Location $PSScriptRoot
 
@@ -77,7 +77,7 @@ if (Test-Path $ExportSummaryFile) { (Remove-Item $ExportSummaryFile) }
 
 
 Write-Host
-Write-Host "Import recipient permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Import recipient permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$RecipientPermissionsFile'"
 $RecipientPermissions = [system.collections.arraylist]::new()
 $RecipientPermissions.AddRange((Import-Csv $RecipientPermissionsFile -Delimiter ';' -Encoding $UTF8Encoding | Sort-Object -Property 'Grantor Primary SMTP'))
@@ -91,12 +91,12 @@ $RecipientPermissions | Add-Member -MemberType NoteProperty -Name 'Edge created'
 
 
 Write-Host
-Write-Host "Filter recipient permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Filter recipient permissions @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $a = $RecipientPermissions.count - 1
 $b = 0
 for ($x = 0; $x -lt $RecipientPermissions.count; $x++) {
     if (($b % $UpdateInterval -eq 0) -or ($b -eq $a)) {
-        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $b, $a, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $b, $a, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($b -eq 0) -or ($b -eq $a)) { Write-Host }
     }
     $b++
@@ -197,20 +197,20 @@ if ($RecipientPermissions.count -le 0) {
 
 
 Write-Host
-Write-Host "Create lookup tables @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
-Write-Host "  Unique IDs for GML node IDs @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Create lookup tables @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+Write-Host "  Unique IDs for GML node IDs @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $UniqueSmtps = (@() + $RecipientPermissions.'Grantor Primary SMTP' + $RecipientPermissions.'Trustee Primary SMTP')
 $GmlIds = @{}
 for ($x = 0; $x -lt $UniqueSmtps.count; $x++) {
     $GmlIds."$($uniquesmtps[$x])" = $x
 }
 
-Write-Host "  RecipientPermissions indexes forech SMTP address @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "  RecipientPermissions indexes forech SMTP address @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $SmtpToRecipientpermissionsIndex = @{}
 
 for ($x = 0; $x -lt $RecipientPermissions.count; $x++) {
     if (($x % $UpdateInterval -eq 0) -or ($x -eq ($RecipientPermissions.count - 1))) {
-        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $x, ($RecipientPermissions.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $x, ($RecipientPermissions.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($x -eq 0) -or ($x -eq ($RecipientPermissions.count - 1))) { Write-Host }
     }
 
@@ -228,13 +228,13 @@ for ($x = 0; $x -lt $RecipientPermissions.count; $x++) {
 
 
 Write-Host
-Write-Host "Import initial recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Import initial recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$InitialRecipientsFile' "
 $InitialRecipients = @(Get-Content $InitialRecipientsFile | Where-Object { $_ -like '*@*' } | Sort-Object -Unique)
 Write-Host '  Match case sensitivity with permissions file'
 for ($x = 0; $x -lt $UniqueSmtps.count; $x++) {
     if (($x % $UpdateInterval -eq 0) -or ($x -eq ($UniqueSmtps.count - 1))) {
-        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $x, ($UniqueSmtps.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $x, ($UniqueSmtps.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($x -eq 0) -or ($x -eq ($UniqueSmtps.count - 1))) { Write-Host }
     }
 
@@ -254,11 +254,11 @@ $AdditionalRecipients = $InitialRecipients
 
 
 Write-Host
-Write-Host "Add metadata to each permission @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Add metadata to each permission @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
 for ($i = 0; $i -lt $RecipientPermissions.count; $i++) {
     if (($i % $UpdateInterval -eq 0) -or ($i -eq ($RecipientPermissions.count - 1))) {
-        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $i, ($RecipientPermissions.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $i, ($RecipientPermissions.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($i -eq 0) -or ($i -eq ($RecipientPermissions.count - 1))) { Write-Host }
     }
 
@@ -280,7 +280,7 @@ for ($i = 0; $i -lt $RecipientPermissions.count; $i++) {
 
 
 Write-Host
-Write-Host "Get GML data from permissions and add additional metadata, recipient by recipient @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Get GML data from permissions and add additional metadata, recipient by recipient @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host '  This may take long, depending on number of permissions and distribution across recipients'
 
 $NodesCreated = @()
@@ -292,7 +292,7 @@ $RootCausePermissionsCount = 0
 
 for ($x = 0; $x -lt $AdditionalRecipients.count; $x++) {
     if (($x % $UpdateInterval -eq 0) -or ($x -eq ($AdditionalRecipients.count - 1))) {
-        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $x, ($AdditionalRecipients.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('  {0:0000000}/{1:0000000} @{2}@' -f $x, ($AdditionalRecipients.count - 1), $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($x -eq 0) -or ($x -eq ($AdditionalRecipients.count - 1))) { Write-Host }
     }
 
@@ -365,7 +365,7 @@ for ($x = 0; $x -lt $AdditionalRecipients.count; $x++) {
 
 
 Write-Host
-Write-Host "Create GML (Graph Modeling Language) file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Create GML (Graph Modeling Language) file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$ExportAllRecipientsGMLFile'"
 $null = $ExportAllRecipientsGMLFileString.add(('node' + [Environment]::NewLine + '[' + [Environment]::NewLine + 'id -32768' + [Environment]::NewLine + 'label "Initial Recipients"' + [Environment]::NewLine + 'isGroup 1' + [Environment]::NewLine + ']'))
 $null = $ExportAllRecipientsGMLFileString.add(('node' + [Environment]::NewLine + '[' + [Environment]::NewLine + 'id -32767' + [Environment]::NewLine + 'label "Additional recipients"' + [Environment]::NewLine + 'isGroup 1' + [Environment]::NewLine + ']'))
@@ -376,13 +376,13 @@ $ExportAllRecipientsGMLFileEdgeString = $null
 
 
 Write-Host
-Write-Host "Export modified recipient permissions file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Export modified recipient permissions file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host '  Filter relevant permissions'
 $a = $RecipientPermissions.Count - 1
 $b = 0
 for ($x = 0; $x -lt $RecipientPermissions.Count; $x++) {
     if (($b % $UpdateInterval -eq 0) -or ($b -eq $a)) {
-        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $b, $a, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz'))) -NoNewline
+        Write-Host (("`b" * 100) + ('    {0:0000000}/{1:0000000} @{2}@' -f $b, $a, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
         if (($b -eq 0) -or ($b -eq $a)) { Write-Host }
     }
     $b++
@@ -397,25 +397,25 @@ $RecipientPermissions | Select-Object * -ExcludeProperty 'GML Source ID', 'GML T
 
 
 Write-Host
-Write-Host "Export list of initial recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Export list of initial recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$ExportInitialRecipientsFile'"
 $InitialRecipients | Out-File $ExportInitialRecipientsFile -Encoding $UTF8Encoding -Force
 
 
 Write-Host
-Write-Host "Export list of additional recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Export list of additional recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$ExportAdditionalRecipientsFile'"
 $AdditionalRecipients[$($InitialRecipients.Count)..$($AdditionalRecipients.count)] | Out-File $ExportAdditionalRecipientsFile -Encoding $UTF8Encoding -Force
 
 
 Write-Host
-Write-Host "Export list of all recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Export list of all recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$ExportAllRecipientsFile'"
 $AdditionalRecipients | Out-File $ExportAllRecipientsFile -Encoding $UTF8Encoding -Force
 
 
 Write-Host
-Write-Host "Create summary @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "Create summary @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  '$ExportSummaryFile'"
 @'
 {0:0000000} initial recipients
@@ -426,4 +426,4 @@ Write-Host "  '$ExportSummaryFile'"
 
 
 Write-Host
-Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz')@"
+Write-Host "End script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
