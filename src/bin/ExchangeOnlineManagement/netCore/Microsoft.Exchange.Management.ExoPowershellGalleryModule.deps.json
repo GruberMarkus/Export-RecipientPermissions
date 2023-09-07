@@ -10,15 +10,15 @@
         "dependencies": {
           "BldSync": "1.0.3",
           "CodeSign.Exchange": "1.3.15",
-          "ExchangeLabBuildTools": "2.1.47",
+          "ExchangeLabBuildTools": "2.1.57",
           "Microsoft.CodeAnalysis.FxCopAnalyzers": "3.3.2",
           "Microsoft.Exchange.Management.AdminApiProvider": "0.0.0",
           "Microsoft.Exchange.Management.RestApiClient": "0.0.0",
           "Microsoft.Internal.Analyzers": "2.9.7",
-          "Microsoft.NETFramework.ReferenceAssemblies": "1.0.0",
+          "Microsoft.NETFramework.ReferenceAssemblies": "1.0.3",
           "Microsoft.Online.CSE.RestApiPowerShellModule.Instrumentation": "0.0.0",
-          "MsBuildRetail.Exchange": "0.0.107",
-          "MsBuild.Exchange": "17.3.64",
+          "MsBuildRetail.Exchange": "0.0.118",
+          "MsBuild.Exchange": "17.3.83",
           "Newtonsoft.Json": "13.0.3",
           "OSS.RoslynAnalysis": "1.4.9",
           "PowerShellStandard.Library": "5.1.1",
@@ -67,7 +67,7 @@
       },
       "BldSync/1.0.3": {},
       "CodeSign.Exchange/1.3.15": {},
-      "ExchangeLabBuildTools/2.1.47": {},
+      "ExchangeLabBuildTools/2.1.57": {},
       "Microsoft.Azure.Cosmos/3.31.2": {
         "dependencies": {
           "Azure.Core": "1.19.0",
@@ -155,7 +155,7 @@
       },
       "Microsoft.CodeAnalysis.VersionCheckAnalyzer/3.3.2": {},
       "Microsoft.CodeQuality.Analyzers/3.3.2": {},
-      "Microsoft.CSharp/4.5.0": {},
+      "Microsoft.CSharp/4.7.0": {},
       "Microsoft.Identity.Client/4.44.0": {
         "runtime": {
           "lib/netcoreapp2.1/Microsoft.Identity.Client.dll": {
@@ -211,7 +211,7 @@
       },
       "Microsoft.IdentityModel.Tokens/6.22.1": {
         "dependencies": {
-          "Microsoft.CSharp": "4.5.0",
+          "Microsoft.CSharp": "4.7.0",
           "Microsoft.IdentityModel.Logging": "6.22.1",
           "System.Security.Cryptography.Cng": "4.5.0"
         },
@@ -520,12 +520,12 @@
       "Microsoft.NETCore.Platforms/2.1.2": {},
       "Microsoft.NETCore.Targets/1.1.0": {},
       "Microsoft.NetFramework.Analyzers/3.3.2": {},
-      "Microsoft.NETFramework.ReferenceAssemblies/1.0.0": {
+      "Microsoft.NETFramework.ReferenceAssemblies/1.0.3": {
         "dependencies": {
-          "Microsoft.NETFramework.ReferenceAssemblies.net461": "1.0.0"
+          "Microsoft.NETFramework.ReferenceAssemblies.net461": "1.0.3"
         }
       },
-      "Microsoft.NETFramework.ReferenceAssemblies.net461/1.0.0": {},
+      "Microsoft.NETFramework.ReferenceAssemblies.net461/1.0.3": {},
       "Microsoft.OData.Client/7.15.0": {
         "dependencies": {
           "Microsoft.OData.Core": "7.15.0"
@@ -736,29 +736,15 @@
           "System.Runtime": "4.3.0"
         }
       },
-      "Microsoft.Win32.Registry/5.0.0": {
+      "Microsoft.Win32.Registry/4.5.0": {
         "dependencies": {
           "System.Security.AccessControl": "6.0.0",
           "System.Security.Principal.Windows": "5.0.0"
-        },
-        "runtime": {
-          "lib/netstandard2.0/Microsoft.Win32.Registry.dll": {
-            "assemblyVersion": "5.0.0.0",
-            "fileVersion": "5.0.20.51904"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win/lib/netstandard2.0/Microsoft.Win32.Registry.dll": {
-            "rid": "win",
-            "assetType": "runtime",
-            "assemblyVersion": "5.0.0.0",
-            "fileVersion": "5.0.20.51904"
-          }
         }
       },
       "Microsoft.Win32.Registry.AccessControl/4.5.0": {
         "dependencies": {
-          "Microsoft.Win32.Registry": "5.0.0",
+          "Microsoft.Win32.Registry": "4.5.0",
           "System.Security.AccessControl": "6.0.0"
         },
         "runtime": {
@@ -792,8 +778,8 @@
           }
         }
       },
-      "MsBuild.Exchange/17.3.64": {},
-      "MsBuildRetail.Exchange/0.0.107": {},
+      "MsBuild.Exchange/17.3.83": {},
+      "MsBuildRetail.Exchange/0.0.118": {},
       "NETStandard.Library/1.6.1": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "2.1.2",
@@ -973,24 +959,11 @@
         }
       },
       "System.Diagnostics.DiagnosticSource/4.6.0": {},
-      "System.Diagnostics.PerformanceCounter/6.0.0": {
-        "dependencies": {
-          "Microsoft.Win32.Registry": "5.0.0",
-          "System.Configuration.ConfigurationManager": "6.0.0",
-          "System.Security.Principal.Windows": "5.0.0"
-        },
+      "System.Diagnostics.PerformanceCounter/7.0.0": {
         "runtime": {
-          "lib/netcoreapp3.1/System.Diagnostics.PerformanceCounter.dll": {
-            "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.21.52210"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win/lib/netcoreapp3.1/System.Diagnostics.PerformanceCounter.dll": {
-            "rid": "win",
-            "assetType": "runtime",
-            "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.21.52210"
+          "lib/netstandard2.0/System.Diagnostics.PerformanceCounter.dll": {
+            "assemblyVersion": "7.0.0.0",
+            "fileVersion": "7.0.22.51805"
           }
         }
       },
@@ -1189,7 +1162,7 @@
       "System.Management/4.5.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "2.1.2",
-          "Microsoft.Win32.Registry": "5.0.0",
+          "Microsoft.Win32.Registry": "4.5.0",
           "System.CodeDom": "4.5.0"
         },
         "runtime": {
@@ -1892,7 +1865,7 @@
       "Microsoft.Exchange.Management.RestApiClient/0.0.0": {
         "dependencies": {
           "Microsoft.Azure.Cosmos": "3.31.2",
-          "Microsoft.CSharp": "4.5.0",
+          "Microsoft.CSharp": "4.7.0",
           "Microsoft.Exchange.Management.AdminApiProvider": "0.0.0",
           "Microsoft.IdentityModel.Authorization": "13.10.8897",
           "Microsoft.OData.Client": "7.15.0",
@@ -1910,7 +1883,7 @@
       },
       "Microsoft.Online.CSE.RestApiPowerShellModule.Instrumentation/0.0.0": {
         "dependencies": {
-          "System.Diagnostics.PerformanceCounter": "6.0.0",
+          "System.Diagnostics.PerformanceCounter": "7.0.0",
           "System.Management.Automation": "6.2.3"
         },
         "runtime": {
@@ -1967,12 +1940,12 @@
       "path": "codesign.exchange/1.3.15",
       "hashPath": "codesign.exchange.1.3.15.nupkg.sha512"
     },
-    "ExchangeLabBuildTools/2.1.47": {
+    "ExchangeLabBuildTools/2.1.57": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-5+u9i5MQu0qwaKNjOETy0ew81hdqHm6kiR7hbm0+bvDXCljCysepdJXdFx6/AwUjyltFXM67JFsxfowHnlBZFA==",
-      "path": "exchangelabbuildtools/2.1.47",
-      "hashPath": "exchangelabbuildtools.2.1.47.nupkg.sha512"
+      "sha512": "sha512-a/0brbtW+UxXqcdjiHKg6LcdaMXFr5PZjBMEmRyJvqFhbANDUNDu87eFRoln1SP0HNTd0v8CnnZqH5e6kUJyvg==",
+      "path": "exchangelabbuildtools/2.1.57",
+      "hashPath": "exchangelabbuildtools.2.1.57.nupkg.sha512"
     },
     "Microsoft.Azure.Cosmos/3.31.2": {
       "type": "package",
@@ -2016,12 +1989,12 @@
       "path": "microsoft.codequality.analyzers/3.3.2",
       "hashPath": "microsoft.codequality.analyzers.3.3.2.nupkg.sha512"
     },
-    "Microsoft.CSharp/4.5.0": {
+    "Microsoft.CSharp/4.7.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-kaj6Wb4qoMuH3HySFJhxwQfe8R/sJsNJnANrvv8WdFPMoNbKY5htfNscv+LHCu5ipz+49m2e+WQXpLXr9XYemQ==",
-      "path": "microsoft.csharp/4.5.0",
-      "hashPath": "microsoft.csharp.4.5.0.nupkg.sha512"
+      "sha512": "sha512-pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA==",
+      "path": "microsoft.csharp/4.7.0",
+      "hashPath": "microsoft.csharp.4.7.0.nupkg.sha512"
     },
     "Microsoft.Identity.Client/4.44.0": {
       "type": "package",
@@ -2107,19 +2080,19 @@
       "path": "microsoft.netframework.analyzers/3.3.2",
       "hashPath": "microsoft.netframework.analyzers.3.3.2.nupkg.sha512"
     },
-    "Microsoft.NETFramework.ReferenceAssemblies/1.0.0": {
+    "Microsoft.NETFramework.ReferenceAssemblies/1.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-7D2TMufjGiowmt0E941kVoTIS+GTNzaPopuzM1/1LSaJAdJdBrVP0SkZW7AgDd0a2U1DjsIeaKG1wxGVBNLDMw==",
-      "path": "microsoft.netframework.referenceassemblies/1.0.0",
-      "hashPath": "microsoft.netframework.referenceassemblies.1.0.0.nupkg.sha512"
+      "sha512": "sha512-vUc9Npcs14QsyOD01tnv/m8sQUnGTGOw1BCmKcv77LBJY7OxhJ+zJF7UD/sCL3lYNFuqmQEVlkfS4Quif6FyYg==",
+      "path": "microsoft.netframework.referenceassemblies/1.0.3",
+      "hashPath": "microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512"
     },
-    "Microsoft.NETFramework.ReferenceAssemblies.net461/1.0.0": {
+    "Microsoft.NETFramework.ReferenceAssemblies.net461/1.0.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-t4HKFwTQk/TkCCe1Sr2veze2QU6/RkRHkSQrZMHo2oFAoPANBg1l93O2Gh+ogqKRLFCRBbInm9hvEeSKVsuepw==",
-      "path": "microsoft.netframework.referenceassemblies.net461/1.0.0",
-      "hashPath": "microsoft.netframework.referenceassemblies.net461.1.0.0.nupkg.sha512"
+      "sha512": "sha512-AmOJZwCqnOCNp6PPcf9joyogScWLtwy0M1WkqfEQ0M9nYwyDD7EX9ZjscKS5iYnyvteX7kzSKFCKt9I9dXA6mA==",
+      "path": "microsoft.netframework.referenceassemblies.net461/1.0.3",
+      "hashPath": "microsoft.netframework.referenceassemblies.net461.1.0.3.nupkg.sha512"
     },
     "Microsoft.OData.Client/7.15.0": {
       "type": "package",
@@ -2170,12 +2143,12 @@
       "path": "microsoft.win32.primitives/4.3.0",
       "hashPath": "microsoft.win32.primitives.4.3.0.nupkg.sha512"
     },
-    "Microsoft.Win32.Registry/5.0.0": {
+    "Microsoft.Win32.Registry/4.5.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-dDoKi0PnDz31yAyETfRntsLArTlVAVzUzCIvvEDsDsucrl33Dl8pIJG06ePTJTI3tGpeyHS9Cq7Foc/s4EeKcg==",
-      "path": "microsoft.win32.registry/5.0.0",
-      "hashPath": "microsoft.win32.registry.5.0.0.nupkg.sha512"
+      "sha512": "sha512-+FWlwd//+Tt56316p00hVePBCouXyEzT86Jb3+AuRotTND0IYn0OO3obs1gnQEs/txEnt+rF2JBGLItTG+Be6A==",
+      "path": "microsoft.win32.registry/4.5.0",
+      "hashPath": "microsoft.win32.registry.4.5.0.nupkg.sha512"
     },
     "Microsoft.Win32.Registry.AccessControl/4.5.0": {
       "type": "package",
@@ -2191,19 +2164,19 @@
       "path": "microsoft.win32.systemevents/6.0.0",
       "hashPath": "microsoft.win32.systemevents.6.0.0.nupkg.sha512"
     },
-    "MsBuild.Exchange/17.3.64": {
+    "MsBuild.Exchange/17.3.83": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-sd/84i0IEcsO5RjU4PfVVKkGZbrjODOTxrdfNCB5+SnMhmzgWuZSz+x6XJQdlO30SsBEwFsfGGYJo4A43wy7RQ==",
-      "path": "msbuild.exchange/17.3.64",
-      "hashPath": "msbuild.exchange.17.3.64.nupkg.sha512"
+      "sha512": "sha512-sMzdNNn6c0jTUfnmrfNWzTb5yiXAu63KrnojBZCRIjvsp2jCptdwuNk5dy2t2bpkmMM5GPXwEs8Zz0ExSTKECQ==",
+      "path": "msbuild.exchange/17.3.83",
+      "hashPath": "msbuild.exchange.17.3.83.nupkg.sha512"
     },
-    "MsBuildRetail.Exchange/0.0.107": {
+    "MsBuildRetail.Exchange/0.0.118": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-9hM7VYDrgJw+FuYChAGxAtjVWw+3cIy+mYOnclbhvDD6C24+z88GdFQ8v3DhFDTDLKyIOFD3jEsbhbNQnjnb0Q==",
-      "path": "msbuildretail.exchange/0.0.107",
-      "hashPath": "msbuildretail.exchange.0.0.107.nupkg.sha512"
+      "sha512": "sha512-Q5IFH0dwZD69Hl+0SOoV2lUTCkgFHLSQIZqRoRZtyMZ93J/xwiZxN9czJVll7xVAsT+KYn+aUwlLtCTqyVqPNw==",
+      "path": "msbuildretail.exchange/0.0.118",
+      "hashPath": "msbuildretail.exchange.0.0.118.nupkg.sha512"
     },
     "NETStandard.Library/1.6.1": {
       "type": "package",
@@ -2422,12 +2395,12 @@
       "path": "system.diagnostics.diagnosticsource/4.6.0",
       "hashPath": "system.diagnostics.diagnosticsource.4.6.0.nupkg.sha512"
     },
-    "System.Diagnostics.PerformanceCounter/6.0.0": {
+    "System.Diagnostics.PerformanceCounter/7.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-gbeE5tNp/oB7O8kTTLh3wPPJCxpNOphXPTWVs1BsYuFOYapFijWuh0LYw1qnDo4gwDUYPXOmpTIhvtxisGsYOQ==",
-      "path": "system.diagnostics.performancecounter/6.0.0",
-      "hashPath": "system.diagnostics.performancecounter.6.0.0.nupkg.sha512"
+      "sha512": "sha512-L+zIMEaXp1vA4wZk1KLMpk6tvU0xy94R0IfmhkmTWeC4KwShsmAfbg5I19LgjsCTYp6GVdXZ2aHluVWL0QqBdA==",
+      "path": "system.diagnostics.performancecounter/7.0.0",
+      "hashPath": "system.diagnostics.performancecounter.7.0.0.nupkg.sha512"
     },
     "System.Diagnostics.Tools/4.3.0": {
       "type": "package",

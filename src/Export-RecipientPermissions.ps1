@@ -513,6 +513,10 @@ $ConnectExchange = {
                         $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
                     }
 
+                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
+                        $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
+                    }
+
                     if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
                         $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
                     }

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>ExchangeOnlineManagement</id>
-    <version>3.2.0</version>
+    <version>3.3.0</version>
     <authors>Microsoft Corporation</authors>
     <owners>Microsoft Corporation</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -12,6 +12,15 @@ Please check the documentation here - https://aka.ms/exov3-module.
 For issues related to the module, contact Microsoft support.</description>
     <releaseNotes>---------------------------------------------------------------------------------------------
 What is new in this release:
+
+v3.3.0 :
+    1.  Support to skip loading cmdlet help files with Connect-ExchangeOnline.
+    2.  Global variable EXO_LastExecutionStatus can now be used to check the status of the last cmdlet that was executed.
+    3.  Bug fixes in Connect-ExchangeOnline and Connect-IPPSSession.
+    4.  Support of user controls enablement by policy for features that are onboarded to Viva feature access management.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
 
 v3.2.0 :
     1.  General Availability of new cmdlets:
@@ -29,9 +38,6 @@ v3.2.0 :
     3.  Support to get REST connection informations from Get-ConnectionInformation cmdlet and disconnect REST connections using Disconnect-ExchangeOnline cmdlet for specific connection(s).
     4.  Support to sign the temporary generated module with a client certificate to use the module in all PowerShell execution policies.
     5.  Bug fixes in Connect-ExchangeOnline.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v3.1.0 :
     1.  Support for providing an Access Token with Connect-ExchangeOnline.

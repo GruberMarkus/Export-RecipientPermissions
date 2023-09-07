@@ -8,7 +8,7 @@ else # Desktop
     '.\netFramework\ExchangeOnlineManagement.psm1'
 }
 FunctionsToExport = @('Connect-ExchangeOnline', 'Connect-IPPSSession', 'Disconnect-ExchangeOnline')
-ModuleVersion = '3.2.0'
+ModuleVersion = '3.3.0'
 GUID = 'B5ECED50-AFA4-455B-847A-D8FB64140A22'
 Author = 'Microsoft Corporation'
 CompanyName = 'Microsoft Corporation'
@@ -37,7 +37,6 @@ FileList = if($PSEdition -eq 'Core')
         '.\netCore\Microsoft.Online.CSE.RestApiPowerShellModule.Instrumentation.dll',
         '.\netCore\Microsoft.Spatial.dll',
         '.\netCore\Microsoft.Win32.Registry.AccessControl.dll',
-        '.\netCore\Microsoft.Win32.Registry.dll',
         '.\netCore\Microsoft.Win32.SystemEvents.dll',
         '.\netCore\msvcp140.dll',
         '.\netCore\Newtonsoft.Json.dll',
@@ -89,6 +88,15 @@ PrivateData = @{
 ---------------------------------------------------------------------------------------------
 What is new in this release:
 
+v3.3.0 :
+    1.  Support to skip loading cmdlet help files with Connect-ExchangeOnline.
+    2.  Global variable EXO_LastExecutionStatus can now be used to check the status of the last cmdlet that was executed.
+    3.  Bug fixes in Connect-ExchangeOnline and Connect-IPPSSession.
+    4.  Support of user controls enablement by policy for features that are onboarded to Viva feature access management.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
+
 v3.2.0 :
     1.  General Availability of new cmdlets:
         -  Updating Briefing Email Settings of a tenant (Get-DefaultTenantBriefingConfig and Set-DefaultTenantBriefingConfig)
@@ -105,9 +113,6 @@ v3.2.0 :
     3.  Support to get REST connection informations from Get-ConnectionInformation cmdlet and disconnect REST connections using Disconnect-ExchangeOnline cmdlet for specific connection(s).
     4.  Support to sign the temporary generated module with a client certificate to use the module in all PowerShell execution policies.
     5.  Bug fixes in Connect-ExchangeOnline.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v3.1.0 :
     1.  Support for providing an Access Token with Connect-ExchangeOnline.

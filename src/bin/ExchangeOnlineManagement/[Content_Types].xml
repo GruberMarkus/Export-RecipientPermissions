@@ -6,8 +6,8 @@
   <Default Extension="psd1" ContentType="application/octet" />
   <Default Extension="txt" ContentType="application/octet" />
   <Default Extension="xml" ContentType="application/octet" />
-  <Default Extension="psm1" ContentType="application/octet" />
   <Default Extension="ps1" ContentType="application/octet" />
+  <Default Extension="psm1" ContentType="application/octet" />
   <Default Extension="json" ContentType="application/octet" />
   <Default Extension="nuspec" ContentType="application/octet" />
 </Types>

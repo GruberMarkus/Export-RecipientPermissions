@@ -19,11 +19,11 @@
         <maml:name>Get-ConnectionInformation</maml:name>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ConnectionId</maml:name>
-          <maml:Description>
-            <maml:para>Note : This parameter is available in version 3.2.0-Preview2 or later of the module.</maml:para>
+          <maml:description>
+            <maml:para>Note : This parameter is available in version 3.2.0 or later of the module.</maml:para>
             <maml:para>The ConnectionId parameter filters the connections by ConnectionId. ConnectionId is a GUID value in the output of the Get-ConnectionInformation cmdlet that uniquely identifies a connection, even if you have multiple connections open. You can specify multiple ConnectionId values separated by commas.</maml:para>
             <maml:para>Don't use this parameter with the ModulePrefix parameter.</maml:para>
-          </maml:Description>
+          </maml:description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -36,12 +36,12 @@
         <maml:name>Get-ConnectionInformation</maml:name>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ModulePrefix</maml:name>
-          <maml:Description>
-            <maml:para>Note : This parameter is available in version 3.2.0-Preview2 or later of the module.</maml:para>
+          <maml:description>
+            <maml:para>Note : This parameter is available in version 3.2.0 or later of the module.</maml:para>
             <maml:para>The ModulePrefix parameter filters the connections by ModulePrefix. When you use the Prefix parameter with the Connect-ExchangeOnline cmdlet, the specified text is added to the names of all Exchange Online cmdlets (for example, Get-InboundConnector becomes Get-ContosoInboundConnector). The ModulePrefix value is visible in the output of the Get-ConnectionInformation cmdlet. You can specify multiple ModulePrefix values separated by commas.</maml:para>
             <maml:para>This parameter is meaningful only for connections that were created with the Prefix parameter.</maml:para>
             <maml:para>Don't use this parameter with the ConnectionId parameter.</maml:para>
-          </maml:Description>
+          </maml:description>
           <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
           <dev:type>
             <maml:name>String[]</maml:name>
@@ -54,11 +54,11 @@
     <command:parameters>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ConnectionId</maml:name>
-        <maml:Description>
-          <maml:para>Note : This parameter is available in version 3.2.0-Preview2 or later of the module.</maml:para>
+        <maml:description>
+          <maml:para>Note : This parameter is available in version 3.2.0 or later of the module.</maml:para>
           <maml:para>The ConnectionId parameter filters the connections by ConnectionId. ConnectionId is a GUID value in the output of the Get-ConnectionInformation cmdlet that uniquely identifies a connection, even if you have multiple connections open. You can specify multiple ConnectionId values separated by commas.</maml:para>
           <maml:para>Don't use this parameter with the ModulePrefix parameter.</maml:para>
-        </maml:Description>
+        </maml:description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
@@ -68,12 +68,12 @@
       </command:parameter>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ModulePrefix</maml:name>
-        <maml:Description>
-          <maml:para>Note : This parameter is available in version 3.2.0-Preview2 or later of the module.</maml:para>
+        <maml:description>
+          <maml:para>Note : This parameter is available in version 3.2.0 or later of the module.</maml:para>
           <maml:para>The ModulePrefix parameter filters the connections by ModulePrefix. When you use the Prefix parameter with the Connect-ExchangeOnline cmdlet, the specified text is added to the names of all Exchange Online cmdlets (for example, Get-InboundConnector becomes Get-ContosoInboundConnector). The ModulePrefix value is visible in the output of the Get-ConnectionInformation cmdlet. You can specify multiple ModulePrefix values separated by commas.</maml:para>
           <maml:para>This parameter is meaningful only for connections that were created with the Prefix parameter.</maml:para>
           <maml:para>Don't use this parameter with the ConnectionId parameter.</maml:para>
-        </maml:Description>
+        </maml:description>
         <command:parameterValue required="true" variableLength="false">String[]</command:parameterValue>
         <dev:type>
           <maml:name>String[]</maml:name>
