@@ -16,7 +16,7 @@ _**Breaking:** Notice about breaking change_
 -->
 
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.0.3" target="_blank">v3.1.0</a> - 2023-09-07
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.1.0" target="_blank">v3.1.0</a> - 2023-09-07
 ### Changed
 - Update ExchangeOnlineManagement module to v3.3.0
 
