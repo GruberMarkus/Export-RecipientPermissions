@@ -19,6 +19,11 @@
             Flag which indicates whether or not PII is shown in logs. False by default.
             </summary>
         </member>
+        <member name="P:Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact">
+            <summary>
+            Flag which indicates whether or not complete <see cref="T:Microsoft.IdentityModel.Logging.SecurityArtifact"/> is shown in logs when <see cref="P:Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII"/> is set to true. False by default.
+            </summary>
+        </member>
         <member name="P:Microsoft.IdentityModel.Logging.IdentityModelEventSource.HiddenPIIString">
             <summary>
             String that is used in place of any arguments to log messages if the 'ShowPII' flag is set to false.
@@ -180,6 +185,20 @@
             </summary>
             <param name="key"> The name of the telemetry.</param>
             <returns> true if the key is successfully removed; otherwise, false.</returns>
+        </member>
+        <member name="T:Microsoft.IdentityModel.Logging.ISafeLogSecurityArtifact">
+            <summary>
+            Interface that provides an unsafe method to log a security artifact.
+            </summary>
+            <remarks>
+            SecurityToken and encoded token are considered as SecurityArtifacts.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Logging.ISafeLogSecurityArtifact.UnsafeToString">
+            <summary>
+            Returns a string that represents the complete security artifact.
+            This may include sensitive information and should only be used for debugging purposes.
+            </summary>
         </member>
         <member name="T:Microsoft.IdentityModel.Logging.LoggerContext">
             <summary>
@@ -454,6 +473,14 @@
             that argument in cleartext, regardless of the <see cref="P:Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII"/> flag value.
             </remarks>
         </member>
+        <member name="M:Microsoft.IdentityModel.Logging.LogHelper.MarkAsSecurityArtifact(System.Object,System.Func{System.Object,System.String})">
+            <summary>
+            Marks a log message argument (<paramref name="arg"/>) as SecurityArtifact.
+            </summary>
+            <param name="arg">A log message argument to be marked as SecurityArtifact.</param>
+            <param name="callback">A callback function to log the security artifact safely.</param>
+            <returns>An argument marked as SecurityArtifact.</returns>
+        </member>
         <member name="M:Microsoft.IdentityModel.Logging.LogHelper.WriteEntry(Microsoft.IdentityModel.Abstractions.EventLogLevel,System.Exception,System.String,System.Object[])">
             <summary>
             Creates a <see cref="T:Microsoft.IdentityModel.Abstractions.LogEntry"/> by using the provided event level, exception argument, string argument and arguments list.
@@ -489,7 +516,40 @@
             <summary>
             Returns a string that represents the <see cref="P:Microsoft.IdentityModel.Logging.NonPII.Argument"/>.
             </summary>
-            <returns><c>Null</c> if the <see cref="P:Microsoft.IdentityModel.Logging.NonPII.Argument"/> is <c>null</c>, otherwise calls <see cref="M:System.ValueType.ToString"/> method of the <see cref="P:Microsoft.IdentityModel.Logging.NonPII.Argument"/>.</returns>
+            <returns><c>Null</c> if the <see cref="P:Microsoft.IdentityModel.Logging.NonPII.Argument"/> is <see langword="null"/>, otherwise calls <see cref="M:System.ValueType.ToString"/> method of the <see cref="P:Microsoft.IdentityModel.Logging.NonPII.Argument"/>.</returns>
+        </member>
+        <member name="T:Microsoft.IdentityModel.Logging.SecurityArtifact">
+            <summary>
+            An internal structure that is used to mark an argument as SecurityArtifact.
+            Arguments wrapped with a SecurityArtifact structure will be considered as a SecurityArtifact in the message logging process.
+            </summary>
+            <remarks>
+            SecurityToken and encoded token are considered as SecurityArtifacts.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Logging.SecurityArtifact.Argument">
+            <summary>
+            Argument wrapped with a <see cref="T:Microsoft.IdentityModel.Logging.SecurityArtifact"/> structure is considered as SecurityArtifact in the message logging process.
+            </summary>
+        </member>
+        <member name="F:Microsoft.IdentityModel.Logging.SecurityArtifact._callback">
+            <summary>
+            The ToString callback delegate that return a disarmed SecurityArtifact.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Logging.SecurityArtifact.#ctor(System.Object,System.Func{System.Object,System.String})">
+            <summary>
+            Creates an instance of <see cref="T:Microsoft.IdentityModel.Logging.SecurityArtifact"/> that wraps the <paramref name="argument"/>.
+            </summary>
+            <param name="argument">An argument that is considered as SecurityArtifact.</param>
+            <param name="toStringCallback">A ToString callback.</param>
+            <exception cref="T:System.ArgumentNullException">if <paramref name="argument"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Logging.SecurityArtifact.ToString">
+            <summary>
+            Returns a string that represents the <see cref="P:Microsoft.IdentityModel.Logging.SecurityArtifact.Argument"/>.
+            </summary>
+            <returns><c>Null</c> if the <see cref="P:Microsoft.IdentityModel.Logging.SecurityArtifact.Argument"/> is <see langword="null"/>, otherwise calls <see cref="M:System.ValueType.ToString"/> method of the <see cref="P:Microsoft.IdentityModel.Logging.SecurityArtifact.Argument"/>.</returns>
         </member>
         <member name="T:Microsoft.IdentityModel.Logging.TextWriterEventListener">
             <summary>
@@ -527,6 +587,211 @@
         <member name="M:Microsoft.IdentityModel.Logging.TextWriterEventListener.Dispose">
             <summary>
             Releases all resources used by the current instance of the <see cref="T:Microsoft.IdentityModel.Logging.TextWriterEventListener"/> class.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute">
+            <summary>
+            Indicates that the specified method requires dynamic access to code that is not referenced
+            statically, for example through <see cref="N:System.Reflection"/>.
+            </summary>
+            <remarks>
+            This allows tools to understand which methods are unsafe to call when removing unreferenced
+            code from an application.
+            </remarks>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute"/> class
+            with the specified message.
+            </summary>
+            <param name="message">
+            A message that contains information about the usage of unreferenced code.
+            </param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.Message">
+            <summary>
+            Gets a message that contains information about the usage of unreferenced code.
+            </summary>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute.Url">
+            <summary>
+            Gets or sets an optional URL that contains more information about the method,
+            why it requires unreferenced code, and what options a consumer has to deal with it.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute">
+            <summary>
+            Suppresses reporting of a specific rule violation, allowing multiple suppressions on a
+            single code artifact.
+            </summary>
+            <remarks>
+            <see cref="T:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"/> is different than
+            <see cref="T:System.Diagnostics.CodeAnalysis.SuppressMessageAttribute"/> in that it doesn't have a
+            <see cref="T:System.Diagnostics.ConditionalAttribute"/>. So it is always preserved in the compiled assembly.
+            </remarks>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.#ctor(System.String,System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"/>
+            class, specifying the category of the tool and the identifier for an analysis rule.
+            </summary>
+            <param name="category">The category for the attribute.</param>
+            <param name="checkId">The identifier of the analysis rule the attribute applies to.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Category">
+            <summary>
+            Gets the category identifying the classification of the attribute.
+            </summary>
+            <remarks>
+            The <see cref="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Category"/> property describes the tool or tool analysis category
+            for which a message suppression attribute applies.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.CheckId">
+            <summary>
+            Gets the identifier of the analysis tool rule to be suppressed.
+            </summary>
+            <remarks>
+            Concatenated together, the <see cref="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Category"/> and <see cref="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.CheckId"/>
+            properties form a unique check identifier.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Scope">
+            <summary>
+            Gets or sets the scope of the code that is relevant for the attribute.
+            </summary>
+            <remarks>
+            The Scope property is an optional argument that specifies the metadata scope for which
+            the attribute is relevant.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Target">
+            <summary>
+            Gets or sets a fully qualified path that represents the target of the attribute.
+            </summary>
+            <remarks>
+            The <see cref="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Target"/> property is an optional argument identifying the analysis target
+            of the attribute. An example value is "System.IO.Stream.ctor():System.Void".
+            Because it is fully qualified, it can be long, particularly for targets such as parameters.
+            The analysis tool user interface should be capable of automatically formatting the parameter.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.MessageId">
+            <summary>
+            Gets or sets an optional argument expanding on exclusion criteria.
+            </summary>
+            <remarks>
+            The <see cref="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.MessageId"/> property is an optional argument that specifies additional
+            exclusion where the literal metadata target is not sufficiently precise. For example,
+            the <see cref="T:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute"/> cannot be applied within a method,
+            and it may be desirable to suppress a violation against a statement in the method that will
+            give a rule violation, but not against all statements in the method.
+            </remarks>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute.Justification">
+            <summary>
+            Gets or sets the justification for suppressing the code analysis message.
+            </summary>
+        </member>
+        <member name="M:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute.#ctor(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes)">
+            <summary>
+            Initializes a new instance of the <see cref="T:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute"/> class
+            with the specified member types.
+            </summary>
+            <param name="memberTypes">The types of members dynamically accessed.</param>
+        </member>
+        <member name="P:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute.MemberTypes">
+            <summary>
+            Gets the <see cref="T:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes"/> which specifies the type
+            of members dynamically accessed.
+            </summary>
+        </member>
+        <member name="T:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes">
+             <summary>
+             Specifies the types of members that are dynamically accessed.
+            
+             This enumeration has a <see cref="T:System.FlagsAttribute"/> attribute that allows a
+             bitwise combination of its member values.
+             </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None">
+            <summary>
+            Specifies no members.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor">
+            <summary>
+            Specifies the default, parameterless public constructor.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors">
+            <summary>
+            Specifies all public constructors.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicConstructors">
+            <summary>
+            Specifies all non-public constructors.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods">
+            <summary>
+            Specifies all public methods.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods">
+            <summary>
+            Specifies all non-public methods.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicFields">
+            <summary>
+            Specifies all public fields.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicFields">
+            <summary>
+            Specifies all non-public fields.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicNestedTypes">
+            <summary>
+            Specifies all public nested types.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicNestedTypes">
+            <summary>
+            Specifies all non-public nested types.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties">
+            <summary>
+            Specifies all public properties.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties">
+            <summary>
+            Specifies all non-public properties.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicEvents">
+            <summary>
+            Specifies all public events.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicEvents">
+            <summary>
+            Specifies all non-public events.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.Interfaces">
+            <summary>
+            Specifies all interfaces implemented by the type.
+            </summary>
+        </member>
+        <member name="F:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All">
+            <summary>
+            Specifies all members.
             </summary>
         </member>
     </members>

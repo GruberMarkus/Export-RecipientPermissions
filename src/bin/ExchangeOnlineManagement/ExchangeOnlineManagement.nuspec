@@ -2,25 +2,29 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>ExchangeOnlineManagement</id>
-    <version>3.3.0</version>
+    <version>3.4.0</version>
     <authors>Microsoft Corporation</authors>
     <owners>Microsoft Corporation</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>http://aka.ms/azps-license</licenseUrl>
-    <description>This is a General Availability (GA) release of the Exchange Online Powershell V3 module. Exchange Online cmdlets in this module are REST-backed and do not require Basic Authentication to be enabled in WinRM.
+    <description>This is a General Availability (GA) release of the Exchange Online Powershell V3 module. Exchange Online cmdlets in this module are REST-backed and do not require Basic Authentication to be enabled in WinRM. REST-based connections in Windows require the PowerShellGet module, and by dependency, the PackageManagement module.
 Please check the documentation here - https://aka.ms/exov3-module.
 For issues related to the module, contact Microsoft support.</description>
     <releaseNotes>---------------------------------------------------------------------------------------------
 What is new in this release:
+
+v3.4.0 :
+    1.  Bug fixes in Connect-ExchangeOnline, Get-EXORecipientPermission and Get-EXOMailboxFolderPermission.
+    2.  Support to use Constrained Language Mode(CLM) using SigningCertificate parameter.
+
+---------------------------------------------------------------------------------------------
+Previous Releases:
 
 v3.3.0 :
     1.  Support to skip loading cmdlet help files with Connect-ExchangeOnline.
     2.  Global variable EXO_LastExecutionStatus can now be used to check the status of the last cmdlet that was executed.
     3.  Bug fixes in Connect-ExchangeOnline and Connect-IPPSSession.
     4.  Support of user controls enablement by policy for features that are onboarded to Viva feature access management.
-
----------------------------------------------------------------------------------------------
-Previous Releases:
 
 v3.2.0 :
     1.  General Availability of new cmdlets:

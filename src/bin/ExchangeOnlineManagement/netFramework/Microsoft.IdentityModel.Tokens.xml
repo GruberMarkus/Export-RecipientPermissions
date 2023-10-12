@@ -172,6 +172,9 @@
             <exception cref="T:System.ObjectDisposedException">If <see cref="M:Microsoft.IdentityModel.Tokens.AsymmetricSignatureProvider.Dispose(System.Boolean)"/> has been called. </exception>
             <remarks>Verify is thread safe.</remarks>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.AsymmetricSignatureProvider.Verify(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc/>
+        </member>
         <member name="M:Microsoft.IdentityModel.Tokens.AsymmetricSignatureProvider.Dispose(System.Boolean)">
             <summary>
             Calls to release managed resources.
@@ -221,7 +224,7 @@
         </member>
         <member name="M:Microsoft.IdentityModel.Tokens.Base64UrlEncoder.DecodeBytes(System.String)">
             <summary>
-             Converts the specified string, which encodes binary data as base-64-url digits, to an equivalent 8-bit unsigned integer array.</summary>
+            Converts the specified string, base-64-url encoded to utf8 bytes.</summary>
             <param name="str">base64Url encoded string.</param>
             <returns>UTF8 bytes.</returns>
         </member>
@@ -245,6 +248,29 @@
         <member name="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.SigningKeys">
             <summary>
             Gets the <see cref="T:System.Collections.Generic.ICollection`1"/> that the IdentityProvider indicates are to be used in order to sign tokens.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.TokenEndpoint">
+            <summary>
+            Gets or sets the token endpoint specified via the metadata endpoint.
+            This is the fed:PassiveRequestorEndpoint in WS-Federation, https://docs.oasis-open.org/wsfed/federation/v1.2/os/ws-federation-1.2-spec-os.html#:~:text=fed%3ASecurityTokenServiceType/fed%3APassiveRequestorEndpoint
+            Or the token_endpoint in the OIDC metadata.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.ActiveTokenEndpoint">
+            <summary>
+            Gets or sets the token endpoint specified via the metadata endpoint.
+            This is the fed:SecurityTokenServiceType in WS-Federation, http://docs.oasis-open.org/wsfed/federation/v1.2/os/ws-federation-1.2-spec-os.html#:~:text=fed%3ASecurityTokenSerivceEndpoint
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.TokenDecryptionKeys">
+            <summary>
+            Gets the <see cref="T:System.Collections.Generic.ICollection`1"/> that the IdentityProvider indicates are to be used in order to decrypt tokens.
+            </summary>
+        </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.BaseConfigurationComparer">
+            <summary>
+            Comparison class for a <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/>.
             </summary>
         </member>
         <member name="T:Microsoft.IdentityModel.Tokens.BaseConfigurationManager">
@@ -272,6 +298,17 @@
             5 minutes is the default time interval that must pass for <see cref="M:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.RequestRefresh"/> to obtain a new configuration.
             </summary>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.#ctor">
+            <summary>
+            The default constructor.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.#ctor(Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions)">
+            <summary>
+            Constructor.
+            </summary>
+            <param name="options">The event queue task creation option.</param>
+        </member>
         <member name="M:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.GetBaseConfigurationAsync(System.Threading.CancellationToken)">
             <summary>
             Obtains an updated version of <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/> if the appropriate refresh interval has passed.
@@ -281,6 +318,12 @@
             <returns>Configuration of type Configuration.</returns>
             <remarks>This method on the base class throws a <see cref="T:System.NotImplementedException"/> as it is meant to be
             overridden by the class that extends it.</remarks>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.GetValidLkgConfigurations">
+            <summary>
+            Gets all valid last known good configurations.
+            </summary>
+            <returns>A collection of all valid last known good configurations.</returns>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.BaseConfigurationManager.LastKnownGoodConfiguration">
             <summary>
@@ -404,6 +447,37 @@
             </summary>
             <param name="algorithm">the decompression algorithm.</param>
             <returns>a <see cref="T:Microsoft.IdentityModel.Tokens.ICompressionProvider"/>.</returns>
+        </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions">
+            <summary>
+            Defines the options which can be used to configure the internal LKG configuration cache.
+            See <see cref="T:Microsoft.IdentityModel.Tokens.EventBasedLRUCache`2"/> for more details.
+            </summary>
+        </member>
+        <member name="F:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions.DefaultLKGConfigurationSizeLimit">
+            <summary>
+            10 is the default size limit of the cache (in number of items) for last known good configuration.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions.BaseConfigurationComparer">
+            <summary>
+            Gets or sets the BaseConfgiurationComparer that to compare <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions.LastKnownGoodConfigurationSizeLimit">
+            <summary>
+            The size limit of the cache (in number of items) for last known good configuration.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions.TaskCreationOptions">
+            <summary>
+            The event queue task creation option, default to None instead of LongRunning as LongRunning will always start a task on a new thread instead of a thread from ThreadPool.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.Configuration.LKGConfigurationCacheOptions.RemoveExpiredValues">
+            <summary>
+            Whether or not to remove expired items.
+            </summary>
         </member>
         <member name="T:Microsoft.IdentityModel.Tokens.CryptoProviderCache">
             <summary>
@@ -1567,6 +1641,37 @@
             FOR TESTING PURPOSES ONLY.
             </summary>
         </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException">
+            <summary>
+            Throw this exception when a received <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> has invalid arguments.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenException"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenException"/> class with a specified error message.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenException"/> class with a specified error message
+            and a reference to the inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+            <param name="innerException">The <see cref="T:System.Exception"/> that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenArgumentException"/> class.
+            </summary>
+            <param name="info">the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data.</param>
+            <param name="context">The contextual information about the source or destination.</param>
+        </member>
         <member name="T:Microsoft.IdentityModel.Tokens.SecurityTokenCompressionFailedException">
             <summary>
             Thrown when JWE compression fails.
@@ -2068,6 +2173,37 @@
             <param name="info">the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data.</param>
             <param name="context">The contextual information about the source or destination.</param>
         </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException">
+            <summary>
+            Represents a <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> exception when the token is malformed.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException"/> class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException"/> class with a specified error message.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException"/> class with a specified error message
+            and a reference to the inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+            <param name="innerException">The <see cref="T:System.Exception"/> that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenMalformedException"/> class.
+            </summary>
+            <param name="info">the <see cref="T:System.Runtime.Serialization.SerializationInfo"/> that holds the serialized object data.</param>
+            <param name="context">The contextual information about the source or destination.</param>
+        </member>
         <member name="T:Microsoft.IdentityModel.Tokens.SecurityTokenNoExpirationException">
             <summary>
             This exception is thrown when a security is missing an ExpirationTime.
@@ -2227,6 +2363,9 @@
             and when validation errors exist over the security token. This exception is not intended to be used as a signal
             to refresh keys.
             </summary>
+            <remarks>
+            This exception type is now considered obsolete and will be removed in the next major version (7.0.0).
+            </remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.SecurityTokenUnableToValidateException.ValidationFailure">
             <summary>
@@ -2509,27 +2648,10 @@
             Validators meant to be kept internal
             </summary>
         </member>
-        <member name="M:Microsoft.IdentityModel.Tokens.InternalValidators.ValidateLifetimeAndIssuerAfterSignatureNotValidatedJwt(Microsoft.IdentityModel.Tokens.SecurityToken,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,Microsoft.IdentityModel.Tokens.TokenValidationParameters,Microsoft.IdentityModel.Tokens.BaseConfiguration,System.Text.StringBuilder,System.Int32,System.Int32)">
+        <member name="M:Microsoft.IdentityModel.Tokens.InternalValidators.ValidateAfterSignatureFailed(Microsoft.IdentityModel.Tokens.SecurityToken,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.Collections.Generic.IEnumerable{System.String},Microsoft.IdentityModel.Tokens.TokenValidationParameters,Microsoft.IdentityModel.Tokens.BaseConfiguration)">
             <summary>
-            Called after signature validation has failed. Will always throw an exception.
+            Called after signature validation has failed to avoid a metadata refresh
             </summary>
-            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenSignatureKeyNotFoundException">
-            If the lifetime and issuer are valid
-            </exception>
-            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenUnableToValidateException">
-            If the lifetime or issuer are invalid
-            </exception>
-        </member>
-        <member name="M:Microsoft.IdentityModel.Tokens.InternalValidators.ValidateLifetimeAndIssuerAfterSignatureNotValidatedSaml(Microsoft.IdentityModel.Tokens.SecurityToken,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,Microsoft.IdentityModel.Tokens.TokenValidationParameters,System.Text.StringBuilder)">
-            <summary>
-            Called after signature validation has failed. Will always throw an exception.
-            </summary>
-            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenSignatureKeyNotFoundException">
-            If the lifetime and issuer are valid
-            </exception>
-            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenUnableToValidateException">
-            If the lifetime or issuer are invalid
-            </exception>
         </member>
         <member name="T:Microsoft.IdentityModel.Tokens.ISecurityTokenValidator">
             <summary>
@@ -3213,6 +3335,9 @@
             Base class for security token.
             </summary>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SecurityToken.UnsafeToString">
+            <inheritdoc/>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.SecurityToken.Id">
             <summary>
             This must be overridden to get the Id of this <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.
@@ -3508,6 +3633,25 @@
             <param name="signature">signature to compare against.</param>
             <returns>true if the computed signature matches the signature parameter, false otherwise.</returns>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SignatureProvider.Verify(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Verifies that a signature created over the 'input' matches the signature. Using <see cref="T:Microsoft.IdentityModel.Tokens.SecurityKey"/> and 'algorithm' passed to <see cref="M:Microsoft.IdentityModel.Tokens.SignatureProvider.#ctor(Microsoft.IdentityModel.Tokens.SecurityKey,System.String)"/>.
+            </summary>
+            <param name="input">The bytes to verify.</param>
+            <param name="inputOffset">offset in to input bytes to caculate hash.</param>
+            <param name="inputLength">number of bytes of signature to use.</param>
+            <param name="signature">signature to compare against.</param>
+            <param name="signatureOffset">offset into signature array.</param>
+            <param name="signatureLength">how many bytes to verfiy.</param>
+            <returns>true if computed signature matches the signature parameter, false otherwise.</returns>
+            <exception cref="T:System.ArgumentNullException">'input' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">'signature' is null.</exception>
+            <exception cref="T:System.ArgumentException">'input.Length' == 0.</exception>
+            <exception cref="T:System.ArgumentException">'signature.Length' == 0. </exception>
+            <exception cref="T:System.ArgumentException">'length &lt; 1'</exception>
+            <exception cref="T:System.ArgumentException">'offset + length &gt; input.Length'</exception>
+            <exception cref="T:System.ObjectDisposedException"><see cref="M:Microsoft.IdentityModel.Tokens.SignatureProvider.Dispose(System.Boolean)"/> has been called.</exception>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.SignatureProvider.WillCreateSignatures">
             <summary>
             Gets or sets a bool indicating if this <see cref="T:Microsoft.IdentityModel.Tokens.SignatureProvider"/> is expected to create signatures.
@@ -3648,6 +3792,11 @@
             Provides signing and verifying operations using a <see cref="T:Microsoft.IdentityModel.Tokens.SymmetricSecurityKey"/> and specifying an algorithm.
             </summary>
         </member>
+        <member name="F:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider._expectedSignatureSizeInBytes">
+            <summary>
+            Mapping from algorithm to the expected signature size in bytes.
+            </summary>
+        </member>
         <member name="F:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider.DefaultMinimumSymmetricKeySizeInBits">
             <summary>
             This is the minimum <see cref="T:Microsoft.IdentityModel.Tokens.SymmetricSecurityKey"/>.KeySize when creating and verifying signatures.
@@ -3763,6 +3912,24 @@
             <exception cref="T:System.ObjectDisposedException"><see cref="M:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider.Dispose(System.Boolean)"/> has been called.</exception>
             <exception cref="T:System.InvalidOperationException">If the internal <see cref="T:System.Security.Cryptography.KeyedHashAlgorithm"/> is null. This can occur if a derived type deletes it or does not create it.</exception>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider.Verify(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider.Verify(System.Byte[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Int32,System.String)">
+            <summary>
+            This internal method is called from the AuthenticatedEncryptionProvider which passes in the algorithm that defines the size expected for the signature.
+            The reason is the way the AuthenticationTag is validated.
+            For example when "A128CBC-HS256" is specified, SHA256 will used to create the HMAC and 32 bytes will be generated, but only the first 16 will be validated.
+            </summary>
+            <param name="input">The bytes to verify.</param>
+            <param name="inputOffset">offset in to input bytes to caculate hash.</param>
+            <param name="inputLength">number of bytes of signature to use.</param>
+            <param name="signature">signature to compare against.</param>
+            <param name="signatureOffset">offset into signature array.</param>
+            <param name="signatureLength">how many bytes to verfiy.</param>
+            <param name="algorithm">algorithm passed by AuthenticatedEncryptionProvider.</param>
+            <returns>true if computed signature matches the signature parameter, false otherwise.</returns>
+        </member>
         <member name="M:Microsoft.IdentityModel.Tokens.SymmetricSignatureProvider.Dispose(System.Boolean)">
             <summary>
             Disposes of internal components.
@@ -3791,9 +3958,10 @@
         </member>
         <member name="F:Microsoft.IdentityModel.Tokens.TokenHandler.DefaultTokenLifetimeInMinutes">
             <summary>
-            Default lifetime of tokens created. When creating tokens, if 'expires' and 'notbefore' are both null, 
-            then a default will be set to: expires = DateTime.UtcNow, notbefore = DateTime.UtcNow + TimeSpan.FromMinutes(TokenLifetimeInMinutes).
+            Default lifetime of tokens created. When creating tokens, if 'expires', 'notbefore' or 'issuedat' are null, 
+            then a default will be set to: issuedat = DateTime.UtcNow, notbefore = DateTime.UtcNow, expires = DateTime.UtcNow + TimeSpan.FromMinutes(TokenLifetimeInMinutes).
             </summary>
+            <remarks>See: <see cref="P:Microsoft.IdentityModel.Tokens.TokenHandler.SetDefaultTimesOnTokenCreation"/> for configuration.</remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenHandler.MaximumTokenSizeInBytes">
             <summary>
@@ -3824,6 +3992,16 @@
             <param name="validationParameters">A <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
             <returns>A <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationResult"/></returns>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenHandler.ValidateTokenAsync(Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenValidationParameters)">
+            <summary>
+            Validates a token.
+            On a validation failure, no exception will be thrown; instead, the exception will be set in the returned TokenValidationResult.Exception property.
+            Callers should always check the TokenValidationResult.IsValid property to verify the validity of the result.
+            </summary>
+            <param name="token">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> to be validated.</param>
+            <param name="validationParameters">A <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
+            <returns>A <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationResult"/></returns>
+        </member>
         <member name="M:Microsoft.IdentityModel.Tokens.TokenHandler.ReadToken(System.String)">
             <summary>
             Converts a string into an instance of <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.
@@ -3832,6 +4010,17 @@
             <exception cref="T:System.ArgumentNullException"><paramref name="token"/> is null or empty.</exception>
             <exception cref="T:System.ArgumentException">'token.Length' is greater than <see cref="P:Microsoft.IdentityModel.Tokens.TokenHandler.MaximumTokenSizeInBytes"/>.</exception>
             <returns>A <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.</returns>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenHandler.CreateClaimsIdentityInternal(Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenValidationParameters,System.String)">
+            <summary>
+            Called by base class to create a <see cref="T:System.Security.Claims.ClaimsIdentity"/>.
+            Currently only used by the JsonWebTokenHandler to allow for a Lazy creation.
+            </summary>
+            <param name="securityToken">the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that has the Claims.</param>
+            <param name="tokenValidationParameters">the <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> that was used to validate the token.</param>
+            <param name="issuer">the 'issuer' to use by default when creating a Claim.</param>
+            <returns>A <see cref="T:System.Security.Claims.ClaimsIdentity"/>.</returns>
+            <exception cref="T:System.NotImplementedException"></exception>
         </member>
         <member name="T:Microsoft.IdentityModel.Tokens.TokenUtilities">
             <summary>
@@ -3900,13 +4089,14 @@
             <param name="exception">The exception to check.</param>
             <returns><c>true</c> if the exception is certain types of exceptions otherwise, <c>false</c>.</returns>
         </member>
-        <member name="M:Microsoft.IdentityModel.Tokens.TokenUtilities.IsRecoverableConfiguration(Microsoft.IdentityModel.Tokens.TokenValidationParameters,Microsoft.IdentityModel.Tokens.BaseConfiguration,Microsoft.IdentityModel.Tokens.BaseConfiguration@)">
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenUtilities.IsRecoverableConfiguration(System.String,Microsoft.IdentityModel.Tokens.BaseConfiguration,Microsoft.IdentityModel.Tokens.BaseConfiguration,System.Exception)">
             <summary>
             Check whether the given configuration is recoverable by LKG.
             </summary>
-            <param name="validationParameters">The <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> to be used for validation.</param>
-            <param name="configuration">The <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/> to check.</param>
-            <param name="currentConfiguration">The updated <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/>.</param>
+            <param name="kid">The kid from token."/></param>
+            <param name="currentConfiguration">The <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/> to check.</param>
+            <param name="lkgConfiguration">The LKG exception to check.</param>
+            <param name="currentException">The exception to check.</param>
             <returns><c>true</c> if the configuration is recoverable otherwise, <c>false</c>.</returns>
         </member>
         <member name="T:Microsoft.IdentityModel.Tokens.AlgorithmValidator">
@@ -4000,6 +4190,18 @@
             priority.
             </remarks>
         </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.IssuerValidatorAsync">
+            <summary>
+            Definition for IssuerValidatorAsync. Left internal for now while we work out the details of async validation for all delegates.
+            </summary>
+            <param name="issuer">The issuer to validate.</param>
+            <param name="securityToken">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</param>
+            <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
+            <returns>The issuer to use when creating the "Claim"(s) in a "ClaimsIdentity".</returns>
+            <remarks>The delegate should return a non null string that represents the 'issuer'. If null a default value will be used.
+            <see cref="T:Microsoft.IdentityModel.Tokens.IssuerValidatorAsync"/> if set, will be called before <see cref="T:Microsoft.IdentityModel.Tokens.IssuerSigningKeyValidatorUsingConfiguration"/> or <see cref="T:Microsoft.IdentityModel.Tokens.IssuerSigningKeyValidator"/>
+            </remarks>
+        </member>
         <member name="T:Microsoft.IdentityModel.Tokens.LifetimeValidator">
             <summary>
             Definition for LifetimeValidator.
@@ -4059,6 +4261,14 @@
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
             <returns>The actual token type, that may be the same as <paramref name="type"/> or a different value if the token type was resolved from a different location.</returns>
         </member>
+        <member name="T:Microsoft.IdentityModel.Tokens.TransformBeforeSignatureValidation">
+            <summary>
+            Definition for TransformBeforeSignatureValidation.
+            </summary>
+            <param name="token">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</param>
+            <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
+            <returns>A transformed <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.</returns>
+        </member>
         <member name="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters">
             <summary>
             Contains a set of parameters that are used by a <see cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenHandler"/> when validating a <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.
@@ -4066,8 +4276,9 @@
         </member>
         <member name="F:Microsoft.IdentityModel.Tokens.TokenValidationParameters.DefaultAuthenticationType">
             <summary>
-            This is the fallback authenticationtype that a <see cref="T:Microsoft.IdentityModel.Tokens.ISecurityTokenValidator"/> will use if nothing is set.
+            This is the default value of <see cref="P:System.Security.Claims.ClaimsIdentity.AuthenticationType"/> when creating a <see cref="T:System.Security.Claims.ClaimsIdentity"/>.
             The value is <c>"AuthenticationTypes.Federation"</c>.
+            To change the value, set <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.AuthenticationType"/> to a different value.
             </summary>
         </member>
         <member name="F:Microsoft.IdentityModel.Tokens.TokenValidationParameters.DefaultClockSkew">
@@ -4078,7 +4289,7 @@
         </member>
         <member name="F:Microsoft.IdentityModel.Tokens.TokenValidationParameters.DefaultMaximumTokenSizeInBytes">
             <summary>
-            Default for the maximm token size.
+            Default for the maximum token size.
             </summary>
             <remarks>250 KB (kilobytes).</remarks>
         </member>
@@ -4090,7 +4301,7 @@
         <member name="M:Microsoft.IdentityModel.Tokens.TokenValidationParameters.#ctor">
             <summary>
             Initializes a new instance of the <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> class.
-            </summary>        
+            </summary>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ActorValidationParameters">
             <summary>
@@ -4156,10 +4367,20 @@
             Users can override the default <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.CryptoProviderFactory"/> with this property. This factory will be used for creating signature providers.
             </summary>
         </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.DebugId">
+            <summary>
+            Gets or sets a string that helps with setting breakpoints when debugging.
+            </summary>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IgnoreTrailingSlashWhenValidatingAudience">
             <summary>
             Gets or sets a boolean that controls if a '/' is significant at the end of the audience.
             The default is <c>true</c>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IncludeTokenOnFailedValidation">
+            <summary>
+            Gets or sets the flag that indicates whether to include the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> when the validation fails.
             </summary>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerSigningKeyValidator">
@@ -4187,6 +4408,17 @@
             If both <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerSigningKeyValidatorUsingConfiguration"/> and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerSigningKeyValidator"/> are set, IssuerSigningKeyValidatorUsingConfiguration takes
             priority.
             </remarks>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.InstancePropertyBag">
+            <summary>
+            Gets a <see cref="T:System.Collections.Generic.IDictionary`2"/> that is unique to this instance.
+            Calling <see cref="M:Microsoft.IdentityModel.Tokens.TokenValidationParameters.Clone"/> will result in a new instance of this IDictionary.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IsClone">
+            <summary>
+            Gets a value indicating if <see cref="M:Microsoft.IdentityModel.Tokens.TokenValidationParameters.Clone"/> was called to obtain this instance.
+            </summary>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerSigningKey">
             <summary>
@@ -4233,6 +4465,17 @@
             priority. 
             </remarks>
         </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidatorAsync">
+            <summary>
+            Gets or sets a delegate that will be used to validate the issuer of the token.
+            </summary>
+            <remarks>
+            If set, this delegate will be called to validate the 'issuer' of the token, instead of default processing.
+            This means that no default 'issuer' validation will occur.
+            Even if <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateIssuer"/> is false, this delegate will still be called.
+            IssuerValidatorAsync takes precedence over <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidatorUsingConfiguration"/> and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidator"/>.
+            </remarks>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.IssuerValidatorUsingConfiguration">
             <summary>
             Gets or sets a delegate that will be used to validate the issuer of the token.
@@ -4246,6 +4489,11 @@
             priority.
             </remarks>
         </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.TransformBeforeSignatureValidation">
+            <summary>
+            Gets or sets a delegate that will be called to transform a token to a supported format before validation.
+            </summary>
+        </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.LifetimeValidator">
             <summary>
             Gets or sets a delegate that will be used to validate the lifetime of the token
@@ -4255,6 +4503,19 @@
             This means that no default lifetime validation will occur.
             Even if <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateLifetime"/> is false, this delegate will still be called.
             </remarks>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.LogTokenId">
+            <summary>
+            Gets or sets a <see cref="T:System.Boolean"/> that will decide if the token identifier claim needs to be logged.
+            Default value is <c>true</c>.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.LogValidationExceptions">
+            <summary>
+            Gets or sets a <see cref="T:System.Boolean"/> that will decide if validation failure needs to be logged as an error.
+            Default value is <c>true</c> for backward compatibility of the behavior.
+            If set to false, validation failures are logged as Information and then thrown.
+            </summary>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.NameClaimType">
             <summary>
@@ -4267,9 +4528,14 @@
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.NameClaimTypeRetriever">
             <summary>
-            Gets or sets a delegate that will be called to obtain the NameClaimType to use when creating a ClaimsIdentity
-            after validating a token.
+            Gets or sets a delegate that will be called to set the property <see cref="P:System.Security.Claims.ClaimsIdentity.NameClaimType"/> after validating a token.
             </summary>
+            <remarks>
+            The function will be passed:
+            <para>The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</para>
+            <para>The issuer associated with the token.</para>
+            <para>Returns the value that will set the property <see cref="P:System.Security.Claims.ClaimsIdentity.NameClaimType"/>.</para>
+            </remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.PropertyBag">
             <summary>
@@ -4314,9 +4580,14 @@
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.RoleClaimTypeRetriever">
             <summary>
-            Gets or sets a delegate that will be called to obtain the RoleClaimType to use when creating a ClaimsIdentity
-            after validating a token.
+            Gets or sets a delegate that will be called to set the property <see cref="P:System.Security.Claims.ClaimsIdentity.RoleClaimType"/> after validating a token.
             </summary>
+            <remarks>
+            The function will be passed:
+            <para>The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</para>
+            <para>The issuer associated with the token.</para>
+            <para>Returns the value that will set the property <see cref="P:System.Security.Claims.ClaimsIdentity.RoleClaimType"/>.</para>
+            </remarks>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.SaveSigninToken">
             <summary>
@@ -4466,7 +4737,7 @@
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateSignatureLast">
             <summary>
-            Gets or sets a boolean that controls if the the vaidation order of the payload and signature during token validation.
+            Gets or sets a boolean that controls the validation order of the payload and signature during token validation.
             </summary>
             <remarks>If <see cref= "P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateSignatureLast" /> is set to ture, it will validate payload ahead of signature .
             The default is <c>false</c>.
@@ -4526,7 +4797,22 @@
         <member name="T:Microsoft.IdentityModel.Tokens.TokenValidationResult">
             <summary>
             Contains artifacts obtained when a SecurityToken is validated.
+            A SecurityTokenHandler returns an instance that captures the results of validating a token.
             </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenValidationResult.#ctor">
+            <summary>
+            Creates an instance of <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationResult"/>
+            </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenValidationResult.#ctor(Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenHandler,Microsoft.IdentityModel.Tokens.TokenValidationParameters,System.String)">
+            <summary>
+            This ctor is used by the JsonWebTokenHandler as part of delaying creation of ClaimsIdentity.
+            </summary>
+            <param name="securityToken"></param>
+            <param name="tokenHandler"></param>
+            <param name="validationParameters"></param>
+            <param name="issuer"></param>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.Claims">
             <summary>
@@ -4537,6 +4823,12 @@
             <summary>
             The <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.ClaimsIdentity"/> created from the validated security token.
             </summary>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.TokenValidationResult.CreateClaimsIdentity">
+            <summary>
+            This call is for JWTs, SamlTokenHandler will set the ClaimsPrincipal.
+            </summary>
+            <returns></returns>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.Exception">
             <summary>
@@ -4561,6 +4853,11 @@
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.SecurityToken">
             <summary>
             Gets or sets the <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.SecurityToken"/> that was validated.
+            </summary>
+        </member>
+        <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.TokenOnFailedValidation">
+            <summary>
+            The <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.SecurityToken"/> to be returned when validation fails.
             </summary>
         </member>
         <member name="P:Microsoft.IdentityModel.Tokens.TokenValidationResult.TokenContext">
@@ -4719,7 +5016,7 @@
             <param name="audiences">The audiences found in the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.</param>
             <param name="securityToken">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> being validated.</param>
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
-            <exception cref="T:System.ArgumentNullException">If 'vaidationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">If 'validationParameters' is null.</exception>
             <exception cref="T:System.ArgumentNullException">If 'audiences' is null and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateAudience"/> is true.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidAudienceException">If <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidAudience"/> is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidAudiences"/> is null.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidAudienceException">If none of the 'audiences' matched either <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidAudience"/> or one of <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidAudiences"/>.</exception>
@@ -4733,7 +5030,7 @@
             <param name="securityToken">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</param>
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
             <returns>The issuer to use when creating the "Claim"(s) in a "ClaimsIdentity".</returns>
-            <exception cref="T:System.ArgumentNullException">If 'vaidationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">If 'validationParameters' is null.</exception>
             <exception cref="T:System.ArgumentNullException">If 'issuer' is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateIssuer"/> is true.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException">If <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuer"/> is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuers"/> is null.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException">If 'issuer' failed to matched either <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuer"/> or one of <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuers"/>.</exception>
@@ -4748,7 +5045,23 @@
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
             <param name="configuration">The <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/> required for issuer and signing key validation.</param>
             <returns>The issuer to use when creating the "Claim"(s) in a "ClaimsIdentity".</returns>
-            <exception cref="T:System.ArgumentNullException">If 'vaidationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">If 'validationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">If 'issuer' is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateIssuer"/> is true.</exception>
+            <exception cref="T:System.ArgumentNullException">If ' configuration' is null.</exception>
+            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException">If <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuer"/> is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuers"/> is null and <see cref="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.Issuer"/> is null.</exception>
+            <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException">If 'issuer' failed to matched either <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuer"/> or one of <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuers"/> or <see cref="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.Issuer"/>.</exception>
+            <remarks>An EXACT match is required.</remarks>
+        </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.Validators.ValidateIssuerAsync(System.String,Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenValidationParameters,Microsoft.IdentityModel.Tokens.BaseConfiguration)">
+            <summary>
+            Determines if an issuer found in a <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> is valid.
+            </summary>
+            <param name="issuer">The issuer to validate</param>
+            <param name="securityToken">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> that is being validated.</param>
+            <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
+            <param name="configuration">The <see cref="T:Microsoft.IdentityModel.Tokens.BaseConfiguration"/> required for issuer and signing key validation.</param>
+            <returns>The issuer to use when creating the "Claim"(s) in a "ClaimsIdentity".</returns>
+            <exception cref="T:System.ArgumentNullException">If 'validationParameters' is null.</exception>
             <exception cref="T:System.ArgumentNullException">If 'issuer' is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidateIssuer"/> is true.</exception>
             <exception cref="T:System.ArgumentNullException">If ' configuration' is null.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidIssuerException">If <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuer"/> is null or whitespace and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.ValidIssuers"/> is null and <see cref="P:Microsoft.IdentityModel.Tokens.BaseConfiguration.Issuer"/> is null.</exception>
@@ -4764,7 +5077,7 @@
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
             <exception cref="T:System.ArgumentNullException"> if 'securityKey' is null and ValidateIssuerSigningKey is true.</exception>
             <exception cref="T:System.ArgumentNullException"> if 'securityToken' is null and ValidateIssuerSigningKey is true.</exception>
-            <exception cref="T:System.ArgumentNullException"> if 'vaidationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException"> if 'validationParameters' is null.</exception>
         </member>
         <member name="M:Microsoft.IdentityModel.Tokens.Validators.ValidateIssuerSecurityKey(Microsoft.IdentityModel.Tokens.SecurityKey,Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenValidationParameters,Microsoft.IdentityModel.Tokens.BaseConfiguration)">
             <summary>
@@ -4778,6 +5091,13 @@
             <exception cref="T:System.ArgumentNullException"> if 'securityToken' is null and ValidateIssuerSigningKey is true.</exception>
             <exception cref="T:System.ArgumentNullException"> if 'validationParameters' is null.</exception>
         </member>
+        <member name="M:Microsoft.IdentityModel.Tokens.Validators.ValidateIssuerSigningKeyLifeTime(Microsoft.IdentityModel.Tokens.SecurityKey,Microsoft.IdentityModel.Tokens.TokenValidationParameters)">
+            <summary>
+            Given a signing key, when it's derived from a certificate, validates that the certificate is already active and non-expired
+            </summary>
+            <param name="securityKey">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityKey"/> that signed the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.</param>
+            <param name="validationParameters">The <see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> that are used to validate the token.</param>
+        </member>
         <member name="M:Microsoft.IdentityModel.Tokens.Validators.ValidateLifetime(System.Nullable{System.DateTime},System.Nullable{System.DateTime},Microsoft.IdentityModel.Tokens.SecurityToken,Microsoft.IdentityModel.Tokens.TokenValidationParameters)">
             <summary>
             Validates the lifetime of a <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.
@@ -4786,7 +5106,7 @@
             <param name="expires">The 'expiration' time found in the <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/>.</param>
             <param name="securityToken">The <see cref="T:Microsoft.IdentityModel.Tokens.SecurityToken"/> being validated.</param>
             <param name="validationParameters"><see cref="T:Microsoft.IdentityModel.Tokens.TokenValidationParameters"/> required for validation.</param>
-            <exception cref="T:System.ArgumentNullException">If 'vaidationParameters' is null.</exception>
+            <exception cref="T:System.ArgumentNullException">If 'validationParameters' is null.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenNoExpirationException">If 'expires.HasValue' is false and <see cref="P:Microsoft.IdentityModel.Tokens.TokenValidationParameters.RequireExpirationTime"/> is true.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenInvalidLifetimeException">If 'notBefore' is &gt; 'expires'.</exception>
             <exception cref="T:Microsoft.IdentityModel.Tokens.SecurityTokenNotYetValidException">If 'notBefore' is &gt; DateTime.UtcNow.</exception>
