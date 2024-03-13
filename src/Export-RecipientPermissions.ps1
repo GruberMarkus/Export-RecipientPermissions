@@ -4906,7 +4906,19 @@ try {
 
                                 try {
                                     if ($ExportFromOnPrem) {
-                                        foreach ($entry in (([adsi]"LDAP://<GUID=$($Grantor.Guid.Guid)>").ObjectSecurity.Access)) {
+                                        try {
+                                            $entries = @(([adsi]"LDAP://<GUID=$($Grantor.Guid.Guid)>").ObjectSecurity.Access)
+
+                                            if (-not $entries) {
+                                                throw 'retry'
+                                            }
+                                        } catch {
+                                            Start-Sleep -Seconds 2
+
+                                            $entries = @(([adsi]"LDAP://<GUID=$($Grantor.Guid.Guid)>").ObjectSecurity.Access)
+                                        }
+
+                                        foreach ($entry in $entries) {
                                             $trustee = $null
 
                                             if ($entry.ObjectType -eq 'ab721a54-1e2f-11d0-9819-00aa0040529b') {
@@ -5365,13 +5377,34 @@ try {
 
                                 try {
                                     if ($ExportFromOnPrem) {
-                                        $directorySearcher = New-Object System.DirectoryServices.DirectorySearcher("(objectguid=$([System.String]::Join('', (([guid]$($Grantor.Guid.Guid)).ToByteArray() | ForEach-Object { '\' + $_.ToString('x2') })).ToUpper()))")
-                                        $directorySearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$(($Grantor.identity -split '/')[0])")
-                                        $null = $directorySearcher.PropertiesToLoad.Add('publicDelegates')
-                                        if ($ExportGuids) {
-                                            $null = $directorySearcher.PropertiesToLoad.Add('objectGuid')
+                                        try {
+                                            $directorySearcher = New-Object System.DirectoryServices.DirectorySearcher("(objectguid=$([System.String]::Join('', (([guid]$($Grantor.Guid.Guid)).ToByteArray() | ForEach-Object { '\' + $_.ToString('x2') })).ToUpper()))")
+                                            $directorySearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$(($Grantor.identity -split '/')[0])")
+                                            $null = $directorySearcher.PropertiesToLoad.Add('publicDelegates')
+
+                                            if ($ExportGuids) {
+                                                $null = $directorySearcher.PropertiesToLoad.Add('objectGuid')
+                                            }
+
+                                            $directorySearcherResults = $directorySearcher.FindOne()
+
+                                            if (-not $directorySearcherResults) {
+                                                throw 'retry'
+                                            }
+                                        } catch {
+                                            Start-Sleep -Seconds 2
+
+                                            $directorySearcher = New-Object System.DirectoryServices.DirectorySearcher("(objectguid=$([System.String]::Join('', (([guid]$($Grantor.Guid.Guid)).ToByteArray() | ForEach-Object { '\' + $_.ToString('x2') })).ToUpper()))")
+                                            $directorySearcher.SearchRoot = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$(($Grantor.identity -split '/')[0])")
+                                            $null = $directorySearcher.PropertiesToLoad.Add('publicDelegates')
+
+                                            if ($ExportGuids) {
+                                                $null = $directorySearcher.PropertiesToLoad.Add('objectGuid')
+                                            }
+
+                                            $directorySearcherResults = $directorySearcher.FindOne()
                                         }
-                                        $directorySearcherResults = $directorySearcher.FindOne()
+
 
                                         foreach ($directorySearcherResult in $directorySearcherResults) {
                                             foreach ($delegateBindDN in $directorySearcherResult.properties.publicdelegates) {
