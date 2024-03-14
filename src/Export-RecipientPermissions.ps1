@@ -426,6 +426,17 @@ $ConnectExchange = {
     $Stoploop = $false
     [int]$Retrycount = 1
 
+    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+        Disconnect-ExchangeOnline -Confirm:$false
+        Remove-Module -Name 'ExchangeOnlineManagement' -Force
+    }
+
+    if (($ExportFromOnPrem -eq $true)) {
+        if ($ExchangeSession) {
+            Remove-PSSession -Session $ExchangeSession
+        }
+    }
+
     if (-not $connectionUri) {
         $connectionUri = $tempConnectionUriQueue.dequeue()
     }
@@ -483,17 +494,21 @@ $ConnectExchange = {
             try {
                 Write-Verbose "Exchange session either not yet established or not working on try $($RetryCount)."
 
+                if ($Retrycount -gt 1) {
+                    $connectionUri = $tempConnectionUriQueue.dequeue()
+                }
+
                 if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                     Disconnect-ExchangeOnline -Confirm:$false
                     Remove-Module -Name 'ExchangeOnlineManagement' -Force
                 }
-
+            
                 if (($ExportFromOnPrem -eq $true)) {
                     if ($ExchangeSession) {
                         Remove-PSSession -Session $ExchangeSession
                     }
                 }
-
+            
                 if ($ExportFromOnPrem -eq $true) {
                     if ($UseDefaultCredential) {
                         $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
@@ -686,7 +701,7 @@ $FilterGetMember = {
             if (($AllRecipientsIndex -ge 0) -and ($AllRecipients[$AllRecipientsIndex].UserFriendlyName)) {
                 "NotARecipient:$($AllRecipients[$AllRecipientsIndex].UserFriendlyName)"
             } elseif (($AllGroupsIndex -ge 0) -and (($AllGroups[$AllGroupsIndex].DisplayName) -or ($AllGroups[$AllGroupsIndex].Name) -or ($AllGroups[$AllGroupsIndex].DistinguishedName))) {
-                "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName), '') | Where-Object { $_ } | Select-Object -First 1)"
+                "NotARecipient:$(@(($AllGroups[$AllGroupsIndex].DistinguishedName), ($AllGroups[$AllGroupsIndex].Name), ($AllGroups[$AllGroupsIndex].DisplayName), 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1)"
             } else {
                 "NotARecipient:$($GroupToCheck)"
             }
@@ -3477,10 +3492,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -3758,10 +3773,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, '') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -4097,8 +4112,7 @@ try {
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        ''
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -4979,8 +4993,7 @@ try {
                                                                                     $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    ''
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
@@ -6167,8 +6180,7 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                ''
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -8009,7 +8021,7 @@ try {
                                                                         'None',
                                                                         $(if ($AcceptedRecipient -is [boolean]) { $Trustee } else { $AcceptedRecipient }),
                                                                         $Trustee.PrimarySmtpAddress,
-                                                                        $(@($Trustee, $Trustee.DisplayName) | Where-Object { $_ } | Select-Object -First 1),
+                                                                        $(@($Trustee, $Trustee.DisplayName, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
                                                                         $Trustee.ExchangeGuid.Guid,
                                                                         $Trustee.Guid.Guid,
                                                                         $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
@@ -8843,7 +8855,7 @@ try {
                                 }
 
                                 $GrantorPrimarySMTP = 'Management Role Group'
-                                $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, '') | Where-Object { $_ } | Select-Object -First 1)
+                                $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1)
                                 $GrantorRecipientType = 'RoleGroup'
 
                                 if ($ExportFromOnPrem) {
@@ -8908,8 +8920,7 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                ''
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -9279,8 +9290,7 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                ''
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -9607,8 +9617,7 @@ try {
                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                        ''
+                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -10416,7 +10425,7 @@ try {
                                             $RoleGroup = $AllGroups[$AllGroupsId]
 
                                             $GrantorPrimarySMTP = 'Management Role Group'
-                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, '') | Where-Object { $_ } | Select-Object -First 1)
+                                            $GrantorDisplayName = $(($RoleGroup.DisplayName, $RoleGroup.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1)
                                             $GrantorRecipientType = 'RoleGroup'
 
                                             if ($ExportFromOnPrem) {
