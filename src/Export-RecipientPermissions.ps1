@@ -502,13 +502,13 @@ $ConnectExchange = {
                     Disconnect-ExchangeOnline -Confirm:$false
                     Remove-Module -Name 'ExchangeOnlineManagement' -Force
                 }
-            
+
                 if (($ExportFromOnPrem -eq $true)) {
                     if ($ExchangeSession) {
                         Remove-PSSession -Session $ExchangeSession
                     }
                 }
-            
+
                 if ($ExportFromOnPrem -eq $true) {
                     if ($UseDefaultCredential) {
                         $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
@@ -1934,15 +1934,16 @@ try {
 
                                 if ($filterstring -ne '') {
                                     try {
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid -ErrorAction Stop)
+                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue | Select-Object userfriendlyname, guid -ErrorAction Stop)
+                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
                                     }
 
                                     foreach ($securityprincipal in $securityprincipals) {
                                         try {
                                             Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+
                                             if ($AllRecipientsIdentityGuidToIndex.containskey($securityprincipal.guid.guid)) {
                                                 ($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$($securityprincipal.guid.guid)])]).UserFriendlyName = $securityprincipal.UserFriendlyName
                                             }
@@ -2951,10 +2952,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = get-calendarprocessing -identity $Recipient.Identity | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
+                                        $x = get-calendarprocessing -identity $Recipient.Identity -ErrorAction stop | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = get-calendarprocessing -identity $Recipient.Identity | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
+                                        $x = get-calendarprocessing -identity $Recipient.Identity -ErrorAction stop | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
                                     }
 
                                     if ($x) {
@@ -3492,10 +3493,10 @@ try {
 
                                 try {
                                     try {
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
                                     if ($x) {
@@ -4018,11 +4019,11 @@ try {
                                                 if ($ExportFromOnPrem) {
                                                     try {
                                                         Get-MailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
+                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
                                                     } catch {
                                                         . ([scriptblock]::Create($ConnectExchange))
                                                         Get-MailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
+                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
                                                     }
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
