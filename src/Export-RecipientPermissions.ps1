@@ -548,6 +548,8 @@ $ConnectExchange = {
         } catch {
             if ($RetryCount -eq 0) {
                 Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum) failed, next try in $($SleepTime) seconds"
+
+                $RetryCount++
             } elseif ($RetryCount -lt $RetryMaximum) {
                 Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, next try in $($SleepTime) seconds"
 
