@@ -494,10 +494,6 @@ $ConnectExchange = {
             try {
                 Write-Verbose "Exchange session either not yet established or not working on try $($RetryCount)."
 
-                if ($Retrycount -gt 1) {
-                    $connectionUri = $tempConnectionUriQueue.dequeue()
-                }
-
                 if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                     Disconnect-ExchangeOnline -Confirm:$false
                     Remove-Module -Name 'ExchangeOnlineManagement' -Force
@@ -507,6 +503,10 @@ $ConnectExchange = {
                     if ($ExchangeSession) {
                         Remove-PSSession -Session $ExchangeSession
                     }
+                }
+
+                if ($Retrycount -gt 1) {
+                    $connectionUri = $tempConnectionUriQueue.dequeue()
                 }
 
                 if ($ExportFromOnPrem -eq $true) {
@@ -1853,19 +1853,41 @@ try {
     }
 
 
-    # Import UserFriendlyNames
+    # Import security principals
     Write-Host
-    Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-    if ($ExportMailboxAccessRights -or $ExportSendAs) {
-        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new($AllRecipients.count))
+    Write-Host "Import security principals, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-        for ($RecipientID = 0; $RecipientID -lt $AllRecipients.count; $RecipientID++) {
-            $tempqueue.enqueue($RecipientID)
+    if (
+            ($ExportMailboxAccessRights) -or
+            ($ExportSendAs) -or
+            ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or
+            ($ExportManagementRoleGroupMembers) -or
+            ($ExportDistributionGroupMembers -ieq 'All') -or
+            ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
+            ($ExpandGroups) -or
+            ($ExportGuids)
+    ) {
+        $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
+
+        $Filters = @()
+
+        foreach ($tempChar in @([char[]](0..255) -clike '[A-Z0-9]')) {
+            $Filters += "(name -like '$($tempChar)*')"
         }
+
+        $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
+
+        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
+
+        foreach ($Filter in $Filters) {
+            $tempQueue.enqueue($Filter)
+        }
+
+        $Filters = $null
 
         $tempQueueCount = $tempQueue.count
 
-        $ParallelJobsNeeded = [math]::min([math]::ceiling($tempQueueCount / 10), $ParallelJobsExchange)
+        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
 
         Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
@@ -1881,90 +1903,75 @@ try {
 
                 [void]$Powershell.AddScript(
                     {
-                        param (
-                            $AllRecipients,
+                        param(
+                            $AllSecurityPrincipals,
                             $tempConnectionUriQueue,
                             $tempQueue,
-                            $AllRecipientsIdentityGuidToIndex,
-                            $DebugFile,
                             $ErrorFile,
+                            $DebugFile,
                             $ExportFromOnPrem,
                             $ConnectExchange,
                             $ExchangeOnlineConnectionParameters,
                             $ExchangeCredential,
                             $UseDefaultCredential,
                             $ScriptPath,
-                            $UTF8Encoding,
                             $VerbosePreference,
-                            $DebugPreference
+                            $DebugPreference,
+                            $UTF8Encoding
                         )
 
                         try {
+                            $DebugPreference = 'Continue'
+
                             Set-Location $ScriptPath
 
                             if ($DebugFile) {
                                 $null = Start-Transcript -LiteralPath $DebugFile -Force
                             }
 
-                            Write-Host "Import UserFriendlyNames @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                             . ([scriptblock]::Create($ConnectExchange))
 
                             while ($tempQueue.count -gt 0) {
-                                Write-Host "Filter string @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-
-                                $dequeued = 0
-                                $filterstring = ''
-
-                                while (($dequeued -lt 10) -and ($tempQueue.count -gt 0)) {
-                                    try {
-                                        $x = $tempQueue.dequeue()
-                                    } catch {
-                                    }
-
-                                    if ($x -and $AllRecipients[$x].Guid.Guid) {
-                                        $filterstring += "(guid -eq '$($AllRecipients[$x].Guid.Guid)') -or "
-                                        $dequeued++
-                                    }
+                                try {
+                                    $filter = $tempQueue.dequeue()
+                                } catch {
+                                    continue
                                 }
 
-                                $filterstring = $filterstring.trimend(' -or ')
+                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                                Write-Host "  $filterstring"
-
-                                if ($filterstring -ne '') {
+                                try {
                                     try {
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize $dequeued -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
 
-                                        If ($securityprincipals.count -ne $securityprincipals.guid.guid.count) {
-                                            throw "Error: Some security principals do not have a GUID, which must be a query error."
+                                        If ($x.count -ne $x.guid.guid.count) {
+                                            throw 'Error: Some security principals do not have a GUID, which must be a query error.'
                                         }
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize $dequeued -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
+                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
                                     }
 
-                                    foreach ($securityprincipal in $securityprincipals) {
-                                        try {
-                                            Write-Host "  '$($securityprincipal.guid.guid)' = '$($securityprincipal.UserFriendlyName)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-
-                                            if ($AllRecipientsIdentityGuidToIndex.containskey($securityprincipal.guid.guid)) {
-                                                ($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$($securityprincipal.guid.guid)])]).UserFriendlyName = $securityprincipal.UserFriendlyName
-                                            }
-                                        } catch {
-                                            (
-                                                '"' + (
-                                                    @(
-                                                        (
-                                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
-                                                            'Import UserFriendlyNames',
-                                                            "Security principal GUID $($securityprincipal.guid.guid)",
-                                                            $($_ | Out-String)
-                                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                                ) + '"'
-                                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
-                                        }
+                                    if ($x) {
+                                        $AllSecurityPrincipals.AddRange(@($x))
+                                        Write-Host "  $($x.count) groups"
+                                    } else {
+                                        Write-Host '  0 groups'
                                     }
+                                } catch {
+                                    (
+                                        '"' + (
+                                            @(
+                                                (
+                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
+                                                    'Import security principals',
+                                                    "Filter '$($filter)'",
+                                                    $($_ | Out-String)
+                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
+                                        ) + '"'
+                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                                 }
                             }
                         } catch {
@@ -1973,7 +1980,7 @@ try {
                                     @(
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
-                                            'Import UserFriendlyNames',
+                                            'Import security principals',
                                             '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
@@ -1999,18 +2006,17 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                      = $AllRecipients
-                        tempConnectionUriQueue             = $tempConnectionUriQueue
-                        tempQueue                          = $tempQueue
-                        AllRecipientsIdentityGuidToIndex   = $AllRecipientsIdentityGuidToIndex
                         DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        AllSecurityPrincipals              = $AllSecurityPrincipals
+                        tempConnectionUriQueue             = $tempConnectionUriQueue
+                        tempQueue                          = $tempQueue
                         ExportFromOnPrem                   = $ExportFromOnPrem
+                        ConnectExchange                    = $ConnectExchange
+                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
                         ExchangeCredential                 = $ExchangeCredential
                         UseDefaultCredential               = $UseDefaultCredential
                         ScriptPath                         = $PSScriptRoot
-                        ConnectExchange                    = $ConnectExchange
-                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
                         VerbosePreference                  = $VerbosePreference
                         DebugPreference                    = $DebugPreference
                         UTF8Encoding                       = $UTF8Encoding
@@ -2025,12 +2031,12 @@ try {
                 [void]$runspaces.Add($Temp)
             }
 
-            Write-Host ('  {0:0000000} recipients to check. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
+            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
 
             $lastCount = -1
             while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
                 Start-Sleep -Seconds 1
-                $done = ($tempQueueCount - $tempQueue.count - (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count * 100))
+                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
@@ -2043,7 +2049,7 @@ try {
             Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
 
             if ($tempQueue.count -ne 0) {
-                Write-Host '    Not all recipients have been checked. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
+                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
             }
 
             foreach ($runspace in $runspaces) {
@@ -2075,6 +2081,73 @@ try {
             }
 
             [GC]::Collect(); Start-Sleep -Seconds 1
+        }
+
+        $AllSecurityPrincipals.TrimToSize()
+        Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
+
+        Write-Host '  Add UserFriendlyName to AllRecipients'
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if ($AllRecipientsIdentityGuidToIndex.containskey(($AllSecurityPrincipals[$x]).guid.guid)) {
+            ($AllRecipients[$($AllRecipientsIdentityGuidToIndex[$(($AllSecurityPrincipals[$x]).guid.guid)])]).UserFriendlyName = ($AllSecurityPrincipals[$x]).UserFriendlyName
+            }
+        }
+
+        Write-Host '  Create lookup hashtables'
+        Write-Host "    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+        $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).Sid) {
+                if ($AllSecurityPrincipalsSidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Sid)) {
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Sid)' is not unique."
+                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid)] = $null
+                } else {
+                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid)] = $x
+                }
+            }
+        }
+
+        Write-Host "    ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+        $AllSecurityPrincipalsObjectguidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).Guid.Guid) {
+                if ($AllSecurityPrincipalsObjectguidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Guid.Guid)) {
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Guid.Guid)' is not unique."
+                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $null
+                } else {
+                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $x
+                }
+            }
+        }
+
+        Write-Host "    DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+        $AllSecurityPrincipalsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).DistinguishedName) {
+                if ($AllSecurityPrincipalsDnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).DistinguishedName)) {
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).DistinguishedName)' is not unique."
+                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $null
+                } else {
+                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $x
+                }
+            }
+        }
+
+        Write-Host "    UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+        $AllSecurityPrincipalsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).UserFriendlyName) {
+                if ($AllSecurityPrincipalsUfnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).UserFriendlyName)) {
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).UserFriendlyName)' is not unique."
+                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $null
+                } else {
+                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $x
+                }
+            }
         }
     } else {
         Write-Host '  Not required with current export settings.'
@@ -3404,300 +3477,6 @@ try {
 
     $GrantorsToConsider.TrimToSize()
     Write-Host ('  {0:0000000}/{1:0000000} recipients are considered as grantors' -f $($GrantorsToConsider.count), $($AllRecipients.count))
-
-
-    # Import security principals
-    Write-Host
-    Write-Host "Import security principals, grouped by first character of name @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-
-    if (
-        ($ExportMailboxAccessRights) -or
-        ($ExportSendAs) -or
-        ($ExportLinkedMasterAccount -and $ExportFromOnPrem) -or
-        ($ExportManagementRoleGroupMembers) -or
-        ($ExportDistributionGroupMembers -ieq 'All') -or
-        ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
-        ($ExpandGroups) -or
-        ($ExportGuids)
-    ) {
-        $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
-
-        $Filters = @()
-
-        foreach ($tempChar in @([char[]](0..255) -clike '[A-Z0-9]')) {
-            $Filters += "(name -like '$($tempChar)*')"
-        }
-
-        $filters += ($filters -join ' -and ').replace('(name -like ''', '(name -notlike ''')
-
-        $tempQueue = [System.Collections.Queue]::Synchronized([System.Collections.Queue]::new())
-
-        foreach ($Filter in $Filters) {
-            $tempQueue.enqueue($Filter)
-        }
-
-        $Filters = $null
-
-        $tempQueueCount = $tempQueue.count
-
-        $ParallelJobsNeeded = [math]::min($tempQueueCount, $ParallelJobsExchange)
-
-        Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
-
-        if ($ParallelJobsNeeded -ge 1) {
-            $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
-            $RunspacePool.Open()
-
-            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
-
-            1..$ParallelJobsNeeded | ForEach-Object {
-                $Powershell = [powershell]::Create()
-                $Powershell.RunspacePool = $RunspacePool
-
-                [void]$Powershell.AddScript(
-                    {
-                        param(
-                            $AllSecurityPrincipals,
-                            $tempConnectionUriQueue,
-                            $tempQueue,
-                            $ErrorFile,
-                            $DebugFile,
-                            $ExportFromOnPrem,
-                            $ConnectExchange,
-                            $ExchangeOnlineConnectionParameters,
-                            $ExchangeCredential,
-                            $UseDefaultCredential,
-                            $ScriptPath,
-                            $VerbosePreference,
-                            $DebugPreference,
-                            $UTF8Encoding
-                        )
-
-                        try {
-                            $DebugPreference = 'Continue'
-
-                            Set-Location $ScriptPath
-
-                            if ($DebugFile) {
-                                $null = Start-Transcript -LiteralPath $DebugFile -Force
-                            }
-
-                            Write-Host "Import security principals @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-
-                            . ([scriptblock]::Create($ConnectExchange))
-
-                            while ($tempQueue.count -gt 0) {
-                                try {
-                                    $filter = $tempQueue.dequeue()
-                                } catch {
-                                    continue
-                                }
-
-                                Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-
-                                try {
-                                    try {
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
-
-                                        If ($x.count -ne $x.guid.guid.count) {
-                                            throw "Error: Some security principals do not have a GUID, which must be a query error."
-                                        }
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
-                                    }
-
-                                    if ($x) {
-                                        $AllSecurityPrincipals.AddRange(@($x))
-                                        Write-Host "  $($x.count) groups"
-                                    } else {
-                                        Write-Host '  0 groups'
-                                    }
-                                } catch {
-                                    (
-                                        '"' + (
-                                            @(
-                                                (
-                                                    $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
-                                                    'Import security principals',
-                                                    "Filter '$($filter)'",
-                                                    $($_ | Out-String)
-                                                ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                        ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
-                                }
-                            }
-                        } catch {
-                            (
-                                '"' + (
-                                    @(
-                                        (
-                                            $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
-                                            'Import security principals',
-                                            '',
-                                            $($_ | Out-String)
-                                        ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
-                                ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
-                        } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
-
-                            if ($DebugFile) {
-                                $null = Stop-Transcript
-                                Start-Sleep -Seconds 1
-                            }
-                        }
-                    }
-                ).AddParameters(
-                    @{
-                        DebugFile                          = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ErrorFile                          = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        AllSecurityPrincipals              = $AllSecurityPrincipals
-                        tempConnectionUriQueue             = $tempConnectionUriQueue
-                        tempQueue                          = $tempQueue
-                        ExportFromOnPrem                   = $ExportFromOnPrem
-                        ConnectExchange                    = $ConnectExchange
-                        ExchangeOnlineConnectionParameters = $ExchangeOnlineConnectionParameters
-                        ExchangeCredential                 = $ExchangeCredential
-                        UseDefaultCredential               = $UseDefaultCredential
-                        ScriptPath                         = $PSScriptRoot
-                        VerbosePreference                  = $VerbosePreference
-                        DebugPreference                    = $DebugPreference
-                        UTF8Encoding                       = $UTF8Encoding
-                    }
-                )
-
-                $Handle = $Powershell.BeginInvoke()
-
-                $temp = '' | Select-Object PowerShell, Handle, Object
-                $temp.PowerShell = $PowerShell
-                $temp.Handle = $Handle
-                [void]$runspaces.Add($Temp)
-            }
-
-            Write-Host ('  {0:0000000} queries to perform. Done (in steps of {1:0000000}):' -f $tempQueueCount, $UpdateInterval)
-
-            $lastCount = -1
-            while (($runspaces.Handle | Where-Object { $_.IsCompleted -eq $False }).count -ne 0) {
-                Start-Sleep -Seconds 1
-                $done = ($tempQueueCount - $tempQueue.count - ($runspaces.Handle | Where-Object { $_.IsCompleted -eq $false }).count)
-                for ($x = $lastCount; $x -le $done; $x++) {
-                    if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
-                        Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
-                        $lastCount = $x
-                    }
-                }
-            }
-
-            Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $tempQueueCount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')))
-
-            if ($tempQueue.count -ne 0) {
-                Write-Host '    Not all queries have been performed. Enable ErrorFile and DebugFile options and check the log files.' -ForegroundColor red
-            }
-
-            foreach ($runspace in $runspaces) {
-                # $null = $runspace.PowerShell.EndInvoke($runspace.handle)
-                # $runspace.PowerShell.Stop()
-                $runspace.PowerShell.Dispose()
-            }
-
-            $RunspacePool.Close()
-            $RunspacePool.Dispose()
-            'temp', 'powershell', 'handle', 'runspaces', 'runspacepool' | ForEach-Object { Remove-Variable -Name $_ }
-
-            if ($DebugFile) {
-                $null = Stop-Transcript
-                Start-Sleep -Seconds 1
-                foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
-                    Remove-Item -LiteralPath $JobDebugFile -Force
-                }
-
-                $null = Start-Transcript -LiteralPath $DebugFile -Append -Force
-            }
-
-            if ($ErrorFile) {
-                foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
-                    Remove-Item -LiteralPath $JobErrorFile -Force
-                }
-            }
-
-            [GC]::Collect(); Start-Sleep -Seconds 1
-        }
-
-        $AllSecurityPrincipals.TrimToSize()
-        Write-Host ('  {0:0000000} security principals found' -f $($AllSecurityPrincipals.count))
-
-        Write-Host '  Create lookup hashtables'
-        Write-Host "    SID to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        $AllSecurityPrincipalsSidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
-
-        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
-            if (($AllSecurityPrincipals[$x]).Sid) {
-                if ($AllSecurityPrincipalsSidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Sid)) {
-                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Sid)' is not unique."
-                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid)] = $null
-                } else {
-                    $AllSecurityPrincipalsSidToIndex[$(($AllSecurityPrincipals[$x]).Sid)] = $x
-                }
-            }
-        }
-
-        Write-Host "    ObjectGuid to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        $AllSecurityPrincipalsObjectguidToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
-
-        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
-            if (($AllSecurityPrincipals[$x]).Guid.Guid) {
-                if ($AllSecurityPrincipalsObjectguidToIndex.ContainsKey(($AllSecurityPrincipals[$x]).Guid.Guid)) {
-                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).Guid.Guid)' is not unique."
-                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $null
-                } else {
-                    $AllSecurityPrincipalsObjectguidToIndex[$(($AllSecurityPrincipals[$x]).Guid.Guid)] = $x
-                }
-            }
-        }
-
-        Write-Host "    DistinguishedName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        $AllSecurityPrincipalsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
-
-        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
-            if (($AllSecurityPrincipals[$x]).DistinguishedName) {
-                if ($AllSecurityPrincipalsDnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).DistinguishedName)) {
-                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).DistinguishedName)' is not unique."
-                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $null
-                } else {
-                    $AllSecurityPrincipalsDnToIndex[$(($AllSecurityPrincipals[$x]).DistinguishedName)] = $x
-                }
-            }
-        }
-
-        Write-Host "    UserFriendlyName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        $AllSecurityPrincipalsUfnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
-
-        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
-            if (($AllSecurityPrincipals[$x]).UserFriendlyName) {
-                if ($AllSecurityPrincipalsUfnToIndex.ContainsKey(($AllSecurityPrincipals[$x]).UserFriendlyName)) {
-                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).UserFriendlyName)' is not unique."
-                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $null
-                } else {
-                    $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $x
-                }
-            }
-        }
-    } else {
-        Write-Host '  Not required with current export settings.'
-    }
 
 
     # Import direct group membership
