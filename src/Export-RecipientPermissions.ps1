@@ -1865,7 +1865,7 @@ try {
 
         $tempQueueCount = $tempQueue.count
 
-        $ParallelJobsNeeded = [math]::min([math]::ceiling($tempQueueCount / 100), $ParallelJobsExchange)
+        $ParallelJobsNeeded = [math]::min([math]::ceiling($tempQueueCount / 10), $ParallelJobsExchange)
 
         Write-Host "  Multi-thread operation, create $($ParallelJobsNeeded) parallel Exchange jobs"
 
@@ -1916,7 +1916,7 @@ try {
                                 $dequeued = 0
                                 $filterstring = ''
 
-                                while (($dequeued -lt 100) -and ($tempQueue.count -gt 0)) {
+                                while (($dequeued -lt 10) -and ($tempQueue.count -gt 0)) {
                                     try {
                                         $x = $tempQueue.dequeue()
                                     } catch {
@@ -1934,10 +1934,14 @@ try {
 
                                 if ($filterstring -ne '') {
                                     try {
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
+                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize $dequeued -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
+
+                                        If ($securityprincipals.count -ne $securityprincipals.guid.guid.count) {
+                                            throw "Error: Some security principals do not have a GUID, which must be a query error."
+                                        }
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
-                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize unlimited -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
+                                        $securityprincipals = @(Get-SecurityPrincipal -filter "$($filterstring)" -resultsize $dequeued -WarningAction silentlycontinue -ErrorAction Stop | Select-Object userfriendlyname, guid)
                                     }
 
                                     foreach ($securityprincipal in $securityprincipals) {
@@ -3494,6 +3498,10 @@ try {
                                 try {
                                     try {
                                         $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
+
+                                        If ($x.count -ne $x.guid.guid.count) {
+                                            throw "Error: Some security principals do not have a GUID, which must be a query error."
+                                        }
                                     } catch {
                                         . ([scriptblock]::Create($ConnectExchange))
                                         $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
