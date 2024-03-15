@@ -423,10 +423,16 @@ Param(
 
 
 $ConnectExchange = {
-    [bool]$StopLoop = $false
+    param (
+        [int]$RetryMaximum = 3,
+        [scriptblock]$ScriptBlock = {
+            Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue -ErrorAction Stop
+        }
+    )
 
-    [int]$RetryCount = 1
-    [int]$RetryMaximum = 4
+    [bool]$StopLoop = $false
+    [int]$RetryCount = 0
+    [int]$SleepTime = 0
 
     $ExchangeCommandNames = @(
         'Get-CASMailbox',
@@ -464,84 +470,85 @@ $ConnectExchange = {
     )
 
     while (($StopLoop -eq $false) -and ($RetryCount -le $RetryMaximum)) {
-        # Prepare stuff
-        $SleepTime = (60 * $RetryCount) + 15
+        if ($RetryCount -gt 0) {
+            # Prepare stuff
+            $SleepTime = (60 * $RetryCount) + 15
 
-        # Disconnect current session
-        Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
+            # Disconnect current session
+            Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
 
-        if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-            Disconnect-ExchangeOnline -Confirm:$false
-            Remove-Module -Name 'ExchangeOnlineManagement' -Force
-        }
-
-        if (($ExportFromOnPrem -eq $true)) {
-            if ($ExchangeSession) {
-                Remove-PSSession -Session $ExchangeSession
+            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                Disconnect-ExchangeOnline -Confirm:$false
+                Remove-Module -Name 'ExchangeOnlineManagement' -Force
             }
-        }
+
+            if (($ExportFromOnPrem -eq $true)) {
+                if ($ExchangeSession) {
+                    Remove-PSSession -Session $ExchangeSession
+                }
+            }
 
 
-        # Get (new) connection URI
-        $connectionUri = $tempConnectionUriQueue.dequeue()
+            # Get (new) connection URI
+            $connectionUri = $tempConnectionUriQueue.dequeue()
 
 
-        # Connect to new session
-        Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
+            # Connect to new session
+            Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
-        if ($ExportFromOnPrem -eq $true) {
-            if ($UseDefaultCredential) {
-                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+            if ($ExportFromOnPrem -eq $true) {
+                if ($UseDefaultCredential) {
+                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                } else {
+                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                }
+
+                $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
             } else {
-                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
+                    $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
+                }
+
+                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
+                    $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
+                }
+
+                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
+                    $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
+                }
+
+                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
+                    $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
+                }
+
+                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
+                    $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
+                }
+
+                $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
+                $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
+
+                try {
+                    Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
+                } catch {
+                    Start-Sleep -Seconds 2
+
+                    Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
+                }
+
+                Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
             }
-
-            $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
-        } else {
-            if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
-                $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
-            }
-
-            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
-                $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
-            }
-
-            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
-                $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
-            }
-
-            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
-                $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
-            }
-
-            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
-                $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
-            }
-
-            $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
-            $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
-
-            try {
-                Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
-            } catch {
-                Start-Sleep -Seconds 2
-
-                Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
-            }
-
-            Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
         }
 
-
-        # Test new connection
-        if (@(Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue).count -eq 1) {
-            Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), successfully connected to '$($connectionUri)'"
-
-            $StopLoop = $true
-        } else {
-            if ($RetryCount -lt $RetryMaximum) {
+        # Execute $ScriptBlock to test connection
+        try {
+            return $(. [scriptblock]::Create($ScriptBlock))
+        } catch {
+            if ($RetryCount -eq 0) {
+                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum) failed, next try in $($SleepTime) seconds"
+            } elseif ($RetryCount -lt $RetryMaximum) {
                 Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, next try in $($SleepTime) seconds"
 
                 Start-Sleep -Seconds $SleepTime
@@ -628,21 +635,10 @@ $FilterGetMember = {
             }
         } elseif ($GroupToCheckType -ieq 'DynamicDistributionGroup') {
             if ($ExportFromOnPrem) {
-                try {
-                    $DynamicGroup = Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer
-                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
-                } catch {
-                    . ([scriptblock]::Create($ConnectExchange))
-                    $DynamicGroup = Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer
-                    $members = @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
-                }
+                $DynamicGroup = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer })
+                $members = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity })
             } else {
-                try {
-                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
-                } catch {
-                    . ([scriptblock]::Create($ConnectExchange))
-                    $members = @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity
-                }
+                $members = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity })
             }
 
             foreach ($member in $members) {
@@ -1058,19 +1054,9 @@ try {
 
                             try {
                                 if ($ExportFromOnPrem) {
-                                    try {
-                                        $x = @(Get-Recipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-Recipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Recipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) })
                                 } else {
-                                    try {
-                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop)
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-EXORecipient -RecipientTypeDetails $QueueArray[0] -Filter $QueueArray[1] -Properties $RecipientProperties -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) })
                                 }
 
                                 if ($x) {
@@ -1211,69 +1197,29 @@ try {
 
     Write-Host '      Migration mailboxes'
     # Get-EXOMailbox misses several options (such as -Migration), so Get-Mailbox is still used for Exchange Online sometimes
-    try {
-        $AllRecipients.AddRange(@(Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-    } catch {
-        . ([scriptblock]::Create($ConnectExchange))
-        $AllRecipients.AddRange(@(Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-    }
+    $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
 
     if ($ExportFromOnPrem) {
         Write-Host '      Arbitration mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
 
         Write-Host '      AuditLog mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
 
         Write-Host '      AuxAuditLog mailboxes'
-        try {
-            $AllRecipients.AddRange(@( Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@( Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @( Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
 
         Write-Host '      Monitoring mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
 
         Write-Host '      RemoteArchive mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop) }))
     } else {
         Write-Host '      Inactive mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties) }))
 
         Write-Host '      Softdeleted mailboxes'
-        try {
-            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipients.AddRange(@(Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties))
-        }
+        $AllRecipients.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property $RecipientPropertiesExtended -ErrorAction Stop | Select-Object $RecipientProperties) }))
     }
 
     Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
@@ -1363,19 +1309,9 @@ try {
         $AllRecipientsSendas = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count * 2))
 
         if ($ExportFromOnPrem) {
-            try {
-                $AllRecipientsSendas.AddRange(@(Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype -ErrorAction Stop))
-            } catch {
-                . ([scriptblock]::Create($ConnectExchange))
-                $AllRecipientsSendas.AddRange(@(Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype -ErrorAction Stop))
-            }
+            $AllRecipientsSendas.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype -ErrorAction Stop) }))
         } else {
-            try {
-                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
-            } catch {
-                . ([scriptblock]::Create($ConnectExchange))
-                $AllRecipientsSendas.AddRange(@(Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue))
-            }
+            $AllRecipientsSendas.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue) }))
         }
 
         $AllRecipientsSendas.TrimToSize()
@@ -1394,44 +1330,19 @@ try {
 
         Write-Host "  Mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         # Get-EXOMailbox does not support the GrantSendOnBehalfTo filter, so Get-Mailbox is used
-        try {
-            $AllRecipientsSendonbehalf.AddRange(@(Get-Mailbox -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendonbehalf.AddRange(@(Get-Mailbox -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        }
+        $AllRecipientsSendonbehalf.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop) }))
 
         Write-Host "  Distribution groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        try {
-            $AllRecipientsSendonbehalf.AddRange(@(Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendonbehalf.AddRange(@(Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        }
+        $AllRecipientsSendonbehalf.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop) }))
 
         Write-Host "  Dynamic Distribution Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        try {
-            $AllRecipientsSendonbehalf.AddRange(@(Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendonbehalf.AddRange(@(Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        }
+        $AllRecipientsSendonbehalf.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop) }))
 
         Write-Host "  Unified Groups (Microsoft 365 Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        try {
-            $AllRecipientsSendonbehalf.AddRange(@(Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendonbehalf.AddRange(@(Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        }
+        $AllRecipientsSendonbehalf.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop) }))
 
         Write-Host "  Mail-enabled Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-        try {
-            $AllRecipientsSendonbehalf.AddRange(@(Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllRecipientsSendonbehalf.AddRange(@(Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop))
-        }
+        $AllRecipientsSendonbehalf.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne $null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop) }))
 
         $AllRecipientsSendonbehalf.TrimToSize()
         Write-Host ('  {0:0000000} Send On Behalf permissions found' -f $($AllRecipientsSendonbehalf.count))
@@ -1448,12 +1359,7 @@ try {
 
         $AllMailboxDatabases = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
-        try {
-            $AllMailboxDatabases.AddRange(@((Get-MailboxDatabase -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Guid, ProhibitSendQuota -ErrorAction Stop) | Sort-Object { $_.DisplayName }))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllMailboxDatabases.AddRange(@((Get-MailboxDatabase -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Guid, ProhibitSendQuota -ErrorAction Stop) | Sort-Object { $_.DisplayName }))
-        }
+        $AllMailboxDatabases.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @((Get-MailboxDatabase -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Guid, ProhibitSendQuota -ErrorAction Stop) | Sort-Object { $_.DisplayName }) }))
 
         $AllMailboxDatabases.TrimToSize()
         Write-Host ('  {0:0000000} mailbox databases found' -f $($AllMailboxDatabases.count))
@@ -1470,12 +1376,7 @@ try {
 
         $AllPublicFolders = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
-        try {
-            $AllPublicFolders.AddRange(@((Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, ContentMailboxGuid, MailEnabled, MailRecipientGuid, FolderClass, FolderPath -ErrorAction Stop) | Sort-Object { $_.FolderPath }))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AllPublicFolders.AddRange(@((Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, ContentMailboxGuid, MailEnabled, MailRecipientGuid, FolderClass, FolderPath -ErrorAction Stop) | Sort-Object { $_.FolderPath }))
-        }
+        $AllPublicFolders.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @((Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property EntryId, ContentMailboxGuid, MailEnabled, MailRecipientGuid, FolderClass, FolderPath -ErrorAction Stop) | Sort-Object { $_.FolderPath }) }))
 
         $AllPublicFolders.TrimToSize()
         Write-Host ('  {0:0000000} Public Folders found' -f $($AllPublicFolders.count))
@@ -1493,34 +1394,14 @@ try {
         $AdditionalForwardingAddresses = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
         # Get-EXOMailbox does not support the ForwardingAddress filter, so Get-Mailbox is used
-        try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        }
+        $AdditionalForwardingAddresses.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Mailbox -filter '(ForwardingAddress -ne $null) -or (ForwardingSmtpAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward) }))
 
-        try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        }
+        $AdditionalForwardingAddresses.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-MailPublicFolder -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward) }))
 
-        try {
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        } catch {
-            . ([scriptblock]::Create($ConnectExchange))
-            $AdditionalForwardingAddresses.AddRange(@(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-        }
+        $AdditionalForwardingAddresses.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-MailUser -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward) }))
 
         if ($ExportFromOnPrem) {
-            try {
-                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-            } catch {
-                . ([scriptblock]::Create($ConnectExchange))
-                $AdditionalForwardingAddresses.AddRange(@(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
-            }
+            $AdditionalForwardingAddresses.AddRange($(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-RemoteMailbox -filter '(ForwardingAddress -ne $null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward) }))
         }
 
         $AdditionalForwardingAddresses.TrimToSize()
@@ -1667,12 +1548,7 @@ try {
                                 Write-Host "MailboxDatabaseGuid $($MailboxDatabaseGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $mailboxes = @((Get-Mailbox -database $MailboxDatabaseGuid -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Identity, Guid, LinkedMasterAccount -ErrorAction Stop))
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $mailboxes = @((Get-Mailbox -database $MailboxDatabaseGuid -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Identity, Guid, LinkedMasterAccount -ErrorAction Stop))
-                                    }
+                                    $mailboxes = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @((Get-Mailbox -database $MailboxDatabaseGuid -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Identity, Guid, LinkedMasterAccount -ErrorAction Stop)) })
 
                                     foreach ($mailbox in $mailboxes) {
                                         if ($mailbox.LinkedMasterAccount) {
@@ -1911,15 +1787,10 @@ try {
                                 Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } }) })
 
-                                        If ($x.count -ne $x.guid.guid.count) {
-                                            throw 'Error: Some security principals do not have a GUID, which must be a query error.'
-                                        }
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-SecurityPrincipal -Filter $filter -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
+                                    If ($x.count -ne $x.guid.guid.count) {
+                                        throw 'Error: Some security principals do not have a GUID, which must be a query error.'
                                     }
 
                                     if ($x) {
@@ -2253,20 +2124,11 @@ try {
                                 Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
-                                            }
-                                        )
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
-                                            }
-                                        )
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(
+                                                if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
+                                                    . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, ModerationEnabled, SendModerationNotifications, ModeratedBy, BypassModerationFromSendersOrMembers
+                                                }
+                                            ) })
 
                                     if ($x) {
                                         Write-Host "  $($x.count) recipients"
@@ -2507,20 +2369,11 @@ try {
                                 Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity
-                                            }
-                                        )
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity
-                                            }
-                                        )
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(
+                                                if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
+                                                    . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity
+                                                }
+                                            ) })
 
                                     if ($x) {
                                         Write-Host "  $($x.count) recipients"
@@ -2759,20 +2612,11 @@ try {
                                 Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
-                                            }
-                                        )
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
-                                            }
-                                        )
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(
+                                                if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
+                                                    . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, AcceptMessagesOnlyFromSendersOrMembers
+                                                }
+                                            ) })
 
                                     if ($x) {
                                         Write-Host "  $($x.count) recipients"
@@ -2996,12 +2840,7 @@ try {
                                 Write-Host "Recipient $($RecipientID) ($($Recipient.PrimarySmtpAddress)) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = get-calendarprocessing -identity $Recipient.Identity -ErrorAction stop | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = get-calendarprocessing -identity $Recipient.Identity -ErrorAction stop | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { get-calendarprocessing -identity $Recipient.Identity -ErrorAction stop | Select-Object ResourceDelegates, AllBookInPolicy, BookInPolicy, AllRequestInPolicy, RequestInPolicy, AllRequestOutOfPolicy, RequestOutOfPolicy })
 
                                     if ($x) {
                                         $Recipient.ResourceDelegates = $x.ResourceDelegates
@@ -3236,20 +3075,11 @@ try {
                                 Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, LegacyExchangeDN
-                                            }
-                                        )
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(
-                                            if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
-                                                . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, LegacyExchangeDN
-                                            }
-                                        )
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(
+                                                if (Get-Command "$($QueueArray[0])" -ErrorAction SilentlyContinue) {
+                                                    . ([scriptblock]::Create("$($QueueArray[0]) -Filter '$($QueueArray[1])' -ResultSize Unlimited -WarningAction SilentlyContinue")) | Select-Object Identity, LegacyExchangeDN
+                                                }
+                                            ) })
 
                                     if ($x) {
                                         Write-Host "  $($x.count) recipients"
@@ -3528,12 +3358,7 @@ try {
                                 Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    try {
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $x = @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } })
-                                    }
+                                    $x = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Group -Filter $filter -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Name, DisplayName, Identity, Guid, Members, RecipientType, RecipientTypeDetails -ErrorAction Stop -WarningAction SilentlyContinue | Sort-Object -Property @{expression = { ($_.DisplayName, $_.Name, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1 } }) })
 
                                     if ($x) {
                                         $AllGroups.AddRange(@($x))
@@ -3772,34 +3597,16 @@ try {
                                     foreach ($MailboxPermission in
                                         @($(
                                                 if ($ExportFromOnPrem) {
-                                                    try {
-                                                        Get-MailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
-                                                    } catch {
-                                                        . ([scriptblock]::Create($ConnectExchange))
-                                                        Get-MailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                        $UFNSelf = (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
-                                                    }
+                                                    $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxPermission -identity $GrantorPrimarySMTP -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                    $UFNSelf = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { (Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName })
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
                                                         if ($Grantor.WhenSoftDeleted) {
-                                                            try {
-                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                                $UFNSelf = 'NT AUTHORITY\SELF'
-                                                            } catch {
-                                                                . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                                $UFNSelf = 'NT AUTHORITY\SELF'
-                                                            }
+                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                            $UFNSelf = 'NT AUTHORITY\SELF'
                                                         } else {
-                                                            try {
-                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                                $UFNSelf = 'NT AUTHORITY\SELF'
-                                                            } catch {
-                                                                . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType
-                                                                $UFNSelf = 'NT AUTHORITY\SELF'
-                                                            }
+                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -Identity $GrantorPrimarySMTP -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType -ErrorAction Stop | Select-Object identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                            $UFNSelf = 'NT AUTHORITY\SELF'
                                                         }
                                                     }
                                                 }
@@ -4198,19 +4005,9 @@ try {
                                 Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 if ($ExportFromOnPrem) {
-                                    try {
-                                        $Folders = Get-MailboxFolderStatistics -identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $Folders = Get-MailboxFolderStatistics -identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
-                                    }
+                                    $Folders = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderStatistics -identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop })
                                 } else {
-                                    try {
-                                        $Folders = Get-EXOMailboxFolderStatistics -Identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
-                                    } catch {
-                                        . ([scriptblock]::Create($ConnectExchange))
-                                        $Folders = Get-EXOMailboxFolderStatistics -Identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop
-                                    }
+                                    $Folders = $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderStatistics -Identity $GrantorPrimarySMTP -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype -ErrorAction Stop })
                                 }
                                 foreach ($Folder in $Folders) {
                                     try {
@@ -4224,27 +4021,12 @@ try {
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
-                                                        try {
-                                                            (Get-MailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop)
-                                                        } catch {
-                                                            . ([scriptblock]::Create($ConnectExchange))
-                                                            (Get-MailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop)
-                                                        }
+                                                        $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { (Get-MailboxFolderPermission -identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop) })
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
-                                                            try {
-                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                            } catch {
-                                                                . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                            }
+                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop })
                                                         } else {
-                                                            try {
-                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                            } catch {
-                                                                . ([scriptblock]::Create($ConnectExchange))
-                                                                Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                            }
+                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity "$($GrantorPrimarySMTP):$($Folder.folderid)" -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop })
                                                         }
                                                     }
                                                 ))
@@ -6365,12 +6147,7 @@ try {
 
                                     foreach ($FolderPermissions in
                                         @($(
-                                                try {
-                                                    Get-PublicFolderClientPermission -identity $($Folder.EntryId) -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                } catch {
-                                                    . ([scriptblock]::Create($ConnectExchange))
-                                                    Get-PublicFolderClientPermission -identity $($Folder.EntryId) -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop
-                                                }
+                                                $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-PublicFolderClientPermission -identity $($Folder.EntryId) -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights -ErrorAction Stop })
                                             ))
                                     ) {
                                         foreach ($FolderPermission in $FolderPermissions) {
