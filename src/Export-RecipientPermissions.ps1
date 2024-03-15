@@ -423,25 +423,10 @@ Param(
 
 
 $ConnectExchange = {
-    $Stoploop = $false
-    [int]$Retrycount = 1
+    [bool]$StopLoop = $false
 
-    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-        Disconnect-ExchangeOnline -Confirm:$false
-        Remove-Module -Name 'ExchangeOnlineManagement' -Force
-    }
-
-    if (($ExportFromOnPrem -eq $true)) {
-        if ($ExchangeSession) {
-            Remove-PSSession -Session $ExchangeSession
-        }
-    }
-
-    if (-not $connectionUri) {
-        $connectionUri = $tempConnectionUriQueue.dequeue()
-    }
-
-    Write-Verbose "Connection URI: '$connectionUri'"
+    [int]$RetryCount = 1
+    [int]$RetryMaximum = 4
 
     $ExchangeCommandNames = @(
         'Get-CASMailbox',
@@ -478,109 +463,86 @@ $ConnectExchange = {
         'Set-AdServerSettings' # Exchange on-prem only
     )
 
-    while ($Stoploop -ne $true) {
-        try {
-            if ($Retrycount -gt 1) {
-                Write-Host "Try $($Retrycount), via '$($connectionUri)'."
-            }
+    while (($StopLoop -eq $false) -and ($RetryCount -le $RetryMaximum)) {
+        # Prepare stuff
+        $SleepTime = (60 * $RetryCount) + 15
 
-            if (@(Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue).count -eq 1) {
-                Write-Verbose "Exchange session established and working on try $($RetryCount)."
-                $Stoploop = $true
+        # Disconnect current session
+        Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', remove existing connection"
+
+        if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+            Disconnect-ExchangeOnline -Confirm:$false
+            Remove-Module -Name 'ExchangeOnlineManagement' -Force
+        }
+
+        if (($ExportFromOnPrem -eq $true)) {
+            if ($ExchangeSession) {
+                Remove-PSSession -Session $ExchangeSession
+            }
+        }
+
+
+        # Get (new) connection URI
+        $connectionUri = $tempConnectionUriQueue.dequeue()
+
+
+        # Connect to new session
+        Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', start connect"
+
+        if ($ExportFromOnPrem -eq $true) {
+            if ($UseDefaultCredential) {
+                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames
             } else {
-                throw
+                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames
             }
-        } catch {
-            try {
-                Write-Verbose "Exchange session either not yet established or not working on try $($RetryCount)."
 
-                if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                    Disconnect-ExchangeOnline -Confirm:$false
-                    Remove-Module -Name 'ExchangeOnlineManagement' -Force
-                }
+            $null = Set-AdServerSettings -ViewEntireForest $True
+        } else {
+            if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
+                $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
+            }
 
-                if (($ExportFromOnPrem -eq $true)) {
-                    if ($ExchangeSession) {
-                        Remove-PSSession -Session $ExchangeSession
-                    }
-                }
+            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
+                $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
+            }
 
-                if ($Retrycount -gt 1) {
-                    $connectionUri = $tempConnectionUriQueue.dequeue()
-                }
+            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
+                $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
+            }
 
-                if ($ExportFromOnPrem -eq $true) {
-                    if ($UseDefaultCredential) {
-                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                        $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames
-                    } else {
-                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                        $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames
-                    }
+            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
+                $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
+            }
 
-                    $null = Set-AdServerSettings -ViewEntireForest $True
-                } else {
-                    if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
-                        $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
-                    }
+            if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
+                $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
+            }
 
-                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
-                        $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
-                    }
+            $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
+            $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
 
-                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
-                        $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
-                    }
+            Import-Module '.\bin\ExchangeOnlineManagement' -Force
 
-                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
-                        $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
-                    }
+            Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
+        }
 
-                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
-                        $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
-                    }
 
-                    $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
-                    $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
+        # Test new connection
+        if (@(Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue).count -eq 1) {
+            Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', success"
 
-                    Import-Module '.\bin\ExchangeOnlineManagement' -Force
+            $StopLoop = $true
+        } else {
+            if ($RetryCount -lt $RetryMaximum) {
+                Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', failure, next try in $($SleepTime) seconds"
 
-                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
-                }
+                Start-Sleep -Seconds $SleepTime
 
-                if (@(Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue).count -eq 1) {
-                    Write-Verbose "Exchange session established and working on try $($RetryCount)."
-                    $Stoploop = $true
-                } else {
-                    throw
-                }
-            } catch {
-                if ($Retrycount -lt 3) {
-                    Write-Host "Exchange session could not be established in a working state to '$($connectionUri)' on try $($Retrycount)."
-                    Write-Host $error[0]
-                    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                        Disconnect-ExchangeOnline -Confirm:$false
-                        Remove-Module -Name 'ExchangeOnlineManagement' -Force
-                    }
-
-                    if (($ExportFromOnPrem -eq $true)) {
-                        if ($ExchangeSession) {
-                            Remove-PSSession -Session $ExchangeSession
-                        }
-                    }
-
-                    $connectionUri = $tempConnectionUriQueue.dequeue()
-
-                    $SleepTime = (30 * $RetryCount * ($RetryCount / 2)) + 15
-
-                    Write-Host "Trying again in $($SleepTime) seconds via '$connectionUri'."
-
-                    Start-Sleep -Seconds $SleepTime
-                    $Retrycount++
-                } else {
-                    throw "Exchange session could not be established in a working state on $($Retrycount) retries. Giving up."
-                    $Stoploop = $true
-                }
+                $RetryCount++
+            } else {
+                throw "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', failure, giving up because maximum retries reached"
             }
         }
     }
@@ -1956,9 +1918,9 @@ try {
 
                                     if ($x) {
                                         $AllSecurityPrincipals.AddRange(@($x))
-                                        Write-Host "  $($x.count) groups"
+                                        Write-Host "  $($x.count) security principals"
                                     } else {
-                                        Write-Host '  0 groups'
+                                        Write-Host '  0 security principals'
                                     }
                                 } catch {
                                     (
