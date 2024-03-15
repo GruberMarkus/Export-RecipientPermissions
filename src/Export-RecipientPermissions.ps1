@@ -468,7 +468,7 @@ $ConnectExchange = {
         $SleepTime = (60 * $RetryCount) + 15
 
         # Disconnect current session
-        Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', remove existing connection"
+        Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
 
         if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
             Disconnect-ExchangeOnline -Confirm:$false
@@ -487,7 +487,7 @@ $ConnectExchange = {
 
 
         # Connect to new session
-        Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', start connect"
+        Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
         if ($ExportFromOnPrem -eq $true) {
             if ($UseDefaultCredential) {
@@ -531,18 +531,18 @@ $ConnectExchange = {
 
         # Test new connection
         if (@(Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue).count -eq 1) {
-            Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', success"
+            Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), successfully connected to '$($connectionUri)'"
 
             $StopLoop = $true
         } else {
             if ($RetryCount -lt $RetryMaximum) {
-                Write-Host "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', failure, next try in $($SleepTime) seconds"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, next try in $($SleepTime) seconds"
 
                 Start-Sleep -Seconds $SleepTime
 
                 $RetryCount++
             } else {
-                throw "Try $($RetryCount)/$($RetryMaximum), connection URI '$($connectionUri)', failure, giving up because maximum retries reached"
+                throw "ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, giving up because maximum retries reached"
             }
         }
     }
