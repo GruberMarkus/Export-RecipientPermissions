@@ -490,29 +490,15 @@ $ConnectExchange = {
         Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
         if ($ExportFromOnPrem -eq $true) {
-            try {
-                if ($UseDefaultCredential) {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -FormatTypeName * -ErrorAction Stop
-                } else {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -FormatTypeName * -ErrorAction Stop
-                }
-
-                $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
-            } catch {
-                Start-Sleep -Seconds 2
-
-                if ($UseDefaultCredential) {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -FormatTypeName * -ErrorAction Stop
-                } else {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -FormatTypeName * -ErrorAction Stop
-                }
-
-                $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
+            if ($UseDefaultCredential) {
+                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+            } else {
+                $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
             }
+
+            $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
         } else {
             if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
                 $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
