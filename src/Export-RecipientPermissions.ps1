@@ -3636,7 +3636,7 @@ try {
                                 try {
                                     $RecipientID = $tempQueue.dequeue()
 
-                                    $runcount++
+                                    $runsDone++
                                 } catch {
                                     continue
                                 }
