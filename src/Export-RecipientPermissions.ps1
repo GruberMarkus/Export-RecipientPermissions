@@ -512,7 +512,7 @@ $ConnectExchange = {
                     $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
                 }
 
-                $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
+                . ([scriptblock]::Create("Set-$($CmdletPrefix)AdServerSettings -ViewEntireForest `$True -ErrorAction Stop"))
             } else {
                 if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
                     $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
