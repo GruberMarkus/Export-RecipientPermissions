@@ -434,7 +434,6 @@ $ConnectExchange = {
     [bool]$StopLoop = $false
     [int]$RetryCount = 0
     [int]$SleepTime = 0
-    [string]$CmdletPrefix = (New-Guid).ToString('N')
     [scriptblock]$ScriptBlockPre = { if (($ExportFromOnPrem -eq $true)) { Set-AdServerSettings -ViewEntireForest $true -ErrorAction Stop } }
 
 
@@ -551,11 +550,14 @@ $ConnectExchange = {
 
 
         # Mode ExchangeCommandNames in ScriptBlock to match CmdletPrefix
+        $ScriptBlockPreConverted = $ScriptBlockPre
+        $ScriptBlockConverted = $ScriptBlock
+
         $ExchangeCommandNames | ForEach-Object {
             $ReplaceString = ($_ -split '-', 2)
             $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
-            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPre -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
-            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlock -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPreConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlockConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
         }
 
 
