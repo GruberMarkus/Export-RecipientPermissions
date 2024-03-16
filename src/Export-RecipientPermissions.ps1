@@ -513,10 +513,6 @@ $ConnectExchange = {
                     $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
                     $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
                 }
-
-                if ($ExportFromOnPrem -eq $true) {
-                    Set-AdServerSettings -ViewEntireForest $true -ErrorAction Stop
-                }
             } else {
                 if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
                     $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
