@@ -3629,7 +3629,10 @@ try {
                             . ([scriptblock]::Create($ConnectExchange)) -NoReturnValue
 
                             while ($tempQueue.count -gt 0) {
-                                if ($runsDone -eq 10) { exit }
+                                if ($runsDone -eq 10) {
+                                    write-host "10 runs done, leaving this runspace"
+                                    exit
+                                }
 
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
 
