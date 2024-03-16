@@ -435,6 +435,8 @@ $ConnectExchange = {
     [int]$RetryCount = 0
     [int]$SleepTime = 0
     [string]$CmdletPrefix = (New-Guid).ToString('N')
+    [scriptblock]$ScriptBlockPre = { if (($ExportFromOnPrem -eq $true)) { Set-AdServerSettings -ViewEntireForest $true -ErrorAction Stop } }
+
 
     $ExchangeCommandNames = @(
         'Get-CASMailbox',
@@ -512,7 +514,9 @@ $ConnectExchange = {
                     $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
                 }
 
-                . ([scriptblock]::Create("Set-$($CmdletPrefix)AdServerSettings -ViewEntireForest `$True -ErrorAction Stop"))
+                if ($ExportFromOnPrem -eq $true) {
+                    Set-AdServerSettings -ViewEntireForest $true -ErrorAction Stop
+                }
             } else {
                 if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
                     $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
@@ -554,12 +558,15 @@ $ConnectExchange = {
         $ExchangeCommandNames | ForEach-Object {
             $ReplaceString = ($_ -split '-', 2)
             $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
+            $ScriptBlockPre = [scriptblock]::create($($ScriptBlockPre -ireplace [regex]::escape($_), $ReplaceString))
             $ScriptBlock = [scriptblock]::create($($ScriptBlock -ireplace [regex]::escape($_), $ReplaceString))
         }
 
 
         # Execute $ScriptBlock to test connection
         try {
+            . ([scriptblock]::Create($ScriptBlockPre))
+
             $x = $(. ([scriptblock]::Create($ScriptBlock)))
 
             if ($NoReturnValue -eq $false) {
