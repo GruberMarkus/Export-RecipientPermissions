@@ -473,106 +473,117 @@ $ConnectExchange = {
     )
 
     while (($StopLoop -eq $false) -and ($RetryCount -le $RetryMaximum)) {
+        $ConnectionError = $false
+
         if ($RetryCount -gt 0) {
-            # Prepare stuff
-            $SleepTime = (60 * $RetryCount) + 15
+            try {
+                # Prepare stuff
+                $SleepTime = (60 * $RetryCount) + 15
 
 
-            # Disconnect current session
-            Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
+                # Disconnect current session
+                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
 
-            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                Disconnect-ExchangeOnline -Confirm:$false
-                Remove-Module -Name 'ExchangeOnlineManagement' -Force
-            }
-
-            if (($ExportFromOnPrem -eq $true)) {
-                if ($ExchangeSession) {
-                    Remove-PSSession -Session $ExchangeSession
+                if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+                    Disconnect-ExchangeOnline -Confirm:$false
+                    Remove-Module -Name 'ExchangeOnlineManagement' -Force
                 }
-            }
+
+                if (($ExportFromOnPrem -eq $true)) {
+                    if ($ExchangeSession) {
+                        Remove-PSSession -Session $ExchangeSession
+                    }
+                }
 
 
-            # Get (new) connection URI
-            $connectionUri = $tempConnectionUriQueue.dequeue()
+                # Get (new) connection URI
+                $connectionUri = $tempConnectionUriQueue.dequeue()
 
 
-            # Create new prefix
-            $CmdletPrefix = (New-Guid).ToString('N')
+                # Create new prefix
+                $CmdletPrefix = (New-Guid).ToString('N')
 
 
-            # Connect to new session
-            Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
+                # Connect to new session
+                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
-            if ($ExportFromOnPrem -eq $true) {
-                if ($UseDefaultCredential) {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                if ($ExportFromOnPrem -eq $true) {
+                    if ($UseDefaultCredential) {
+                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                        $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                    } else {
+                        $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
+                        $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                    }
                 } else {
-                    $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                    if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
+                        $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
+                    }
+
+                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
+                        $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
+                    }
+
+                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
+                        $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
+                    }
+
+                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
+                        $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
+                    }
+
+                    if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
+                        $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
+                    }
+
+                    $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
+                    $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
+
+                    try {
+                        Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
+                    } catch {
+                        Start-Sleep -Seconds 2
+
+                        Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
+                    }
+
+                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -Prefix $CmdletPrefix
                 }
-            } else {
-                if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
-                    $ExchangeOnlineConnectionParameters['Credential'] = $ExchangeCredential
-                }
-
-                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingFormatData')) {
-                    $ExchangeOnlineConnectionParameters['SkipLoadingFormatData'] = $true
-                }
-
-                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('SkipLoadingCmdletHelp')) {
-                    $ExchangeOnlineConnectionParameters['SkipLoadingCmdletHelp'] = $true
-                }
-
-                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowBanner')) {
-                    $ExchangeOnlineConnectionParameters['ShowBanner'] = $false
-                }
-
-                if (-not $ExchangeOnlineConnectionParameters.ContainsKey('ShowProgress')) {
-                    $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
-                }
-
-                $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
-                $ExchangeOnlineConnectionParameters['CommandName'] = $ExchangeCommandNames
-
-                try {
-                    Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
-                } catch {
-                    Start-Sleep -Seconds 2
-
-                    Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
-                }
-
-                Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -Prefix $CmdletPrefix
+            } catch {
+                $ConnectionError = $true
             }
         }
 
+        if ($ConnectionError -eq $false) {
+            # Mode ExchangeCommandNames in ScriptBlock to match CmdletPrefix
+            $ScriptBlockPreConverted = $ScriptBlockPre
+            $ScriptBlockConverted = $ScriptBlock
 
-        # Mode ExchangeCommandNames in ScriptBlock to match CmdletPrefix
-        $ScriptBlockPreConverted = $ScriptBlockPre
-        $ScriptBlockConverted = $ScriptBlock
+            $ExchangeCommandNames | ForEach-Object {
+                $ReplaceString = ($_ -split '-', 2)
+                $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
+                $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPreConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+                $ScriptBlockConverted = [scriptblock]::create($($ScriptBlockConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+            }
 
-        $ExchangeCommandNames | ForEach-Object {
-            $ReplaceString = ($_ -split '-', 2)
-            $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
-            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPreConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
-            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlockConverted -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+
+            # Execute $ScriptBlock to test connection
+            try {
+                . ([scriptblock]::Create($ScriptBlockPreConverted))
+
+                $x = $(. ([scriptblock]::Create($ScriptBlockConverted)))
+
+                if ($NoReturnValue -eq $false) {
+                    return $x
+                } else {
+                    $StopLoop = $true
+                }
+            } catch {
+                $ConnectionError = $true
+            }
         }
 
-
-        # Execute $ScriptBlock to test connection
-        try {
-            . ([scriptblock]::Create($ScriptBlockPreConverted))
-
-            $x = $(. ([scriptblock]::Create($ScriptBlockConverted)))
-
-            if ($NoReturnValue -eq $false) {
-                return $x
-            } else {
-                $StopLoop = $true
-            }
-        } catch {
+        if ($ConnectionError -eq $true) {
             if ($RetryCount -eq 0) {
                 Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum) failed, next try in $($SleepTime) seconds"
 
@@ -3572,9 +3583,9 @@ try {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
             $RunspacePool.Open()
 
-            $runspaces = [system.collections.arraylist]::new([math]::ceiling($tempQueueCount/10))
+            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
 
-            1..[math]::ceiling($tempQueueCount/10) | ForEach-Object {
+            1..$ParallelJobsNeeded | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
 
@@ -3624,16 +3635,9 @@ try {
 
                             Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                            $runsDone = 0
-
                             . ([scriptblock]::Create($ConnectExchange)) -NoReturnValue
 
                             while ($tempQueue.count -gt 0) {
-                                if ($runsDone -eq 10) {
-                                    write-host "10 runs done, leaving this runspace"
-                                    exit
-                                }
-
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
 
                                 try {
