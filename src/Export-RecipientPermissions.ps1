@@ -982,7 +982,7 @@ try {
     try {
         # Get-EXORecipient does not (yet) return allowed RecipientTypeDetails,
         #   so Get-Recipient is used for Exchange on-prem and Exchange Online
-        $null = . ([scriptblock]::Create("@(Get-$($CmdletPrefix)Recipient -RecipientTypeDetails '!!!Fail!!!' -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue)")
+        $null = @($(. ([scriptblock]::Create("Get-$($CmdletPrefix)Recipient -RecipientTypeDetails '!!!Fail!!!' -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue"))))
     } catch {
         $null = $error[0].exception -match '(?!.*: )(.*)(")$'
         $RecipientTypeDetailsListUnchecked = $matches[1].trim() -split ', ' | Where-Object { $_ } | Sort-Object -Unique
@@ -994,7 +994,7 @@ try {
         # Get-EXORecipient is extremly slow when querying for non-existing RecipienttypeDetails
         #   so Get-Recipient is used for Exchange on-prem and Exchange Online
         try {
-            $null = @(Get-Recipient -RecipientTypeDetails $RecipientTypeDetail -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue )
+            $null = @($(. ([scriptblock]::Create("Get-$($CmdletPrefix)Recipient -RecipientTypeDetails $RecipientTypeDetail -resultsize 1 -ErrorAction Stop -WarningAction silentlycontinue"))))
             $RecipientTypeDetailsList += $RecipientTypeDetail
         } catch {
         }
