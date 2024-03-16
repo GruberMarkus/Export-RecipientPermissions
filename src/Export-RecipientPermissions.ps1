@@ -434,6 +434,7 @@ $ConnectExchange = {
     [bool]$StopLoop = $false
     [int]$RetryCount = 0
     [int]$SleepTime = 0
+    [string]$CmdletPrefix = (New-Guid).ToString('N')
 
     $ExchangeCommandNames = @(
         'Get-CASMailbox',
@@ -475,6 +476,7 @@ $ConnectExchange = {
             # Prepare stuff
             $SleepTime = (60 * $RetryCount) + 15
 
+
             # Disconnect current session
             Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
 
@@ -494,16 +496,20 @@ $ConnectExchange = {
             $connectionUri = $tempConnectionUriQueue.dequeue()
 
 
+            # Create new prefix
+            $CmdletPrefix = (New-Guid).ToString('N')
+
+
             # Connect to new session
             Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
             if ($ExportFromOnPrem -eq $true) {
                 if ($UseDefaultCredential) {
                     $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                    $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
                 } else {
                     $ExchangeSession = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ExchangeSession' -ErrorAction Stop
-                    $null = Import-PSSession $ExchangeSession -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
+                    $null = Import-PSSession $ExchangeSession -Prefix $CmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ExchangeCommandNames -ErrorAction Stop
                 }
 
                 $null = Set-AdServerSettings -ViewEntireForest $True -ErrorAction Stop
@@ -539,9 +545,18 @@ $ConnectExchange = {
                     Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
                 }
 
-                Connect-ExchangeOnline @ExchangeOnlineConnectionParameters
+                Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -Prefix $CmdletPrefix
             }
         }
+
+
+        # Mode ExchangeCommandNames in ScriptBlock to match CmdletPrefix
+        $ExchangeCommandNames | ForEach-Object {
+            $ReplaceString = ($_ -split '-', 2)
+            $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
+            $ScriptBlock = [scriptblock]::create($($ScriptBlock -ireplace [regex]::escape($_), $ReplaceString))
+        }
+
 
         # Execute $ScriptBlock to test connection
         try {
