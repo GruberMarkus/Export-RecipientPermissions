@@ -597,6 +597,10 @@ $ConnectExchange = {
             } else {
                 throw "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, giving up because maximum retries reached"
             }
+        } else {
+            if ($RetryCount -gt 0) {
+                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), successfully connected"
+            }
         }
     }
 }
