@@ -554,8 +554,8 @@ $ConnectExchange = {
         $ExchangeCommandNames | ForEach-Object {
             $ReplaceString = ($_ -split '-', 2)
             $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
-            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPre -ireplace [regex]::escape($_), $ReplaceString))
-            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlock -ireplace [regex]::escape($_), $ReplaceString))
+            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPre -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
+            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlock -ireplace "\b$([regex]::escape($_))\b", $ReplaceString))
         }
 
 
