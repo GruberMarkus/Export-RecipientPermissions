@@ -554,16 +554,16 @@ $ConnectExchange = {
         $ExchangeCommandNames | ForEach-Object {
             $ReplaceString = ($_ -split '-', 2)
             $ReplaceString = "$($ReplaceString[0])-$($CmdletPrefix)$($ReplaceString[1])"
-            $ScriptBlockPre = [scriptblock]::create($($ScriptBlockPre -ireplace [regex]::escape($_), $ReplaceString))
-            $ScriptBlock = [scriptblock]::create($($ScriptBlock -ireplace [regex]::escape($_), $ReplaceString))
+            $ScriptBlockPreConverted = [scriptblock]::create($($ScriptBlockPre -ireplace [regex]::escape($_), $ReplaceString))
+            $ScriptBlockConverted = [scriptblock]::create($($ScriptBlock -ireplace [regex]::escape($_), $ReplaceString))
         }
 
 
         # Execute $ScriptBlock to test connection
         try {
-            . ([scriptblock]::Create($ScriptBlockPre))
+            . ([scriptblock]::Create($ScriptBlockPreConverted))
 
-            $x = $(. ([scriptblock]::Create($ScriptBlock)))
+            $x = $(. ([scriptblock]::Create($ScriptBlockConverted)))
 
             if ($NoReturnValue -eq $false) {
                 return $x
