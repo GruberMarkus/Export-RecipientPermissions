@@ -3572,9 +3572,9 @@ try {
             $RunspacePool = [RunspaceFactory]::CreateRunspacePool(1, $ParallelJobsNeeded)
             $RunspacePool.Open()
 
-            $runspaces = [system.collections.arraylist]::new($ParallelJobsNeeded)
+            $runspaces = [system.collections.arraylist]::new([math]::ceiling($tempQueueCount/10))
 
-            1..$ParallelJobsNeeded | ForEach-Object {
+            1..[math]::ceiling($tempQueueCount/10) | ForEach-Object {
                 $Powershell = [powershell]::Create()
                 $Powershell.RunspacePool = $RunspacePool
 
@@ -3624,13 +3624,19 @@ try {
 
                             Write-Host "Get and export Mailbox Access Rights @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
+                            $runsDone = 0
+
                             . ([scriptblock]::Create($ConnectExchange)) -NoReturnValue
 
                             while ($tempQueue.count -gt 0) {
+                                if ($runsDone -eq 10) { exit }
+
                                 $ExportFileLines = [system.collections.arraylist]::new(1000)
 
                                 try {
                                     $RecipientID = $tempQueue.dequeue()
+
+                                    $runcount++
                                 } catch {
                                     continue
                                 }
