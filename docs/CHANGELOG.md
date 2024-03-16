@@ -16,6 +16,15 @@ _**Breaking:** Notice about breaking change_
 -->
 
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Changed
+- Error handling improvements
+  - Complete rewrite of Exchange connection code
+  - More resilient Active Directory queries
+  - Exchange occasionally returns security principals without a GUID
+- Complete rewrite of code getting UserFriendlyNames
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.1.1" target="_blank">v3.1.1</a> - 2023-10-12
 ### Changed
 - Update ExchangeOnlineManagement module to v3.4.0
