@@ -482,7 +482,7 @@ $ConnectExchange = {
 
 
                 # Disconnect current session
-                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), remove existing connection"
 
                 if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
                     Disconnect-ExchangeOnline -Confirm:$false
@@ -505,7 +505,7 @@ $ConnectExchange = {
 
 
                 # Connect to new session
-                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
 
                 if ($ExportFromOnPrem -eq $true) {
                     if ($UseDefaultCredential) {
@@ -585,21 +585,21 @@ $ConnectExchange = {
 
         if ($ConnectionError -eq $true) {
             if ($RetryCount -eq 0) {
-                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum) failed, next try in $($SleepTime) seconds"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), failed, next try in $($SleepTime) seconds"
 
                 $RetryCount++
             } elseif ($RetryCount -lt $RetryMaximum) {
-                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, next try in $($SleepTime) seconds"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, next try in $($SleepTime) seconds"
 
                 Start-Sleep -Seconds $SleepTime
 
                 $RetryCount++
             } else {
-                throw "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, giving up because maximum retries reached"
+                throw "ConnectExchange, try $($RetryCount)/$($RetryMaximum), connecting to '$($connectionUri)' failed, giving up because maximum retries reached"
             }
         } else {
             if ($RetryCount -gt 0) {
-                Write-Host "  ConnectExchange, try $($RetryCount)/$($RetryMaximum), successfully connected"
+                Write-Host "ConnectExchange, try $($RetryCount)/$($RetryMaximum), successfully connected"
             }
         }
     }
