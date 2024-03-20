@@ -430,72 +430,66 @@ $ConnectExchange = {
 
         [switch]$NoReturnValue,
 
-        [switch]$Disconnect
+        [switch]$Disconnect,
+
+        [string]$Indent = 2
     )
 
     [bool]$ConnectExchangeTempVariableStopLoop = $false
     [int]$ConnectExchangeTempVariableRetryCount = 0
     [int]$ConnectExchangeTempVariableSleepTime = 0
-    [scriptblock]$ConnectExchangeTempVariableScriptBlockPre = { if (($ExportFromOnPrem -eq $true)) { Set-AdServerSettings -ViewEntireForest $true -ErrorAction Stop } }
+    [scriptblock]$ConnectExchangeTempVariableScriptBlockPre = { Set-AdServerSettings -ViewEntireForest 1 -ErrorAction Stop }
+
+    $DisconnectExchange = {
+        # Disconnect current session
+        Write-Host "$(' '*$Indent)DisconnectExchange, remove existing connection"
+
+        if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
+            Disconnect-ExchangeOnline -Confirm:$false
+            Remove-Module -Name 'ExchangeOnlineManagement' -Force
+        }
+
+        if (($ExportFromOnPrem -eq $true)) {
+            if ($ConnectExchangeExchangeSessionModule) {
+                $ConnectExchangeExchangeSessionModule | Remove-Module
+            }
+
+            Get-PSSession | Where-Object { $_.Name -eq 'ConnectExchangeExchangeSession' } | Remove-PSSession
+        }
+    }
 
 
-    $ConnectExchangeTempVariableExchangeCommandNames = @(
-        'Get-Mailbox',
-        'Get-MailboxDatabase',
-        'Get-MailboxFolderPermission',
-        'Get-MailboxStatistics',
-        'Get-SecurityPrincipal',
-        'Get-User',
-        'Set-AdServerSettings'
-    )
+    if ($Disconnect) {
+        . ([scriptblock]::Create($DisconnectExchange))
+        return
+    }
 
+
+    if (-not $ConnectExchangeTempVariableConnectionUri) {
+        $ConnectExchangeTempVariableRetryCount++
+    }
 
     while (($ConnectExchangeTempVariableStopLoop -eq $false) -and ($ConnectExchangeTempVariableRetryCount -le $RetryMaximum)) {
         try {
-            if (($ConnectExchangeTempVariableRetryCount -gt 0) -or ($Disconnect)) {
-                # Disconnect current session
-                Write-Host "  ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), remove existing connection"
-
-                if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                    Disconnect-ExchangeOnline -Confirm:$false
-                    Remove-Module -Name 'ExchangeOnlineManagement' -Force
-                }
-
-                if (($ExportFromOnPrem -eq $true)) {
-                    Get-PSSession | Where-Object { $_.Name -eq 'ConnectExchangeExchangeSession' } | Remove-PSSession
-                }
+            # Calculate SleepTime in case of error
+            $ConnectExchangeTempVariableSleepTime = (60 * $ConnectExchangeTempVariableRetryCount) + 15
 
 
-                # Return if $Disconnect
-                if ($Disconnect) {
-                    return
-                }
-
-
-                # Calculate SleepTime
-                if (-not $ExportFromOnPrem) {
-                    $ConnectExchangeTempVariableSleepTime = (60 * $ConnectExchangeTempVariableRetryCount) + 15
-                }
-
-
+            if ($ConnectExchangeTempVariableRetryCount -gt 0) {
                 # Get (new) connection URI
-                $connectionUri = $tempConnectionUriQueue.dequeue()
+                if ((-not $ConnectExchangeTempVariableConnectionUri) -or ($ConnectExchangeTempVariableRetryCount -gt 1)) {
+                    $ConnectExchangeTempVariableConnectionUri = $tempConnectionUriQueue.dequeue()
+                }
 
 
-                # Create new prefix
-                $ConnectExchangeTempVariableCmdletPrefix = (New-Guid).ToString('N')
-
-
-                # Connect to new session
-                Write-Host "  ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), start connecting to '$($connectionUri)'"
+                # Create new session
+                Write-Host "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), start connecting to '$($ConnectExchangeTempVariableConnectionUri)'"
 
                 if ($ExportFromOnPrem -eq $true) {
                     if ($UseDefaultCredential) {
-                        $ConnectExchangeExchangeSession = New-PSSession -ConfigurationName 'Microsoft.Exchange' -ConnectionUri $connectionUri -Authentication Kerberos -AllowRedirection -Name 'ConnectExchangeExchangeSession' -ErrorAction Stop
-                        $ConnectExchangeExchangeSessionModule = Import-PSSession $ConnectExchangeExchangeSession -Prefix $ConnectExchangeTempVariableCmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ConnectExchangeTempVariableExchangeCommandNames -ErrorAction Stop
+                        $ConnectExchangeExchangeSession = New-PSSession -ConfigurationName 'Microsoft.Exchange' -ConnectionUri $ConnectExchangeTempVariableConnectionUri -Authentication Kerberos -AllowRedirection -Name 'ConnectExchangeExchangeSession' -ErrorAction Stop
                     } else {
-                        $ConnectExchangeExchangeSession = New-PSSession -ConfigurationName 'Microsoft.Exchange' -ConnectionUri $connectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ConnectExchangeExchangeSession' -ErrorAction Stop
-                        $ConnectExchangeExchangeSessionModule = Import-PSSession $ConnectExchangeExchangeSession -Prefix $ConnectExchangeTempVariableCmdletPrefix -DisableNameChecking -AllowClobber -CommandName $ConnectExchangeTempVariableExchangeCommandNames -ErrorAction Stop
+                        $ConnectExchangeExchangeSession = New-PSSession -ConfigurationName 'Microsoft.Exchange' -ConnectionUri $ConnectExchangeTempVariableConnectionUri -Credential $ExchangeCredential -Authentication Kerberos -AllowRedirection -Name 'ConnectExchangeExchangeSession' -ErrorAction Stop
                     }
                 } else {
                     if ($ExchangeOnlineConnectionParameters.ContainsKey('Credential')) {
@@ -518,32 +512,27 @@ $ConnectExchange = {
                         $ExchangeOnlineConnectionParameters['ShowProgress'] = $false
                     }
 
-                    $ExchangeOnlineConnectionParameters['ConnectionUri'] = $connectionUri
-                    $ExchangeOnlineConnectionParameters['CommandName'] = $ConnectExchangeTempVariableExchangeCommandNames
+                    $ExchangeOnlineConnectionParameters['ConnectionUri'] = $ConnectExchangeTempVariableConnectionUri
 
                     Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
 
-                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters -Prefix $ConnectExchangeTempVariableCmdletPrefix
+                    Connect-ExchangeOnline @ExchangeOnlineConnectionParameters # -Prefix $ConnectExchangeTempVariableCmdletPrefix
                 }
             }
 
 
-            # Mode ExchangeCommandNames in ScriptBlock to match ConnectExchangeTempVariableCmdletPrefix
-            $ConnectExchangeTempVariableScriptBlockPreConverted = $ConnectExchangeTempVariableScriptBlockPre
-            $ConnectExchangeTempVariableScriptBlockConverted = $ScriptBlock
-
-            $ConnectExchangeTempVariableExchangeCommandNames | ForEach-Object {
-                $ConnectExchangeTempVariableReplaceString = ($_ -split '-', 2)
-                $ConnectExchangeTempVariableReplaceString = "$($ConnectExchangeTempVariableReplaceString[0])-$($ConnectExchangeTempVariableCmdletPrefix)$($ConnectExchangeTempVariableReplaceString[1])"
-                $ConnectExchangeTempVariableScriptBlockPreConverted = [scriptblock]::create($($ConnectExchangeTempVariableScriptBlockPreConverted -ireplace "\b$([regex]::escape($_))\b", $ConnectExchangeTempVariableReplaceString))
-                $ConnectExchangeTempVariableScriptBlockConverted = [scriptblock]::create($($ConnectExchangeTempVariableScriptBlockConverted -ireplace "\b$([regex]::escape($_))\b", $ConnectExchangeTempVariableReplaceString))
-            }
-
-
             # Execute $ScriptBlock to test connection
-            . ([scriptblock]::Create($ConnectExchangeTempVariableScriptBlockPreConverted))
+            if ($ExportFromOnPrem) {
+                $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
 
-            $ConnectExchangeTempReturnValue = $(. ([scriptblock]::Create($ConnectExchangeTempVariableScriptBlockConverted)))
+                $null = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
+
+                $ConnectExchangeTempVariableScriptBlockExecute = $ScriptBlock
+                $ConnectExchangeTempReturnValue = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
+            } else {
+                $ConnectExchangeTempVariableScriptBlockExecute = $ScriptBlock
+                $ConnectExchangeTempReturnValue = $(. ([scriptblock]::Create($ScriptBlock)))
+            }
 
             if ($NoReturnValue -eq $false) {
                 return $ConnectExchangeTempReturnValue
@@ -552,17 +541,23 @@ $ConnectExchange = {
             }
         } catch {
             if ($ConnectExchangeTempVariableRetryCount -eq 0) {
-                Write-Host "  ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, next try in $($ConnectExchangeTempVariableSleepTime) seconds"
+                Write-Host "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, next try in $($ConnectExchangeTempVariableSleepTime) seconds"
+
+                . ([scriptblock]::Create($DisconnectExchange))
+                Start-Sleep -Seconds $ConnectExchangeTempVariableSleepTime
 
                 $ConnectExchangeTempVariableRetryCount++
             } elseif ($ConnectExchangeTempVariableRetryCount -lt $RetryMaximum) {
-                Write-Host "  ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, next try in $($ConnectExchangeTempVariableSleepTime) seconds`r`n    ScriptBlock: $($ScriptBlock)`r`n    Error: $($_ | Out-String)"
+                Write-Host "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, next try in $($ConnectExchangeTempVariableSleepTime) seconds`r`n    ScriptBlock: $($ConnectExchangeTempVariableScriptBlockExecute)`r`n    ScriptBlock expanded: $($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))`r`n    Error: $($_ | Out-String)"
 
+                . ([scriptblock]::Create($DisconnectExchange))
                 Start-Sleep -Seconds $ConnectExchangeTempVariableSleepTime
 
                 $ConnectExchangeTempVariableRetryCount++
             } else {
-                throw "  ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, giving up`r`n    ScriptBlock: $($ScriptBlock)`r`n    Error: $($_ | Out-String)"
+                . ([scriptblock]::Create($DisconnectExchange))
+
+                throw "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, giving up`r`n    ScriptBlock: $($ConnectExchangeTempVariableScriptBlockExecute)`r`n    ScriptBlock expanded: $($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))`r`n    Error: $($_ | Out-String)"
             }
         }
     }
