@@ -520,17 +520,25 @@ $ConnectExchange = {
 
                     Connect-ExchangeOnline @ExchangeOnlineConnectionParameters # -Prefix $ConnectExchangeTempVariableCmdletPrefix
                 }
+
+
+                # Execute $ScriptBlockPre to test new connection
+                if ($ExportFromOnPrem) {
+                    if ($ConnectExchangeTempVariableScriptBlockPre) {
+                        $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
+                        $null = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
+                    }
+                } else {
+                    if ($ConnectExchangeTempVariableScriptBlockPre) {
+                        $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
+                        . ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute)))
+                    }
+                }
             }
 
 
-            # Execute $ScriptBlock to test connection
+            # Execute $ScriptBlock
             if ($ExportFromOnPrem) {
-                if ($ConnectExchangeTempVariableScriptBlockPre) {
-                    $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
-                    $null = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
-                }
-
-
                 if ($ScriptBlock) {
                     $ConnectExchangeTempVariableScriptBlockExecute = $ScriptBlock
                     $ConnectExchangeTempReturnValue = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
@@ -540,11 +548,6 @@ $ConnectExchange = {
                     . ([scriptblock]::Create($ScriptBlockAfter))
                 }
             } else {
-                if ($ConnectExchangeTempVariableScriptBlockPre) {
-                    $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
-                    . ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute)))
-                }
-
                 if ($ScriptBlock) {
                     $ConnectExchangeTempVariableScriptBlockExecute = $ScriptBlock
                     $ConnectExchangeTempReturnValue = . ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute)))
@@ -576,9 +579,11 @@ $ConnectExchange = {
 
                 $ConnectExchangeTempVariableRetryCount++
             } else {
+                $ConnectExchangeTempVariableError = $_
+
                 . ([scriptblock]::Create($DisconnectExchange))
 
-                throw "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, giving up`r`n    ScriptBlock: $($ConnectExchangeTempVariableScriptBlockExecute)`r`n    ScriptBlock expanded: $($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))`r`n    Error: $($_ | Out-String)"
+                throw "$(' '*$Indent)ConnectExchange, try $($ConnectExchangeTempVariableRetryCount)/$($RetryMaximum), failed, giving up`r`n    ScriptBlock: $($ConnectExchangeTempVariableScriptBlockExecute)`r`n    ScriptBlock expanded: $($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))`r`n    Error: $($ConnectExchangeTempVariableError | Out-String)"
             }
         }
     }
@@ -658,13 +663,21 @@ $FilterGetMember = {
             }
         } elseif ($GroupToCheckType -ieq 'DynamicDistributionGroup') {
             if ($ExportFromOnPrem) {
-                $DynamicGroup = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DynamicDistributionGroup -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer }
-                $members = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-Recipient -RecipientPreviewFilter $DynamicGroup.RecipientFilter -OrganizationalUnit $DynamicGroup.RecipientContainer -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity }
+                $DynamicGroup = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DynamicDistributionGroup -identity $($AllRecipients[$AllRecipientsIndex].Guid.Guid) -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object RecipientFilter, RecipientContainer }
+                $members = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Recipient -RecipientPreviewFilter $('''' + [System.Management.Automation.Language.CodeGeneration]::EscapeSingleQuotedStringContent($($DynamicGroup.RecipientFilter)) + '''') -OrganizationalUnit $('''' + $($DynamicGroup.RecipientContainer) + '''') -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity }
             } else {
-                $members = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { @(Get-DynamicDistributionGroupMember -identity $GroupToCheck -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity -ErrorAction Stop).identity }
+                $members = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DynamicDistributionGroupMember -identity $($AllRecipients[$AllRecipientsIndex].Guid.Guid) -WarningAction SilentlyContinue -ErrorAction Stop | Select-Object Identity }
             }
 
-            if ($members) {$members = @($members)}
+            if ($members) {
+                $members = @($members)
+
+                for ($x = 0; $x -lt $members.count; $x++) {
+                    if (($members[$x]).Identity.Rdn) { ($members[$x]).Identity = ($members[$x]).Identity.ToString() }
+                }
+
+                $members = @(@($members).Identity)
+            }
 
             foreach ($member in @($members)) {
                 if ($DirectMembersOnly.IsPresent) {
@@ -1127,16 +1140,7 @@ try {
                             ) + '"'
                         ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                     } finally {
-                        if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                            Disconnect-ExchangeOnline -Confirm:$false
-                            # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                        }
-
-                        if (($ExportFromOnPrem -eq $true)) {
-                            if ($ExchangeSession) {
-                                # Remove-PSSession -Session $ExchangeSession # Hangs often
-                            }
-                        }
+                        . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                         if ($DebugFile) {
                             $null = Stop-Transcript
@@ -1348,7 +1352,7 @@ try {
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].EmailAddresses) {
-            foreach ($EmailAddress in (@($AllRecipients[$x].EmailAddresses | Where-Object { $_.StartsWith('smtp:', 'CurrentCultureIgnoreCase') }) -replace '^smtp:', '')) {
+            foreach ($EmailAddress in (@(@($AllRecipients[$x].EmailAddresses | Where-Object { $_.StartsWith('smtp:', 'CurrentCultureIgnoreCase') }) | ForEach-Object { $_ -replace '^smtp:', '' }))) {
                 if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
                     Write-Verbose "    '$($EmailAddress)' is not unique."
                     $AllRecipientsSmtpToIndex[$EmailAddress] = $null
@@ -1421,6 +1425,10 @@ try {
         Write-Host "  Mail-enabled Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object identity, grantsendonbehalfto -ErrorAction Stop }
         if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x)) }
+
+        for ($y = 0; $y -lt $AllRecipientsSendonbehalf.count; $y++) {
+            if (($AllRecipientsSendonbehalf[$y]).Identity.Rdn) { ($AllRecipientsSendonbehalf[$y]).Identity = ($AllRecipientsSendonbehalf[$y]).Identity.ToString() }
+        }
 
         $AllRecipientsSendonbehalf.TrimToSize()
         Write-Host ('  {0:0000000} Send On Behalf permissions found' -f $($AllRecipientsSendonbehalf.count))
@@ -1556,7 +1564,7 @@ try {
     Write-Host
     Write-Host "Single-thread Exchange operations completed, remove connection to Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-    . ([scriptblock]::create($DisconnectExchange))
+    . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
     [GC]::Collect(); Start-Sleep -Seconds 1
 
@@ -1629,7 +1637,13 @@ try {
                                 Write-Host "MailboxDatabaseGuid $($MailboxDatabaseGuid) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    $mailboxes = @(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -database $($MailboxDatabaseGuid) -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Identity, Guid, LinkedMasterAccount -ErrorAction Stop })
+                                    $mailboxes = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -database $($MailboxDatabaseGuid) -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property Guid, LinkedMasterAccount -ErrorAction Stop }
+
+                                    if ($mailboxes) {
+                                        $mailboxes = @($mailboxes)
+                                    } else {
+                                        $mailboxes = @()
+                                    }
 
                                     foreach ($mailbox in $mailboxes) {
                                         if ($mailbox.LinkedMasterAccount) {
@@ -1677,16 +1691,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -1916,16 +1921,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2275,16 +2271,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2523,16 +2510,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2770,16 +2748,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -2986,16 +2955,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3236,16 +3196,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3511,16 +3462,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3695,7 +3637,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $trustees = [system.collections.arraylist]::new(1000)
@@ -3777,7 +3719,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export ManagedBy permissions',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -3822,7 +3764,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export ManagedBy permissions',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -4006,6 +3948,7 @@ try {
                                 } catch {
                                     continue
                                 }
+
                                 $Grantor = $AllRecipients[$RecipientID]
                                 $Trustee = $null
 
@@ -4020,13 +3963,13 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     foreach ($MailboxPermission in
                                         @($(
                                                 if ($ExportFromOnPrem) {
-                                                    $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxPermission -identity $($Grantor.Guid.Guid) -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                    $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxPermission -identity $($Grantor.Guid.Guid) -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
 
                                                     $UFNSelf = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue }
                                                     if ($UFNSelf) {
@@ -4038,13 +3981,19 @@ try {
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
                                                         if ($Grantor.WhenSoftDeleted) {
-                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
                                                         } else {
-                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType })
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
                                                         }
 
                                                         $UFNSelf = 'NT AUTHORITY\SELF'
                                                     }
+                                                }
+
+                                                if ($x) {
+                                                    @($x)
+                                                } else {
+                                                    @()
                                                 }
                                             ))
                                     ) {
@@ -4176,7 +4125,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Mailbox Access Rights',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -4221,22 +4170,13 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Mailbox Access Rights',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -4438,13 +4378,20 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 if ($ExportFromOnPrem) {
-                                    $Folders = @(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderStatistics -identity $($Grantor.Guid.Guid) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype })
+                                    $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderStatistics -identity $($Grantor.Guid.Guid) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype }
                                 } else {
-                                    $Folders = @(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderStatistics -PrimarySmtpAddress $($GrantorPrimarySMTP) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype })
+                                    $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderStatistics -PrimarySmtpAddress $($GrantorPrimarySMTP) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype }
                                 }
+
+                                if ($Folders) {
+                                    $Folders = @($Folders)
+                                } else {
+                                    $Folders = @()
+                                }
+
                                 foreach ($Folder in $Folders) {
                                     try {
                                         if (-not $folder.foldertype) { $folder.foldertype = $null }
@@ -4457,13 +4404,19 @@ try {
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
-                                                        $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -identity $("$($Grantor.Guid.Guid):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights })
+                                                        $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -identity $("$($Grantor.Guid.Guid):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
-                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights })
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                         } else {
-                                                            $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights })
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                         }
+                                                    }
+
+                                                    if ($x) {
+                                                        @($x)
+                                                    } else {
+                                                        @()
                                                     }
                                                 ))
                                         ) {
@@ -4632,7 +4585,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Mailbox Folder permissions',
-                                                        "$($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -4684,16 +4637,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -4890,7 +4834,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5122,7 +5066,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send As permissions',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -5167,7 +5111,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Send As permissions',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -5360,7 +5304,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5555,7 +5499,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send On Behalf permissions',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -5600,7 +5544,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Send On Behalf permissions',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -5790,7 +5734,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -5910,7 +5854,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Linked Master Accounts',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -5955,7 +5899,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Linked Master Accounts',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -6191,7 +6135,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $folder.folderpath = '/' + $($folder.folderpath -join '/')
@@ -6277,7 +6221,13 @@ try {
 
                                     foreach ($FolderPermissions in
                                         @($(
-                                                $(. ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-PublicFolderClientPermission -identity $($Folder.EntryId) -ErrorAction stop -WarningAction silentlycontinue | Select-Object identity, user, accessrights })
+                                                $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-PublicFolderClientPermission -identity $($Folder.EntryId) -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
+
+                                                if ($x) {
+                                                    @($x)
+                                                } else {
+                                                    @()
+                                                }
                                             ))
                                     ) {
                                         foreach ($FolderPermission in $FolderPermissions) {
@@ -6437,7 +6387,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Public Folder permissions',
-                                                    "$($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -6482,22 +6432,13 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Public Folder permissions',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -6694,7 +6635,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ForwarderType in ('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress')) {
                                     try {
@@ -6776,7 +6717,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Forwarders',
-                                                        "$($GrantorPrimarySMTP)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -6822,7 +6763,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Forwarders',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -7002,7 +6943,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ModeratorSetting in @('ModeratedBy', 'ModeratedByBypass')) {
                                     foreach ($Moderator in $($Grantor.$ModeratorSetting)) {
@@ -7085,7 +7026,7 @@ try {
                                                         (
                                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export moderators',
-                                                            "$($GrantorPrimarySMTP)",
+                                                            "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($Moderator)",
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                                 ) + '"'
@@ -7132,7 +7073,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export moderators',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -7313,7 +7254,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($AcceptedRecipient in $($Grantor.AcceptMessagesOnlyFromSendersOrMembers)) {
                                     try {
@@ -7395,7 +7336,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export AcceptMessagesOnlyFrom',
-                                                        "$($GrantorPrimarySMTP)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -7441,7 +7382,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export AcceptMessagesOnlyFrom',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -7623,7 +7564,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ResourceDelegatesSetting in @('ResourceDelegates', 'AllBookInPolicy', 'BookInPolicy', 'AllRequestInPolicy', 'RequestInPolicy', 'AllRequestOutOfPolicy', 'RequestOutOfPolicy')) {
                                     foreach ($AcceptedRecipient in $($Grantor.$ResourceDelegatesSetting)) {
@@ -7720,7 +7661,7 @@ try {
                                                         (
                                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export ResourceDelegates',
-                                                            "$($GrantorPrimarySMTP)",
+                                                            "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                                 ) + '"'
@@ -7767,7 +7708,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export ResourceDelegates',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -7949,7 +7890,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $Trustee = 'NT AUTHORITY\Authenticated Users'
@@ -8020,7 +7961,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export RequireAllSendersAreAuthenticated',
-                                                    "$($GrantorPrimarySMTP)",
+                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -8066,7 +8007,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export RequireAllSendersAreAuthenticated',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -8327,16 +8268,7 @@ try {
                                 ) + '"'
                             ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
                         } finally {
-                            if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-                                Disconnect-ExchangeOnline -Confirm:$false
-                                # Remove-Module -Name 'ExchangeOnlineManagement' -Force # Hangs often
-                            }
-
-                            if (($ExportFromOnPrem -eq $true)) {
-                                if ($ExchangeSession) {
-                                    # Remove-PSSession -Session $ExchangeSession # Hangs often
-                                }
-                            }
+                            . ([scriptblock]::create($ConnectExchange)) -Disconnect
 
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -8690,7 +8622,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Management Role Group members',
-                                            "$($($GrantorPrimarySMTP), $($RoleGroupMember.RoleGroup), $($RoleGroupMember.TrusteeOriginalIdentity))",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -8895,7 +8827,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $GrantorMembers = @($AllGroupMembers[$Grantor.Identity])
@@ -9014,7 +8946,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Distribution Group Members',
-                                                        "$($GrantorPrimarySMTP)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -9048,7 +8980,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Get and export Distribution Group Members',
-                                            "$($GrantorPrimarySMTP)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -9359,7 +9291,7 @@ try {
                                         (
                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                             'Expand groups in temporary result files',
-                                            "$($JobResultFile)",
+                                            '',
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                 ) + '"'
@@ -9561,7 +9493,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -9631,7 +9563,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (recipients)',
-                                                        "$($GrantorPrimarySMTP)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -9830,7 +9762,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -9900,7 +9832,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Public Folders)',
-                                                        "$($GrantorPrimarySMTP)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -10097,7 +10029,7 @@ try {
                                                 $GrantorEnvironment = 'Cloud'
                                             }
 
-                                            Write-Host "$($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -10167,7 +10099,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Management Role Groups)',
-                                                        "$($GrantorDisplayName)",
+                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -10292,16 +10224,8 @@ try {
     Write-Host
     Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-    if (($ExportFromOnPrem -eq $false) -and ((Get-Module -Name 'ExchangeOnlineManagement').count -ge 1)) {
-        Disconnect-ExchangeOnline -Confirm:$false
-        Remove-Module -Name 'ExchangeOnlineManagement' -Force
-    }
-
-    if (($ExportFromOnPrem -eq $true)) {
-        if ($ExchangeSession) {
-            Remove-PSSession -Session $ExchangeSession
-        }
-    }
+    Write-Host "  Exchange connection(s) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+    . ([scriptblock]::create($ConnectExchange)) -Disconnect -indent 4
 
     Write-Host "  Runspaces and RunspacePool @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
