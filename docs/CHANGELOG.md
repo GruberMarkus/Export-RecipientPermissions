@@ -21,8 +21,10 @@ _**Breaking:** Notice about breaking change_
 - Error handling improvements
   - Complete rewrite of Exchange connection code
   - More resilient Active Directory queries
-  - Exchange occasionally returns security principals without a GUID
-- Complete rewrite of code getting UserFriendlyNames
+  - Exchange on-prem occasionally returns security principals without a GUID
+- Complete rewrite of code getting UserFriendlyName
+- Use GUID instead of PrimarySmtpAddress where possible
+- Debug files now contain Exchange GUID as well as the primary SMTp address
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.1.1" target="_blank">v3.1.1</a> - 2023-10-12
