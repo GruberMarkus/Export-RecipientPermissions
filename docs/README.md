@@ -3,19 +3,19 @@
 
 # Features <!-- omit in toc -->
 Document, filter and compare Exchange permissions:
-- mailbox access rights
-- mailbox folder permissions
-- public folder permissions
-- send as
-- send on behalf
-- managed by
-- moderated by
-- linked master accounts
-- forwarders
-- sender restrictions
-- resource delegates
-- group members
-- management role group members
+- Mailbox access rights
+- Mailbox folder permissions
+- Public Folder permissions
+- Send As
+- Send On Behalf
+- Managed By
+- Moderated By
+- Linked Master Accounts
+- Forwarders
+- Sender restrictions
+- Resource delegates
+- Group members
+- Management Role group members
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
@@ -175,12 +175,11 @@ Default values:
 ### 1.2.6. RecipientProperties
 Recipient properties to import.
 
-Be aware that these properties are not queried with a simple '`Get-Recipient`', but with '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties)`'.  
-This way, some properties have sub-values. For example, the property .PrimarySmtpAddress has .Local, .Domain and .Address as sub-values.
+Be aware that these properties are not queried with '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties)`', but with a simple '`Get-Recipient`'.
 
-These properties are available for GrantorFilter and TrusteeFilter. 
+These properties are available for GrantorFilter and TrusteeFilter.
 
-Properties that are always included: 'Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount'
+Properties that are always included: 'Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'Name', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount'
 
 ### 1.2.7. GrantorFilter
 Only check grantors where the filter criteria matches $true.

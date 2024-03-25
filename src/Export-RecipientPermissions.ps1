@@ -671,7 +671,7 @@ $FilterGetMember = {
             }
 
             if ($members) {
-                $members = @($members | Select-Object Identity)
+                $members = @(@($members).Identity)
             }
 
             foreach ($member in @($members)) {
@@ -1347,6 +1347,19 @@ try {
         }
     }
 
+    Write-Host "    DisplayName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+    $AllRecipientsDisplaynameToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
+    for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+        if ($AllRecipients[$x].DisplayName) {
+            if ($AllRecipientsDisplaynameToIndex.ContainsKey($AllRecipients[$x].DisplayName)) {
+                Write-Verbose "    '$($EmailAddress)' is not unique."
+                $AllRecipientsDisplaynameToIndex[$AllRecipients[$x].DisplayName] = $null
+            } else {
+                $AllRecipientsDisplaynameToIndex[$AllRecipients[$x].DisplayName] = $x
+            }
+        }
+    }
+
 
     # Import recipient permissions (SendAs)
     Write-Host
@@ -1358,11 +1371,11 @@ try {
         if ($ExportFromOnPrem) {
             $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-RecipientPermission -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
         } else {
-            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXORecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
+            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-RecipientPermission -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
         }
 
         if ($x) {
-            $x = @($x | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype)
+            $x = @($x | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype, trusteeSidString)
 
             if ($x) { $AllRecipientsSendas.AddRange(@($x)) }
         }
@@ -2038,6 +2051,20 @@ try {
                     $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $null
                 } else {
                     $AllSecurityPrincipalsUfnToIndex[$(($AllSecurityPrincipals[$x]).UserFriendlyName)] = $x
+                }
+            }
+        }
+
+        Write-Host "    DisplayName to index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+        $AllSecurityPrincipalsDisplaynameToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllSecurityPrincipals.count, [StringComparer]::OrdinalIgnoreCase))
+
+        for ($x = 0; $x -lt $AllSecurityPrincipals.Count; $x++) {
+            if (($AllSecurityPrincipals[$x]).DisplayName) {
+                if ($AllSecurityPrincipalsDisplaynameToIndex.ContainsKey(($AllSecurityPrincipals[$x]).DisplayName)) {
+                    Write-Verbose "    '$(($AllSecurityPrincipals[$x]).DisplayName)' is not unique."
+                    $AllSecurityPrincipalsDisplaynameToIndex[$(($AllSecurityPrincipals[$x]).DisplayName)] = $null
+                } else {
+                    $AllSecurityPrincipalsDisplaynameToIndex[$(($AllSecurityPrincipals[$x]).DisplayName)] = $x
                 }
             }
         }
@@ -3845,12 +3872,14 @@ try {
                             $ExportFileHeader,
                             $ExportFileFilter,
                             $AllRecipientsSmtpToIndex,
+                            $AllRecipientsDisplaynameToIndex,
                             $ExportGuids,
                             $AllSecurityPrincipals,
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex
                         )
 
                         try {
@@ -3909,9 +3938,9 @@ try {
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
                                                         if ($Grantor.WhenSoftDeleted) {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
                                                         } else {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
                                                         }
 
                                                         $UFNSelf = 'NT AUTHORITY\SELF'
@@ -3932,16 +3961,15 @@ try {
 
                                             $trustees = [system.collections.arraylist]::new(1000)
 
-                                            try {
-                                                $index = $null
-                                                if (($TrusteeRight.user -ine 'S-1-5-10') -and ($TrusteeRight.user -ine $UFNSelf)) {
-                                                    if ($TrusteeRight.user -ilike '*\') {
-                                                        $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
-                                                    } else {
-                                                        $index = ($AllRecipientsSmtpToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
+                                            $index = $null
+
+                                            if (($TrusteeRight.user) -and ($TrusteeRight.user -ine 'S-1-5-10') -and ($TrusteeRight.user -ine $UFNSelf)) {
+                                                @($AllRecipientsUfnToIndex, $AllRecipientsLinkedmasteraccountToIndex, $AllRecipientsSmtpToIndex, $AllRecipientsDisplaynameToIndex) | ForEach-Object {
+                                                    if ($_.ContainsKey($($TrusteeRight.trustee))) {
+                                                        $index = $_[$($TrusteeRight.trustee)]
+                                                        break
                                                     }
                                                 }
-                                            } catch {
                                             }
 
                                             if ($index -ge 0) {
@@ -3992,7 +4020,8 @@ try {
                                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -4148,6 +4177,8 @@ try {
                         AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
                         AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
                         AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
+                        AllRecipientsDisplaynameToIndex         = $AllRecipientsDisplaynameToIndex
                     }
                 )
 
@@ -4339,9 +4370,9 @@ try {
                                                         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -identity $('' + $($Grantor.Guid.Guid) + ':' + $($Folder.folderid)) -ErrorAction stop -WarningAction silentlycontinue }
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue }
                                                         } else {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -ErrorAction stop -WarningAction silentlycontinue }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -ErrorAction stop -WarningAction silentlycontinue }
                                                         }
                                                     }
 
@@ -4439,12 +4470,12 @@ try {
                                                             if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'member@local') { continue }
                                                         }
 
-                                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.userprincipalname)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.userprincipalname))) {
+                                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal))) {
                                                             $trustee = $null
 
                                                             try {
                                                                 $index = $null
-                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.userprincipalname)]
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
                                                             } catch {
                                                             }
 
@@ -4730,7 +4761,9 @@ try {
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex,
+                            $AllRecipientsDisplaynameToIndex
                         )
 
                         try {
@@ -4843,7 +4876,8 @@ try {
                                                                                     $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                     $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
@@ -4905,20 +4939,14 @@ try {
                                                 if (($ExportSendAsSelf -eq $false) -and ($entry.trustee -ieq 'NT AUTHORITY\SELF')) {
                                                     continue
                                                 }
+
                                                 $trustee = $null
 
-                                                if ($entry.trustee -ieq 'NT AUTHORITY\SELF') {
-                                                    $index = $null
-                                                } elseif ($entry.trustee -ilike '*\*') {
+                                                $index = $null
+
+                                                if (($entry.trusteesidstring) -and ($entry.trusteesidstring -ine 'S-1-5-10')) {
                                                     try {
-                                                        $index = $null
-                                                        $index = ($AllRecipientsUfnToIndex[$($entry.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($entry.trustee)], '') | Select-Object -First 1
-                                                    } catch {
-                                                    }
-                                                } elseif ($entry.trustee -ilike '*@*') {
-                                                    try {
-                                                        $index = $null
-                                                        $index = $AllRecipientsSmtpToIndex[$($entry.trustee)]
+                                                        $index = $AllRecipientsUfnToIndex[$($($AllSecurityPrincipals[$($AllSecurityPrincipalsSidToIndex[$($entry.TrusteeSidString)])]).UserFriendlyName)]
                                                     } catch {
                                                     }
                                                 }
@@ -5082,6 +5110,8 @@ try {
                         AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
                         AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
                         AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
+                        AllRecipientsDisplaynameToIndex         = $AllRecipientsDisplaynameToIndex
                     }
                 )
 
@@ -5630,7 +5660,8 @@ try {
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex
                         )
 
                         try {
@@ -5724,7 +5755,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -5868,6 +5900,7 @@ try {
                         AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
                         AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
                         AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
                     }
                 )
 
@@ -7557,7 +7590,7 @@ try {
                                                                         'None',
                                                                         $(if ($AcceptedRecipient -is [boolean]) { $Trustee } else { $AcceptedRecipient }),
                                                                         $Trustee.PrimarySmtpAddress,
-                                                                        $(@($Trustee, $Trustee.DisplayName, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
+                                                                        $(@($Trustee.DisplayName, $Trustee, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
                                                                         $Trustee.ExchangeGuid.Guid,
                                                                         $Trustee.Guid.Guid,
                                                                         $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
@@ -8352,7 +8385,8 @@ try {
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex
                         )
 
                         try {
@@ -8447,7 +8481,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -8568,30 +8603,31 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                          = $AllRecipients
-                        AllGroups                              = $AllGroups
-                        AllGroupmembers                        = $AllGroupMembers
-                        tempQueue                              = $tempQueue
-                        ExportFile                             = $ExportFile
-                        ExportTrustees                         = $ExportTrustees
-                        AllRecipientsIdentityGuidToIndex       = $AllRecipientsIdentityGuidToIndex
-                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                             = $PSScriptRoot
-                        ExportFromOnPrem                       = $ExportFromOnPrem
-                        VerbosePreference                      = $VerbosePreference
-                        DebugPreference                        = $DebugPreference
-                        TrusteeFilter                          = $TrusteeFilter
-                        UTF8Encoding                           = $UTF8Encoding
-                        ExportFileHeader                       = $ExportFileHeader
-                        ExportFileFilter                       = $ExportFileFilter
-                        ExportGuids                            = $ExportGuids
-                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
-                        AllSecurityPrincipals                  = $AllSecurityPrincipals
-                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
-                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
-                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
-                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
+                        AllRecipients                           = $AllRecipients
+                        AllGroups                               = $AllGroups
+                        AllGroupmembers                         = $AllGroupMembers
+                        tempQueue                               = $tempQueue
+                        ExportFile                              = $ExportFile
+                        ExportTrustees                          = $ExportTrustees
+                        AllRecipientsIdentityGuidToIndex        = $AllRecipientsIdentityGuidToIndex
+                        ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                               = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                              = $PSScriptRoot
+                        ExportFromOnPrem                        = $ExportFromOnPrem
+                        VerbosePreference                       = $VerbosePreference
+                        DebugPreference                         = $DebugPreference
+                        TrusteeFilter                           = $TrusteeFilter
+                        UTF8Encoding                            = $UTF8Encoding
+                        ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
+                        ExportGuids                             = $ExportGuids
+                        ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
                     }
                 )
 
@@ -8723,7 +8759,8 @@ try {
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex
                         )
 
                         try {
@@ -8817,7 +8854,8 @@ try {
                                                                                 $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                                 $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                             ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                             if ($AllSecurityPrincipalsLookupResult) {
@@ -8926,31 +8964,32 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                          = $AllRecipients
-                        tempQueue                              = $tempQueue
-                        ExportFile                             = $ExportFile
-                        ExportTrustees                         = $ExportTrustees
-                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                             = $PSScriptRoot
-                        ExportFromOnPrem                       = $ExportFromOnPrem
-                        VerbosePreference                      = $VerbosePreference
-                        DebugPreference                        = $DebugPreference
-                        TrusteeFilter                          = $TrusteeFilter
-                        UTF8Encoding                           = $UTF8Encoding
-                        ExportFileHeader                       = $ExportFileHeader
-                        ExportFileFilter                       = $ExportFileFilter
-                        AllGroups                              = $AllGroups
-                        AllGroupsIdentityToIndex               = $AllGroupsIdentityToIndex
-                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
-                        AllGroupMembers                        = $AllGroupMembers
-                        ExportGuids                            = $ExportGuids
-                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
-                        AllSecurityPrincipals                  = $AllSecurityPrincipals
-                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
-                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
-                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
-                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
+                        AllRecipients                           = $AllRecipients
+                        tempQueue                               = $tempQueue
+                        ExportFile                              = $ExportFile
+                        ExportTrustees                          = $ExportTrustees
+                        ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                               = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                              = $PSScriptRoot
+                        ExportFromOnPrem                        = $ExportFromOnPrem
+                        VerbosePreference                       = $VerbosePreference
+                        DebugPreference                         = $DebugPreference
+                        TrusteeFilter                           = $TrusteeFilter
+                        UTF8Encoding                            = $UTF8Encoding
+                        ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
+                        AllGroups                               = $AllGroups
+                        AllGroupsIdentityToIndex                = $AllGroupsIdentityToIndex
+                        AllRecipientsIdentityToIndex            = $AllRecipientsIdentityToIndex
+                        AllGroupMembers                         = $AllGroupMembers
+                        ExportGuids                             = $ExportGuids
+                        ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
                     }
                 )
 
@@ -9071,7 +9110,8 @@ try {
                             $AllSecurityPrincipalsSidToIndex,
                             $AllSecurityPrincipalsObjectguidToIndex,
                             $AllSecurityPrincipalsDnToIndex,
-                            $AllSecurityPrincipalsUfnToIndex
+                            $AllSecurityPrincipalsUfnToIndex,
+                            $AllSecurityPrincipalsDisplaynameToIndex
                         )
 
                         try {
@@ -9144,7 +9184,8 @@ try {
                                                                         $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
                                                                         $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                        $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                     if ($AllSecurityPrincipalsLookupResult) {
@@ -9237,31 +9278,32 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                          = $AllRecipients
-                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
-                        tempQueue                              = $tempQueue
-                        ExportFile                             = $ExportFile
-                        ExportTrustees                         = $ExportTrustees
-                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ScriptPath                             = $PSScriptRoot
-                        ExportFromOnPrem                       = $ExportFromOnPrem
-                        VerbosePreference                      = $VerbosePreference
-                        DebugPreference                        = $DebugPreference
-                        TrusteeFilter                          = $TrusteeFilter
-                        UTF8Encoding                           = $UTF8Encoding
-                        ExportFileHeader                       = $ExportFileHeader
-                        ExportFileFilter                       = $ExportFileFilter
-                        AllGroups                              = $AllGroups
-                        AllGroupsIdentityToIndex               = $AllGroupsIdentityToIndex
-                        AllGroupMembers                        = $AllGroupMembers
-                        ExportGuids                            = $ExportGuids
-                        ExportGroupMembersRecurse              = $ExportGroupMembersRecurse
-                        AllSecurityPrincipals                  = $AllSecurityPrincipals
-                        AllSecurityPrincipalsSidToIndex        = $AllSecurityPrincipalsSidToIndex
-                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
-                        AllSecurityPrincipalsDnToIndex         = $AllSecurityPrincipalsDnToIndex
-                        AllSecurityPrincipalsUfnToIndex        = $AllSecurityPrincipalsUfnToIndex
+                        AllRecipients                           = $AllRecipients
+                        AllRecipientsSmtpToIndex                = $AllRecipientsSmtpToIndex
+                        tempQueue                               = $tempQueue
+                        ExportFile                              = $ExportFile
+                        ExportTrustees                          = $ExportTrustees
+                        ErrorFile                               = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugFile                               = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ScriptPath                              = $PSScriptRoot
+                        ExportFromOnPrem                        = $ExportFromOnPrem
+                        VerbosePreference                       = $VerbosePreference
+                        DebugPreference                         = $DebugPreference
+                        TrusteeFilter                           = $TrusteeFilter
+                        UTF8Encoding                            = $UTF8Encoding
+                        ExportFileHeader                        = $ExportFileHeader
+                        ExportFileFilter                        = $ExportFileFilter
+                        AllGroups                               = $AllGroups
+                        AllGroupsIdentityToIndex                = $AllGroupsIdentityToIndex
+                        AllGroupMembers                         = $AllGroupMembers
+                        ExportGuids                             = $ExportGuids
+                        ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
+                        AllSecurityPrincipals                   = $AllSecurityPrincipals
+                        AllSecurityPrincipalsSidToIndex         = $AllSecurityPrincipalsSidToIndex
+                        AllSecurityPrincipalsObjectguidToIndex  = $AllSecurityPrincipalsObjectguidToIndex
+                        AllSecurityPrincipalsDnToIndex          = $AllSecurityPrincipalsDnToIndex
+                        AllSecurityPrincipalsUfnToIndex         = $AllSecurityPrincipalsUfnToIndex
+                        AllSecurityPrincipalsDisplaynameToIndex = $AllSecurityPrincipalsDisplaynameToIndex
                     }
                 )
 
