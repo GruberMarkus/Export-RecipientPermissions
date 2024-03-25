@@ -1102,7 +1102,7 @@ try {
                                 }
 
                                 if ($x) {
-                                    $x = @($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))
+                                    $x = @($x | Select-Object -Property $RecipientPropertiesExtended)
                                     $AllRecipients.AddRange(@($x))
                                     Write-Host "  $($x.count) recipients"
                                 } else {
@@ -1232,37 +1232,36 @@ try {
     Write-Host '      Migration mailboxes'
     # Get-EXOMailbox misses several options (such as -Migration), so Get-Mailbox is still used for Exchange Online sometimes
     $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-
-    if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+    if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
     if ($ExportFromOnPrem) {
         Write-Host '      Arbitration mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
         Write-Host '      AuditLog mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
         Write-Host '      AuxAuditLog mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
         Write-Host '      Monitoring mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
         Write-Host '      RemoteArchive mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
     } else {
         Write-Host '      Inactive mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
 
         Write-Host '      Softdeleted mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $($RecipientPropertiesExtended -join ', '))) }
+        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
     }
 
     Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
@@ -1270,7 +1269,7 @@ try {
     Write-Host "  Sort list by PrimarySmtpAddress @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipients.TrimToSize()
 
-    $x = @($AllRecipients | Where-Object { $_.PrimarySmtpAddress } | Sort-Object -Property PrimarySmtpAddress)
+    $x = @(@($AllRecipients) | Where-Object { $_.PrimarySmtpAddress } | Sort-Object -Property PrimarySmtpAddress)
 
     $AllRecipients.clear()
     $AllRecipients.AddRange(@($x))
@@ -1278,7 +1277,7 @@ try {
     $AllRecipients.TrimToSize()
 
     Write-Host '  Create lookup hashtables'
-    Write-Host "    first character (lowercase) of name attribute for future wildcard searches @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+    Write-Host "    First character (lowercase) of name attribute for future wildcard searches @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $WildcardSearchStrings = @(@(for ($x = 0; $x -lt $AllRecipients.count; $x++) { (-join $AllRecipients[$x].Name[0]).ToLower() }) | Select-Object -Unique)
 
     Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
