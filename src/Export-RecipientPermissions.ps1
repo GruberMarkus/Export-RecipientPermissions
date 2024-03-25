@@ -426,7 +426,13 @@ $ConnectExchange = {
     param (
         [int]$RetryMaximum = 3,
 
-        [scriptblock]$ScriptBlock = { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue -ErrorAction Stop },
+        [scriptblock]$ScriptBlock = $(
+            if ($ExportFromOnPrem) {
+                { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue -ErrorAction Stop }
+            } else {
+                { Get-SecurityPrincipal -ResultSize 1 -WarningAction SilentlyContinue }
+            }
+        ),
 
         [scriptblock]$ScriptBlockAfter = $null,
 
@@ -527,11 +533,6 @@ $ConnectExchange = {
                     if ($ConnectExchangeTempVariableScriptBlockPre) {
                         $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
                         $null = Invoke-Command -Session $ConnectExchangeExchangeSession -HideComputerName -ScriptBlock ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute))) -ErrorAction Stop
-                    }
-                } else {
-                    if ($ConnectExchangeTempVariableScriptBlockPre) {
-                        $ConnectExchangeTempVariableScriptBlockExecute = $ConnectExchangeTempVariableScriptBlockPre
-                        . ([scriptblock]::create($ExecutionContext.InvokeCommand.ExpandString($ConnectExchangeTempVariableScriptBlockExecute)))
                     }
                 }
             }
@@ -1875,7 +1876,12 @@ try {
                                 Write-Host "Filter '$($filter)' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-SecurityPrincipal -Filter $($filter) -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName } -ScriptBlockAfter {
+                                    $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock $(
+                                        if ($ExportFromOnPrem) {
+                                            { Get-SecurityPrincipal -Filter $($filter) -ResultSize Unlimited -WarningAction SilentlyContinue -ErrorAction stop | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName }
+                                        } else {
+                                            { Get-SecurityPrincipal -Filter $($filter) -ResultSize Unlimited -WarningAction SilentlyContinue | Select-Object Sid, UserFriendlyName, Guid, DistinguishedName }
+                                        }) -ScriptBlockAfter {
                                         if (@($ConnectExchangeTempReturnValue).count -ne @($ConnectExchangeTempReturnValue).guid.guid.count) {
                                             throw 'Error: Some security principals do not have a GUID, which must be a query error.'
                                         }
@@ -2390,7 +2396,7 @@ try {
                     'Get-SecurityPrincipal'
                 ) | Where-Object { $_ })) {
             foreach ($Filter in $Filters) {
-                $tempQueue.enqueue((, $Cmdlet, $Filter))
+                $tempQueue.enqueue(@($Cmdlet, $Filter))
             }
         }
         $Filters = $null
@@ -2454,7 +2460,7 @@ try {
                                 Write-Host "Cmdlet '$($QueueArray[0])', Filter '$($QueueArray[1])' @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
-                                    $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock ([scriptblock]::Create("$($QueueArray[0]) -Filter $($QueueArray[1]) -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue | Select-Object Identity"))
+                                    $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock ([scriptblock]::Create("$($QueueArray[0]) -Filter $($QueueArray[1]) -ResultSize Unlimited $(if (($($QueueArray[0]) -ieq 'Get-SecurityPrincipal') -and ($ExportFromOnPrem -eq $false)) { '' } else { ' -ErrorAction Stop' }) -WarningAction SilentlyContinue | Select-Object Identity"))
 
                                     if ($x) {
                                         $x = @($x)
@@ -3981,9 +3987,9 @@ try {
                                                 } else {
                                                     if ($GrantorRecipientTypeDetails -ine 'GroupMailbox') {
                                                         if ($Grantor.WhenSoftDeleted) {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -SoftDeletedMailbox -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
                                                         } else {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $($GrantorPrimarySMTP) -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxPermission -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue | Select-Object -Property identity, user, accessrights, deny, isinherited, inheritanceType }
                                                         }
 
                                                         $UFNSelf = 'NT AUTHORITY\SELF'
@@ -4007,7 +4013,11 @@ try {
                                             try {
                                                 $index = $null
                                                 if (($TrusteeRight.user -ine 'S-1-5-10') -and ($TrusteeRight.user -ine $UFNSelf)) {
-                                                    $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
+                                                    if ($TrusteeRight.user -ilike '*\') {
+                                                        $index = ($AllRecipientsUfnToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
+                                                    } else {
+                                                        $index = ($AllRecipientsSmtpToIndex[$($TrusteeRight.trustee)], $AllRecipientsLinkedmasteraccountToIndex[$($TrusteeRight.trustee)], '') | Select-Object -First 1
+                                                    }
                                                 }
                                             } catch {
                                             }
@@ -4383,7 +4393,7 @@ try {
                                 if ($ExportFromOnPrem) {
                                     $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderStatistics -identity $($Grantor.Guid.Guid) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype }
                                 } else {
-                                    $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderStatistics -PrimarySmtpAddress $($GrantorPrimarySMTP) -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype }
+                                    $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderStatistics -PrimarySmtpAddress $("'$($GrantorPrimarySMTP)'") -ErrorAction Stop -WarningAction silentlycontinue | Select-Object folderid, folderpath, foldertype }
                                 }
 
                                 if ($Folders) {
@@ -4400,16 +4410,16 @@ try {
 
                                         if ($Folder.foldertype -ieq 'root') { $Folder.folderpath = '/' }
 
-                                        Write-Host "  Folder '$($folder.folderid)' ('$folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                        Write-Host "  Folder '$($folder.folderid)' ('$($folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
                                         foreach ($FolderPermissions in
                                             @($(
                                                     if ($ExportFromOnPrem) {
-                                                        $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -identity $("$($Grantor.Guid.Guid):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
+                                                        $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderPermission -identity $('' + $($Grantor.Guid.Guid) + ':' + $($Folder.folderid)) -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                     } else {
                                                         if ($GrantorRecipientTypeDetails -ieq 'groupmailbox') {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -GroupMailbox -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                         } else {
-                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -PrimarySmtpAddress $("$($GrantorPrimarySMTP):$($Folder.folderid)") -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
+                                                            $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailboxFolderPermission -Identity $("'$($GrantorPrimarySMTP):$($Folder.folderid)'") -ErrorAction stop -WarningAction silentlycontinue | Select-Object user, accessrights }
                                                         }
                                                     }
 
@@ -4507,12 +4517,12 @@ try {
                                                             if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'member@local') { continue }
                                                         }
 
-                                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal.PrimarySmtpAddress))) {
+                                                        if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.userprincipalname)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.userprincipalname))) {
                                                             $trustee = $null
 
                                                             try {
                                                                 $index = $null
-                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.recipientprincipal.primarysmtpaddress)]
+                                                                $index = $AllRecipientsSmtpToIndex[$($FolderPermission.user.userprincipalname)]
                                                             } catch {
                                                             }
 
