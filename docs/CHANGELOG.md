@@ -24,7 +24,11 @@ _**Breaking:** Notice about breaking change_
   - Exchange on-prem occasionally returns security principals without a GUID
 - Complete rewrite of code getting UserFriendlyName
 - Use GUID instead of PrimarySmtpAddress where possible
-- Debug files now contain Exchange GUID as well as the primary SMTp address
+- The default export and error files now have the execution timestamp in their filename
+### Added
+- Debug and error files now contain the Exchange GUID and the Directory GUID in addition to the primary SMTP address
+### Fixed
+- Exchange Online: Switched back from EXO cmdlets to regular cmdlets, because of changes in returned properties, which do not allow to uniquely identify a trustee (example: Get-EXORecipientPermission sometimes only returns the trustee's display name, which is not guaranteed to be unique)
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.1.1" target="_blank">v3.1.1</a> - 2023-10-12

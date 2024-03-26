@@ -410,8 +410,9 @@ Param(
     [boolean]$ExportGuids = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
-    [string]$ExportFile = '.\export\Export-RecipientPermissions_Result.csv',
-    [string]$ErrorFile = '.\export\Export-RecipientPermissions_Error.csv',
+    [parameter(dontshow = $true)][string]$ExportTimestamp = $((Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') -replace ':', '' -replace '-', ''),
+    [string]$ExportFile = ".\export\Export-RecipientPermissions_$($ExportTimestamp)_Result.csv",
+    [string]$ErrorFile = ".\export\Export-RecipientPermissions_$($ExportTimestamp)_Error.csv",
     [string]$DebugFile = '',
     [int][ValidateRange(1, [int]::MaxValue)]$UpdateInterval = 100
 )
@@ -3594,7 +3595,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $trustees = [system.collections.arraylist]::new(1000)
@@ -3676,7 +3677,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export ManagedBy permissions',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -3932,6 +3933,7 @@ try {
 
                                                     $UFNSelf = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue }
                                                     if ($UFNSelf) {
+                                                        Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP 
                                                         $UFNSelf = @($UFNSelf)
                                                         $UFNSelf = ($UFNSelf | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
                                                     } else {
@@ -4088,7 +4090,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Mailbox Access Rights',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -4343,7 +4345,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 if ($ExportFromOnPrem) {
                                     $Folders = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxFolderStatistics -identity $($Grantor.Guid.Guid) -ErrorAction Stop -WarningAction silentlycontinue }
@@ -4550,7 +4552,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Mailbox Folder permissions',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.folderid) ($($Folder.folderpath))",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -4801,7 +4803,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5028,7 +5030,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send As permissions',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -5268,7 +5270,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     if ($ExportFromOnPrem) {
@@ -5463,7 +5465,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Send On Behalf permissions',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -5699,7 +5701,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     try {
@@ -5820,7 +5822,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Linked Master Accounts',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -6102,7 +6104,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $folder.folderpath = '/' + $($folder.folderpath -join '/')
@@ -6354,7 +6356,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export Public Folder permissions',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($GrantorPrimarySMTP):$($Folder.Entryd) ($($Folder.folderpath))",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -6602,7 +6604,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ForwarderType in ('ExternalEmailAddress', 'ForwardingAddress', 'ForwardingSmtpAddress')) {
                                     try {
@@ -6684,7 +6686,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Forwarders',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -6910,7 +6912,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ModeratorSetting in @('ModeratedBy', 'ModeratedByBypass')) {
                                     foreach ($Moderator in $($Grantor.$ModeratorSetting)) {
@@ -6993,7 +6995,7 @@ try {
                                                         (
                                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export moderators',
-                                                            "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($Moderator)",
+                                                            "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($Moderator)",
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                                 ) + '"'
@@ -7221,7 +7223,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($AcceptedRecipient in $($Grantor.AcceptMessagesOnlyFromSendersOrMembers)) {
                                     try {
@@ -7303,7 +7305,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export AcceptMessagesOnlyFrom',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -7531,7 +7533,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 foreach ($ResourceDelegatesSetting in @('ResourceDelegates', 'AllBookInPolicy', 'BookInPolicy', 'AllRequestInPolicy', 'RequestInPolicy', 'AllRequestOutOfPolicy', 'RequestOutOfPolicy')) {
                                     foreach ($AcceptedRecipient in $($Grantor.$ResourceDelegatesSetting)) {
@@ -7628,7 +7630,7 @@ try {
                                                         (
                                                             $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                             'Get and export ResourceDelegates',
-                                                            "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
+                                                            "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails), $($AcceptedRecipient)",
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                                 ) + '"'
@@ -7857,7 +7859,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $Trustee = 'NT AUTHORITY\Authenticated Users'
@@ -7928,7 +7930,7 @@ try {
                                                 (
                                                     $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                     'Get and export RequireAllSendersAreAuthenticated',
-                                                    "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                    "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                         ) + '"'
@@ -8798,7 +8800,7 @@ try {
                                     if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                 }
 
-                                Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                 try {
                                     $GrantorMembers = @($AllGroupMembers[$Grantor.Identity])
@@ -8918,7 +8920,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Get and export Distribution Group Members',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -9469,7 +9471,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -9539,7 +9541,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (recipients)',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -9738,7 +9740,7 @@ try {
                                                 if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
                                             }
 
-                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -9808,7 +9810,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Public Folders)',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
@@ -10005,7 +10007,7 @@ try {
                                                 $GrantorEnvironment = 'Cloud'
                                             }
 
-                                            Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+                                            Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
                                             if ($ExportGuids) {
                                                 $ExportFileLines.add(
@@ -10075,7 +10077,7 @@ try {
                                                     (
                                                         $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'),
                                                         'Export grantors with no permissions (Management Role Groups)',
-                                                        "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
+                                                        "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails)",
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -replace '"', '""' }) -join '";"'
                                             ) + '"'
