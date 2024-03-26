@@ -1184,7 +1184,9 @@ try {
             for ($x = $lastCount; $x -le $done; $x++) {
                 if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                     Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                    if ($x -eq 0) { Write-Host }
+                    if ($x -eq 0) {
+                        Write-Host
+                    }
                     $lastCount = $x
                 }
             }
@@ -1235,36 +1237,52 @@ try {
     Write-Host '      Migration mailboxes'
     # Get-EXOMailbox misses several options (such as -Migration), so Get-Mailbox is still used for Exchange Online sometimes
     $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Migration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-    if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+    if ($x) {
+        $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+    }
 
     if ($ExportFromOnPrem) {
         Write-Host '      Arbitration mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Arbitration -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
 
         Write-Host '      AuditLog mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -AuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
 
         Write-Host '      AuxAuditLog mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -AuxAuditLog -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
 
         Write-Host '      Monitoring mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -Monitoring -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
 
         Write-Host '      RemoteArchive mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -RemoteArchive -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
     } else {
         Write-Host '      Inactive mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailbox -InactiveMailboxOnly -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
 
         Write-Host '      Softdeleted mailboxes'
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-EXOMailbox -SoftDeletedMailbox -PropertySets All -ResultSize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended)) }
+        if ($x) {
+            $AllRecipients.AddRange(@($x | Select-Object -Property $RecipientPropertiesExtended))
+        }
     }
 
     Write-Host ('  {0:0000000} total recipients found' -f $($AllRecipients.count))
@@ -1281,7 +1299,9 @@ try {
 
     Write-Host '  Create lookup hashtables'
     Write-Host "    First character (lowercase) of name attribute for future wildcard searches @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-    $WildcardSearchStrings = @(@(for ($x = 0; $x -lt $AllRecipients.count; $x++) { (-join $AllRecipients[$x].Name[0]).ToLower() }) | Select-Object -Unique)
+    $WildcardSearchStrings = @(@(for ($x = 0; $x -lt $AllRecipients.count; $x++) {
+ (-join $AllRecipients[$x].Name[0]).ToLower()
+            }) | Select-Object -Unique)
 
     Write-Host "    DistinguishedName to recipients array index @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     $AllRecipientsDnToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.count, [StringComparer]::OrdinalIgnoreCase))
@@ -1380,7 +1400,9 @@ try {
         if ($x) {
             $x = @($x | Select-Object identity, trustee, accessrights, accesscontroltype, isinherited, inheritancetype, trusteeSidString)
 
-            if ($x) { $AllRecipientsSendas.AddRange(@($x)) }
+            if ($x) {
+                $AllRecipientsSendas.AddRange(@($x))
+            }
         }
 
         $AllRecipientsSendas.TrimToSize()
@@ -1400,23 +1422,33 @@ try {
         Write-Host "  Mailboxes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         # Get-EXOMailbox does not support the GrantSendOnBehalfTo filter, so Get-Mailbox is used
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto)) }
+        if ($x) {
+            $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto))
+        }
 
         Write-Host "  Distribution groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DistributionGroup -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto)) }
+        if ($x) {
+            $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto))
+        }
 
         Write-Host "  Dynamic Distribution Groups @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-DynamicDistributionGroup -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto)) }
+        if ($x) {
+            $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto))
+        }
 
         Write-Host "  Unified Groups (Microsoft 365 Groups) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-UnifiedGroup -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto)) }
+        if ($x) {
+            $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto))
+        }
 
         Write-Host "  Mail-enabled Public Folders @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailPublicfolder -filter 'GrantSendOnBehalfTo -ne `$null' -resultsize unlimited -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto)) }
+        if ($x) {
+            $AllRecipientsSendonbehalf.AddRange(@($x | Select-Object identity, grantsendonbehalfto))
+        }
 
         $AllRecipientsSendonbehalf.TrimToSize()
         Write-Host ('  {0:0000000} Send On Behalf permissions found' -f $($AllRecipientsSendonbehalf.count))
@@ -1434,7 +1466,9 @@ try {
         $AllMailboxDatabases = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailboxDatabase -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllMailboxDatabases.AddRange(@($x | Select-Object -Property Guid, ProhibitSendQuota)) }
+        if ($x) {
+            $AllMailboxDatabases.AddRange(@($x | Select-Object -Property Guid, ProhibitSendQuota))
+        }
 
         $AllMailboxDatabases.TrimToSize()
         Write-Host ('  {0:0000000} mailbox databases found' -f $($AllMailboxDatabases.count))
@@ -1452,7 +1486,9 @@ try {
         $AllPublicFolders = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new(1000000))
 
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-PublicFolder -recurse -ErrorAction Stop -WarningAction silentlycontinue }
-        if ($x) { $AllPublicFolders.AddRange(@($x | Select-Object -Property EntryId, ContentMailboxGuid, MailEnabled, MailRecipientGuid, FolderClass, FolderPath | Sort-Object -Property FolderPath )) }
+        if ($x) {
+            $AllPublicFolders.AddRange(@($x | Select-Object -Property EntryId, ContentMailboxGuid, MailEnabled, MailRecipientGuid, FolderClass, FolderPath | Sort-Object -Property FolderPath ))
+        }
 
         $AllPublicFolders.TrimToSize()
         Write-Host ('  {0:0000000} Public Folders found' -f $($AllPublicFolders.count))
@@ -1471,17 +1507,25 @@ try {
 
         # Get-EXOMailbox does not support the ForwardingAddress filter, so Get-Mailbox is used
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-Mailbox -filter '(ForwardingAddress -ne `$null) -or (ForwardingSmtpAddress -ne `$null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue }
-        if ($x) { $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward)) }
+        if ($x) {
+            $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
+        }
 
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailPublicFolder -filter '(ForwardingAddress -ne `$null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue }
-        if ($x) { $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward)) }
+        if ($x) {
+            $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
+        }
 
         $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-MailUser -filter '(ForwardingAddress -ne `$null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue }
-        if ($x) { $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward)) }
+        if ($x) {
+            $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
+        }
 
         if ($ExportFromOnPrem) {
             $x = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-RemoteMailbox -filter '(ForwardingAddress -ne `$null)' -ResultSize Unlimited -ErrorAction Stop -WarningAction SilentlyContinue }
-            if ($x) { $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward)) }
+            if ($x) {
+                $AdditionalForwardingAddresses.AddRange(@($x | Select-Object -Property Identity, ForwardingAddress, ForwardingSmtpAddress, DeliverToMailboxAndForward))
+            }
         }
 
         $AdditionalForwardingAddresses.TrimToSize()
@@ -1718,7 +1762,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -1948,7 +1994,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -2137,8 +2185,12 @@ try {
                     'Get-MailContact',
                     'Get-MailPublicFolder',
                     'Get-MailUser',
-                    $(if ($ExportFromOnprem -eq $true) { 'Get-RemoteMailbox' }), # available on-prem only
-                    $(if ($ExportFromOnprem -eq $false) { 'Get-UnifiedGroup' }) # Exchange Online only
+                    $(if ($ExportFromOnprem -eq $true) {
+                            'Get-RemoteMailbox'
+                        }), # available on-prem only
+                    $(if ($ExportFromOnprem -eq $false) {
+                            'Get-UnifiedGroup'
+                        }) # Exchange Online only
                 ) | Where-Object { $_ })) {
             foreach ($Filter in $Filters) {
                 $tempQueue.enqueue(@($Cmdlet, $Filter))
@@ -2305,7 +2357,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -2374,8 +2428,12 @@ try {
                     'Get-MailContact',
                     'Get-MailPublicFolder',
                     'Get-MailUser',
-                    $(if ($ExportFromOnprem -eq $true) { 'Get-RemoteMailbox' }),
-                    $(if ($ExportFromOnprem -eq $false) { 'Get-UnifiedGroup' }),
+                    $(if ($ExportFromOnprem -eq $true) {
+                            'Get-RemoteMailbox'
+                        }),
+                    $(if ($ExportFromOnprem -eq $false) {
+                            'Get-UnifiedGroup'
+                        }),
                     'Get-SecurityPrincipal'
                 ) | Where-Object { $_ })) {
             foreach ($Filter in $Filters) {
@@ -2536,7 +2594,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -2605,8 +2665,12 @@ try {
                     'Get-MailContact',
                     'Get-MailPublicFolder',
                     'Get-MailUser',
-                    $(if ($ExportFromOnprem -eq $true) { 'Get-RemoteMailbox' }),
-                    $(if ($ExportFromOnprem -eq $false) { 'Get-UnifiedGroup' })
+                    $(if ($ExportFromOnprem -eq $true) {
+                            'Get-RemoteMailbox'
+                        }),
+                    $(if ($ExportFromOnprem -eq $false) {
+                            'Get-UnifiedGroup'
+                        })
                 ) | Where-Object { $_ })) {
             foreach ($Filter in $Filters) {
                 $tempQueue.enqueue(@($Cmdlet, $Filter))
@@ -2766,7 +2830,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -2973,7 +3039,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -3039,14 +3107,20 @@ try {
                     'Get-CASMailbox',
                     'Get-DistributionGroup',
                     'Get-DynamicDistributionGroup',
-                    $(if ($ExportFromOnprem -eq $false) { 'Get-LinkedUser' }),
+                    $(if ($ExportFromOnprem -eq $false) {
+                            'Get-LinkedUser'
+                        }),
                     'Get-Mailbox', # Get-EXOMailbox can't yet handle the filter
                     'Get-MailContact',
                     'Get-MailPublicFolder',
                     'Get-MailUser',
-                    $(if ($ExportFromOnprem -eq $true) { 'Get-RemoteMailbox' }),
+                    $(if ($ExportFromOnprem -eq $true) {
+                            'Get-RemoteMailbox'
+                        }),
                     'Get-User',
-                    $(if ($ExportFromOnprem -eq $false) { 'Get-UnifiedGroup' })
+                    $(if ($ExportFromOnprem -eq $false) {
+                            'Get-UnifiedGroup'
+                        })
                 ) | Where-Object { $_ })) {
             foreach ($Filter in $Filters) {
                 $tempQueue.enqueue(@($Cmdlet, $Filter))
@@ -3207,7 +3281,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -3464,7 +3540,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -3590,9 +3668,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -3619,9 +3705,17 @@ try {
                                         }
 
                                         if ($ExportFromOnPrem) {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                $TrusteeEnvironment = 'Cloud'
+                                            } else {
+                                                $TrusteeEnvironment = 'On-Prem'
+                                            }
                                         } else {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                $TrusteeEnvironment = 'On-Prem'
+                                            } else {
+                                                $TrusteeEnvironment = 'Cloud'
+                                            }
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -3773,7 +3867,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -3918,9 +4014,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "$($Grantor.ExchangeGuid.Guid), $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -3933,7 +4037,7 @@ try {
 
                                                     $UFNSelf = . ([scriptblock]::Create($ConnectExchange)) -ScriptBlock { Get-SecurityPrincipal -Types WellknownSecurityPrincipal -ErrorAction stop -WarningAction SilentlyContinue }
                                                     if ($UFNSelf) {
-                                                        Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP 
+                                                        Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP
                                                         $UFNSelf = @($UFNSelf)
                                                         $UFNSelf = ($UFNSelf | Where-Object { $_.Sid -ieq 'S-1-5-10' }).UserFriendlyName
                                                     } else {
@@ -3958,7 +4062,11 @@ try {
                                                 }
                                             ))
                                     ) {
-                                        foreach ($TrusteeRight in @($MailboxPermission | Where-Object { if ($ExportMailboxAccessRightsInherited) { $true } else { $_.IsInherited -ne $true } } | Select-Object *, @{ name = 'trustee'; Expression = { $_.user } })) {
+                                        foreach ($TrusteeRight in @($MailboxPermission | Where-Object { if ($ExportMailboxAccessRightsInherited) {
+                                                        $true
+                                                    } else {
+                                                        $_.IsInherited -ne $true
+                                                    } } | Select-Object *, @{ name = 'trustee'; Expression = { $_.user } })) {
                                             if ((-not $ExportMailboxAccessRightsSelf) -and (($TrusteeRight.user -ieq 'S-1-5-10') -or ($TrusteeRight.user -ieq $UFNSelf))) {
                                                 continue
                                             }
@@ -3989,9 +4097,17 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 foreach ($Accessright in ($TrusteeRight.Accessrights -split ', ')) {
@@ -4007,7 +4123,11 @@ try {
                                                                             $GrantorEnvironment,
                                                                             '',
                                                                             $Accessright,
-                                                                            $(if ($Trusteeright.deny) { 'Deny' } else { 'Allow' }),
+                                                                            $(if ($Trusteeright.deny) {
+                                                                                    'Deny'
+                                                                                } else {
+                                                                                    'Allow'
+                                                                                }),
                                                                             $Trusteeright.IsInherited,
                                                                             $Trusteeright.InheritanceType,
                                                                             $TrusteeRight.trustee,
@@ -4067,7 +4187,11 @@ try {
                                                                             $GrantorEnvironment,
                                                                             '',
                                                                             $Accessright,
-                                                                            $(if ($Trusteeright.deny) { 'Deny' } else { 'Allow' }),
+                                                                            $(if ($Trusteeright.deny) {
+                                                                                    'Deny'
+                                                                                } else {
+                                                                                    'Allow'
+                                                                                }),
                                                                             $Trusteeright.IsInherited,
                                                                             $Trusteeright.InheritanceType,
                                                                             $TrusteeRight.trustee,
@@ -4203,7 +4327,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -4340,10 +4466,19 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
+                                'xxx'
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
@@ -4361,11 +4496,17 @@ try {
 
                                 foreach ($Folder in $Folders) {
                                     try {
-                                        if (-not $folder.foldertype) { $folder.foldertype = $null }
+                                        if (-not $folder.foldertype) {
+                                            $folder.foldertype = $null
+                                        }
 
-                                        if ($folder.foldertype -iin $ExportMailboxFolderPermissionsExcludeFoldertype) { continue }
+                                        if ($folder.foldertype -iin $ExportMailboxFolderPermissionsExcludeFoldertype) {
+                                            continue
+                                        }
 
-                                        if ($Folder.foldertype -ieq 'root') { $Folder.folderpath = '/' }
+                                        if ($Folder.foldertype -ieq 'root') {
+                                            $Folder.folderpath = '/'
+                                        }
 
                                         Write-Host "  Folder '$($folder.folderid)' ('$($folder.folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
                                         foreach ($FolderPermissions in
@@ -4390,11 +4531,15 @@ try {
                                             foreach ($FolderPermission in $FolderPermissions) {
                                                 foreach ($AccessRight in ($FolderPermission.AccessRights)) {
                                                     if ($ExportMailboxFolderPermissionsDefault -eq $false) {
-                                                        if ($FolderPermission.user.usertype.value -ieq 'default') { continue }
+                                                        if ($FolderPermission.user.usertype.value -ieq 'default') {
+                                                            continue
+                                                        }
                                                     }
 
                                                     if ($ExportMailboxFolderPermissionsAnonymous -eq $false) {
-                                                        if ($FolderPermission.user.usertype.value -ieq 'anonymous') { continue }
+                                                        if ($FolderPermission.user.usertype.value -ieq 'anonymous') {
+                                                            continue
+                                                        }
                                                     }
 
                                                     if ($ExportFromOnPrem) {
@@ -4419,7 +4564,11 @@ try {
                                                                 }
                                                             }
 
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                                $TrusteeEnvironment = 'Cloud'
+                                                            } else {
+                                                                $TrusteeEnvironment = 'On-Prem'
+                                                            }
 
                                                             if ($ExportGuids) {
                                                                 $ExportFileLines.Add(
@@ -4467,11 +4616,15 @@ try {
                                                         }
                                                     } else {
                                                         if ($ExportMailboxFolderPermissionsOwnerAtLocal -eq $false) {
-                                                            if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'owner@local') { continue }
+                                                            if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'owner@local') {
+                                                                continue
+                                                            }
                                                         }
 
                                                         if ($ExportMailboxFolderPermissionsMemberAtLocal -eq $false) {
-                                                            if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'member@local') { continue }
+                                                            if ($FolderPermission.user.recipientprincipal.primarysmtpaddress -ieq 'member@local') {
+                                                                continue
+                                                            }
                                                         }
 
                                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal))) {
@@ -4495,7 +4648,11 @@ try {
                                                                 }
                                                             }
 
-                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                                $TrusteeEnvironment = 'On-Prem'
+                                                            } else {
+                                                                $TrusteeEnvironment = 'Cloud'
+                                                            }
 
                                                             if ($ExportGuids) {
                                                                 $ExportFileLines.Add(
@@ -4661,7 +4818,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -4798,9 +4957,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -4846,9 +5013,17 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -4968,9 +5143,17 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 foreach ($AccessRight in $entry.AccessRights) {
@@ -5136,7 +5319,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -5265,9 +5450,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -5321,9 +5514,17 @@ try {
                                                 }
 
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -5404,9 +5605,17 @@ try {
                                                     }
 
                                                     if ($ExportFromOnPrem) {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        }
                                                     } else {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        }
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -5563,7 +5772,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -5696,9 +5907,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -5725,9 +5944,17 @@ try {
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                } else {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                } else {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -5925,7 +6152,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -6099,9 +6328,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -6111,9 +6348,13 @@ try {
 
                                     Write-Host "  Folder '$($folder.EntryId)' ('$($Folder.Folderpath)') @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                                    if (-not $folder.folderclass) { $folder.folderclass = $null }
+                                    if (-not $folder.folderclass) {
+                                        $folder.folderclass = $null
+                                    }
 
-                                    if ($folder.folderclass -iin $ExportPublicFolderPermissionsExcludeFoldertype) { continue }
+                                    if ($folder.folderclass -iin $ExportPublicFolderPermissionsExcludeFoldertype) {
+                                        continue
+                                    }
 
                                     if ($folder.MailEnabled) {
                                         $trustee = $null
@@ -6137,9 +6378,17 @@ try {
                                         }
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                } else {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                } else {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             if ($ExportGuids) {
@@ -6202,11 +6451,15 @@ try {
                                         foreach ($FolderPermission in $FolderPermissions) {
                                             foreach ($AccessRight in ($FolderPermission.AccessRights)) {
                                                 if ($ExportPublicFolderPermissionsDefault -eq $false) {
-                                                    if ($FolderPermission.user.usertype.value -ieq 'default') { continue }
+                                                    if ($FolderPermission.user.usertype.value -ieq 'default') {
+                                                        continue
+                                                    }
                                                 }
 
                                                 if ($ExportPublicFolderPermissionsAnonymous -eq $false) {
-                                                    if ($FolderPermission.user.usertype.value -ieq 'anonymous') { continue }
+                                                    if ($FolderPermission.user.usertype.value -ieq 'anonymous') {
+                                                        continue
+                                                    }
                                                 }
 
                                                 if ($ExportFromOnPrem) {
@@ -6231,7 +6484,11 @@ try {
                                                             }
                                                         }
 
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        }
 
                                                         if ($ExportGuids) {
                                                             $ExportFileLines.Add(
@@ -6299,7 +6556,11 @@ try {
                                                             }
                                                         }
 
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        }
 
                                                         if ($ExportGuids) {
                                                             $ExportFileLines.Add(
@@ -6466,7 +6727,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -6599,9 +6862,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -6629,9 +6900,17 @@ try {
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 if ($ExportGuids) {
@@ -6644,7 +6923,11 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) {
+                                                                                '_ForwardOnly'
+                                                                            } else {
+                                                                                '_DeliverAndForward'
+                                                                            } )),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -6665,7 +6948,11 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) { '_ForwardOnly' } else { '_DeliverAndForward' } )),
+                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) {
+                                                                                '_ForwardOnly'
+                                                                            } else {
+                                                                                '_DeliverAndForward'
+                                                                            } )),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -6782,7 +7069,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -6907,9 +7196,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -6937,9 +7234,17 @@ try {
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -7093,7 +7398,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -7218,9 +7525,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -7247,9 +7562,17 @@ try {
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                } else {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                } else {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -7402,7 +7725,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -7528,9 +7853,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -7572,9 +7905,17 @@ try {
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                                 if ($ExportFromOnPrem) {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    }
                                                 } else {
-                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                    if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                        $TrusteeEnvironment = 'On-Prem'
+                                                    } else {
+                                                        $TrusteeEnvironment = 'Cloud'
+                                                    }
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -7588,11 +7929,27 @@ try {
                                                                         $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                         $GrantorEnvironment,
                                                                         '',
-                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') { 'ResourceDelegate' }else { $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)") }),
-                                                                        $(if ($AcceptedRecipient -is [boolean]) { if ($AcceptedRecipient) { 'Allow' }else { 'Deny' } }else { 'Allow' }),
+                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') {
+                                                                                'ResourceDelegate'
+                                                                            } else {
+                                                                                $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)")
+                                                                            }),
+                                                                        $(if ($AcceptedRecipient -is [boolean]) {
+                                                                                if ($AcceptedRecipient) {
+                                                                                    'Allow'
+                                                                                } else {
+                                                                                    'Deny'
+                                                                                }
+                                                                            } else {
+                                                                                'Allow'
+                                                                            }),
                                                                         'False',
                                                                         'None',
-                                                                        $(if ($AcceptedRecipient -is [boolean]) { $Trustee } else { $AcceptedRecipient }),
+                                                                        $(if ($AcceptedRecipient -is [boolean]) {
+                                                                                $Trustee
+                                                                            } else {
+                                                                                $AcceptedRecipient
+                                                                            }),
                                                                         $Trustee.PrimarySmtpAddress,
                                                                         $(@($Trustee.DisplayName, $Trustee, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
                                                                         $Trustee.ExchangeGuid.Guid,
@@ -7609,11 +7966,27 @@ try {
                                                                         $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                         $GrantorEnvironment,
                                                                         '',
-                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') { 'ResourceDelegate' }else { $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)") }),
-                                                                        $(if ($AcceptedRecipient -is [boolean]) { if ($AcceptedRecipient) { 'Allow' }else { 'Deny' } }else { 'Allow' }),
+                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') {
+                                                                                'ResourceDelegate'
+                                                                            } else {
+                                                                                $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)")
+                                                                            }),
+                                                                        $(if ($AcceptedRecipient -is [boolean]) {
+                                                                                if ($AcceptedRecipient) {
+                                                                                    'Allow'
+                                                                                } else {
+                                                                                    'Deny'
+                                                                                }
+                                                                            } else {
+                                                                                'Allow'
+                                                                            }),
                                                                         'False',
                                                                         'None',
-                                                                        $(if ($AcceptedRecipient -is [boolean]) { $Trustee } else { $AcceptedRecipient }),
+                                                                        $(if ($AcceptedRecipient -is [boolean]) {
+                                                                                $Trustee
+                                                                            } else {
+                                                                                $AcceptedRecipient
+                                                                            }),
                                                                         $Trustee.PrimarySmtpAddress,
                                                                         $Trustee.DisplayName,
                                                                         $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -replace '^/$', ''),
@@ -7729,7 +8102,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -7854,9 +8229,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -7872,9 +8255,17 @@ try {
 
                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                         if ($ExportFromOnPrem) {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                $TrusteeEnvironment = 'Cloud'
+                                            } else {
+                                                $TrusteeEnvironment = 'On-Prem'
+                                            }
                                         } else {
-                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                            if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                $TrusteeEnvironment = 'On-Prem'
+                                            } else {
+                                                $TrusteeEnvironment = 'Cloud'
+                                            }
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -8027,7 +8418,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -8288,7 +8681,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -8451,9 +8846,17 @@ try {
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                } else {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                } else {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -8467,7 +8870,11 @@ try {
                                                                     $GrantorRecipientType,
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
+                                                                    $(if ($ExportGroupMembersRecurse) {
+                                                                            'MemberRecurse'
+                                                                        } else {
+                                                                            'MemberDirect'
+                                                                        }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -8526,7 +8933,11 @@ try {
                                                                     $GrantorRecipientType,
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
+                                                                    $(if ($ExportGroupMembersRecurse) {
+                                                                            'MemberRecurse'
+                                                                        } else {
+                                                                            'MemberDirect'
+                                                                        }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -8652,7 +9063,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -8795,9 +9208,17 @@ try {
                                 $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                 if ($ExportFromOnPrem) {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'Cloud'
+                                    } else {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    }
                                 } else {
-                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                    if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                        $GrantorEnvironment = 'On-Prem'
+                                    } else {
+                                        $GrantorEnvironment = 'Cloud'
+                                    }
                                 }
 
                                 Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -8824,9 +9245,17 @@ try {
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
                                             if ($ExportFromOnPrem) {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                } else {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $TrusteeEnvironment = 'On-Prem'
+                                                } else {
+                                                    $TrusteeEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -8840,7 +9269,11 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
+                                                                    $(if ($ExportGroupMembersRecurse) {
+                                                                            'MemberRecurse'
+                                                                        } else {
+                                                                            'MemberDirect'
+                                                                        }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -8899,7 +9332,11 @@ try {
                                                                     $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -replace '^/$', ''),
                                                                     $GrantorEnvironment,
                                                                     '',
-                                                                    $(if ($ExportGroupMembersRecurse) { 'MemberRecurse' } else { 'MemberDirect' }),
+                                                                    $(if ($ExportGroupMembersRecurse) {
+                                                                            'MemberRecurse'
+                                                                        } else {
+                                                                            'MemberDirect'
+                                                                        }),
                                                                     'Allow',
                                                                     'False',
                                                                     'None',
@@ -9014,7 +9451,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -9163,9 +9602,17 @@ try {
                                                     }
 
                                                     if ($ExportFromOnPrem) {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'Cloud' } else { $TrusteeEnvironment = 'On-Prem' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        }
                                                     } else {
-                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') { $TrusteeEnvironment = 'On-Prem' } else { $TrusteeEnvironment = 'Cloud' }
+                                                        if ($Trustee.RecipientTypeDetails -ilike 'Remote*') {
+                                                            $TrusteeEnvironment = 'On-Prem'
+                                                        } else {
+                                                            $TrusteeEnvironment = 'Cloud'
+                                                        }
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
@@ -9328,7 +9775,9 @@ try {
                 for ($x = $lastCount; $x -le $done; $x++) {
                     if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                         Write-Host (("`r") + ('    {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                        if ($x -eq 0) { Write-Host }
+                        if ($x -eq 0) {
+                            Write-Host
+                        }
                         $lastCount = $x
                     }
                 }
@@ -9466,9 +9915,17 @@ try {
                                             $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                             if ($ExportFromOnPrem) {
-                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $GrantorEnvironment = 'Cloud'
+                                                } else {
+                                                    $GrantorEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $GrantorEnvironment = 'On-Prem'
+                                                } else {
+                                                    $GrantorEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -9602,7 +10059,9 @@ try {
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                             Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                            if ($x -eq 0) { Write-Host }
+                            if ($x -eq 0) {
+                                Write-Host
+                            }
                             $lastCount = $x
                         }
                     }
@@ -9735,9 +10194,17 @@ try {
                                             $GrantorRecipientTypeDetails = $Grantor.RecipientTypeDetails
 
                                             if ($ExportFromOnPrem) {
-                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'Cloud' } else { $GrantorEnvironment = 'On-Prem' }
+                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $GrantorEnvironment = 'Cloud'
+                                                } else {
+                                                    $GrantorEnvironment = 'On-Prem'
+                                                }
                                             } else {
-                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') { $GrantorEnvironment = 'On-Prem' } else { $GrantorEnvironment = 'Cloud' }
+                                                if ($Grantor.RecipientTypeDetails -ilike 'Remote*') {
+                                                    $GrantorEnvironment = 'On-Prem'
+                                                } else {
+                                                    $GrantorEnvironment = 'Cloud'
+                                                }
                                             }
 
                                             Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -9873,7 +10340,9 @@ try {
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                             Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                            if ($x -eq 0) { Write-Host }
+                            if ($x -eq 0) {
+                                Write-Host
+                            }
                             $lastCount = $x
                         }
                     }
@@ -10138,7 +10607,9 @@ try {
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                             Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                            if ($x -eq 0) { Write-Host }
+                            if ($x -eq 0) {
+                                Write-Host
+                            }
                             $lastCount = $x
                         }
                     }
@@ -10356,7 +10827,9 @@ try {
                     for ($x = $lastCount; $x -le $done; $x++) {
                         if (($x -gt $lastCount) -and (($x % $UpdateInterval -eq 0) -or ($x -eq $tempQueueCount))) {
                             Write-Host (("`r") + ('          {0:0000000} @{1}@' -f $x, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                            if ($x -eq 0) { Write-Host }
+                            if ($x -eq 0) {
+                                Write-Host
+                            }
                             $lastCount = $x
                         }
                     }
@@ -10415,7 +10888,9 @@ try {
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobResultFiles.count)) {
                     Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                    if ($lastcount -eq $JobResultFiles.count) { Write-Host }
+                    if ($lastcount -eq $JobResultFiles.count) {
+                        Write-Host
+                    }
                 }
 
                 $lastCount++
@@ -10450,7 +10925,9 @@ try {
 
                 if (($lastCount % $UpdateInterval -eq 0) -or ($lastcount -eq $JobErrorFiles.count)) {
                     Write-Host (("`r") + ('      {0:0000000} @{1}@' -f $lastcount, $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK'))) -NoNewline
-                    if ($lastcount -eq $JobErrorFiles.count) { Write-Host }
+                    if ($lastcount -eq $JobErrorFiles.count) {
+                        Write-Host
+                    }
                 }
 
                 $lastCount++
