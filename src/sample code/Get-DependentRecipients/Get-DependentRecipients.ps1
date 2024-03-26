@@ -37,6 +37,8 @@ Clear-Host
 
 Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
+$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+
 Set-Location $PSScriptRoot
 
 if ($PSVersionTable.PSEdition -eq 'desktop') {
