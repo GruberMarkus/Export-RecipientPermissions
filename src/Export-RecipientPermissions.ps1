@@ -708,6 +708,8 @@ $FilterGetMember = {
 
 
 try {
+    $OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+
     Set-Location $PSScriptRoot
 
     if ($PSVersionTable.PSEdition -ieq 'desktop') {
