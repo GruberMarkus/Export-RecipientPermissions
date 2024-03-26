@@ -31,6 +31,9 @@ Clear-Host
 
 Write-Host "Start script @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
+$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+
+Set-Location $PSScriptRoot
 
 Write-Host
 Write-Host "Query AD for data from objects with SIDHistory to remove @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
