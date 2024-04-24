@@ -523,7 +523,7 @@ $ConnectExchange = {
 
                     $ExchangeOnlineConnectionParameters['ConnectionUri'] = $ConnectExchangeTempVariableConnectionUri
 
-                    Import-Module '.\bin\ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
+                    Import-Module 'ExchangeOnlineManagement' -Force -DisableNameChecking -ErrorAction Stop
 
                     Connect-ExchangeOnline @ExchangeOnlineConnectionParameters # -Prefix $ConnectExchangeTempVariableCmdletPrefix
                 }
