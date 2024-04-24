@@ -42,6 +42,29 @@ if ($PSVersionTable.PSEdition -ieq 'desktop') {
 
 
 Write-Host
+Write-Host "Check file lines @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+$oldLinesCount = 0;
+Get-Content $oldCsv -read 1000 | ForEach-Object { $oldLinesCount += $_.Length };
+
+$newLinesCount = 0;
+Get-Content $newCsv -read 1000 | ForEach-Object { $newLinesCount += $_.Length };
+
+Write-Host "  Old CSV file has $($oldLinesCount) lines, new CSV file has $($newLinesCount) lines."
+
+$maxCompareOperations = ($oldLinesCount * $newLinesCount * 2)
+
+if ($maxCompareOperations -lt 10000000000) {
+    Write-Host ('  Comparison requires up to {0:N0} operations, which should be ok.' -f $maxCompareOperations)
+} else {
+    Write-Host ('  Comparison requires up to {0:N0} operations, which may consume lots of RAM, CPU and time.' -f $($maxCompareOperations)) -ForegroundColor Yellow
+    Write-Host '  Consider using a SQL database with indexes instead of PowerShell for this comparison.' -ForegroundColor Yellow
+    Write-Host '  Sleeping for 60 seconds, so you have time to cancel this script.' -ForegroundColor Yellow
+
+    Start-Sleep -Seconds 30
+}
+
+
+Write-Host
 Write-Host "Check CSV files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $CompareLinebyLine = $false
 
