@@ -25,7 +25,7 @@ _**Breaking:** Notice about breaking change_
 - Complete rewrite of code getting UserFriendlyName
 - Use GUID instead of PrimarySmtpAddress where possible
 - The default export and error files now have the execution timestamp in their filename
-- sample code `Compare-RecipientPermissions.ps1` now uses a faster compare mechanism when possible, and warns when comparison probably needs to much ressources
+- Sample code `Compare-RecipientPermissions.ps1` now uses a faster compare mechanism when possible, and warns when comparison probably needs to much ressources
 ### Added
 - Debug and error files now contain the Exchange GUID and the Directory GUID in addition to the primary SMTP address
 ### Removed
