@@ -20,9 +20,6 @@ Param(
     # Path to the CSV file from the newer run of Export-RecipientPermissions
     $newCsv = '.\Export-RecipientPermissions_Output_new.csv',
 
-    # Display results on screen before creating file showing changes
-    $DisplayResults = $true,
-
     # Path for export file showing changes
     # Set to '' or $null to not create this file
     $ChangeFile = '.\comparison.csv'
@@ -45,63 +42,80 @@ if ($PSVersionTable.PSEdition -ieq 'desktop') {
 
 
 Write-Host
+Write-Host "Check CSV files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+$CompareLinebyLine = $false
+
+if (
+    (Get-Content $oldcsv -Head 1 -Encoding utf8) -ieq (Get-Content $oldcsv -Head 1 -Encoding utf8)
+) {
+    $CompareLinebyLine = $true
+
+    Write-Host '  Headers of old and new CSV file are identical.'
+    Write-Host '  Using faster and less memory intensive line-by-line comparison.'
+} else {
+    Write-Host '  Headers of old and new CSV file are not identical.'
+    Write-Host '  Using slower and more memory-intensive object-based comparison.'
+}
+
+
+Write-Host
 Write-Host "Import old CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-$oldLines = Import-Csv $oldCsv -Delimiter ';' -Encoding $UTF8Encoding
+if ($CompareLinebyLine) {
+    $oldLines = Get-Content $oldCsv -Encoding $UTF8Encoding
+} else {
+    $oldLines = Import-Csv $oldCsv -Delimiter ';' -Encoding $UTF8Encoding
+}
 
 
 Write-Host
 Write-Host "Import new CSV file @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-$newLines = Import-Csv $newCsv -Delimiter ';' -Encoding $UTF8Encoding
+if ($CompareLinebyLine) {
+    $newLines = Get-Content $newCsv -Encoding $UTF8Encoding
+} else {
+    $newLines = Import-Csv $newCsv -Delimiter ';' -Encoding $UTF8Encoding
+}
 
 
 Write-Host
 Write-Host "Compare CSV files @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 Write-Host "  Create compared dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-$Dataset = Compare-Object -ReferenceObject $oldLines -DifferenceObject $newLines -Property $newLines[0].psobject.properties.name -IncludeEqual -PassThru
-$Dataset | Add-Member -MemberType NoteProperty -Name 'Change' -Value $null
-
-Write-Host "  Modify and sort dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-foreach ($DatasetObject in $Dataset) {
-    if ($DatasetObject.sideindicator -ieq '<=') {
-        $DatasetObject.'Change' = 'Deleted'
-    } elseif ($DatasetObject.sideindicator -ieq '=>') {
-        $DatasetObject.'Change' = 'New'
-    } else {
-        $DatasetObject.'Change' = 'Unchanged'
-    }
+if ($CompareLinebyLine) {
+    $Dataset = Compare-Object -ReferenceObject $oldLines -DifferenceObject $newLines -IncludeEqual
+    $Dataset[0].InputObject += ';"Change"'
+} else {
+    $Dataset = Compare-Object -ReferenceObject $oldLines -DifferenceObject $newLines -Property $newLines[0].psobject.properties.name -IncludeEqual -PassThru
+    $Dataset | Add-Member -MemberType NoteProperty -Name 'Change' -Value $null
 }
 
-$Dataset = $Dataset | Select-Object * -ExcludeProperty 'SideIndicator'
+Write-Host "  Modify and sort dataset @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
+for ($x = $(if ($CompareLinebyLine) { 1 } else { 0 }); $x -lt $dataset.count; $x++) {
+    $DatasetObject = $Dataset[$x]
 
-$Dataset = $Dataset | Sort-Object -Property 'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Folder', 'Permission', 'Trustee Original Identity', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment', 'Change'
-
-
-Write-Host
-Write-Host "Display results @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
-if ($DisplayResults) {
-    $GrantorPrimarySmtpOrder = [system.collections.arraylist]::new($Dataset.'Grantor Primary SMTP')
-    $GrantorPrimarySmtpReverseOrder = [system.collections.arraylist]::new($GrantorPrimarySmtpOrder.count)
-    $GrantorPrimarySmtpList = [ordered]@{}
-
-    for ($x = $GrantorPrimarySmtpOrder.count; $x -ge 0; $x--) {
-        $null = $GrantorPrimarySmtpReverseOrder.add($GrantorPrimarySmtpOrder[$x])
-        $GrantorPrimarySmtpList.'$($GrantorPrimarySmtpOrder[$x])' = $null
-    }
-
-    foreach ($GrantorPrimarySmtp in ($GrantorPrimarySmtpList.keys)) {
-        Write-Host "  $($GrantorPrimarySmtp)"
-        foreach ($DatasetObject in $Dataset[$($GrantorPrimarySmtpOrder.IndexOf($GrantorPrimarySmtp))..$($GrantorPrimarySmtpReverseOrder.count - 1 - $GrantorPrimarySmtpReverseOrder.IndexOf($GrantorPrimarySmtp))]) {
-            if ($DatasetObject.Change -eq 'Deleted') {
-                Write-Host ("    Deleted: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')') no longer has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
-            } elseif ($DatasetObject.change -eq 'New') {
-                Write-Host ("    New: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')) now has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
-            } else {
-                Write-Host ("    Unchanged: '$($DatasetObject.'Trustee Original Identity')' (E-Mail '$($DatasetObject.'Trustee Primary SMTP')') still has the '$($DatasetObject.'Permission')' right" + $(if ($DatasetObject.'Folder') { " on folder '$($DatasetObject.'Folder')'" }))
-            }
+    if ($DatasetObject.sideindicator -ieq '<=') {
+        if ($CompareLinebyLine) {
+            $DatasetObject.InputObject += ';"Deleted"'
+        } else {
+            $DatasetObject.'Change' = 'Deleted'
+        }
+    } elseif ($DatasetObject.sideindicator -ieq '=>') {
+        if ($CompareLinebyLine) {
+            $DatasetObject.InputObject += ';"New"'
+        } else {
+            $DatasetObject.'Change' = 'New'
+        }
+    } else {
+        if ($CompareLinebyLine) {
+            $DatasetObject.InputObject += ';"Unchanged"'
+        } else {
+            $DatasetObject.'Change' = 'Unchanged'
         }
     }
-} else {
-    Write-Host '  Not required with current settings'
+
+    $Dataset[$x] = $DatasetObject
+}
+
+if (-not $CompareLinebyLine) {
+    $Dataset = $Dataset | Select-Object * -ExcludeProperty 'SideIndicator'
 }
 
 
@@ -109,7 +123,17 @@ Write-Host
 Write-Host "Create export file showing changes @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 if ($ChangeFile) {
     Write-Host "  '$($ChangeFile)'"
-    $Dataset | Export-Csv -Path $ChangeFile -Delimiter ';' -Encoding $UTF8Encoding -NoTypeInformation -Force
+
+    if ($CompareLinebyLine) {
+        (
+            ($Dataset[0].inputobject) +
+            [System.Environment]::NewLine +
+            ((@(($Dataset[1..$($Dataset.count - 1)]).InputObject) | Sort-Object) -join [System.Environment]::NewLine)
+        ) | Set-Content -Path $ChangeFile -Encoding $UTF8Encoding -Force
+    } else {
+        $Dataset = $Dataset | Sort-Object -Property 'Grantor Primary SMTP', 'Grantor Display Name', 'Grantor Recipient Type', 'Grantor Environment', 'Folder', 'Permission', 'Trustee Original Identity', 'Trustee Primary SMTP', 'Trustee Display Name', 'Trustee Recipient Type', 'Trustee Environment', 'Change'
+        $Dataset | Export-Csv -Path $ChangeFile -Delimiter ';' -Encoding $UTF8Encoding -NoTypeInformation -Force
+    }
 } else {
     Write-Host '  Not required with current configuration settings'
 }
