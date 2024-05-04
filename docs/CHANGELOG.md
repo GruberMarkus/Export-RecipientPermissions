@@ -16,7 +16,7 @@ _**Breaking:** Notice about breaking change_
 -->
 
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.2.0" target="_blank">v3.2.0</a> - 2024-05-04
 ### Changed
 - Error handling improvements
   - Complete rewrite of Exchange connection code
