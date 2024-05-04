@@ -1,5 +1,7 @@
 function main {
     Write-Output 'Basics'
+    $OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+
     Set-Location $env:GITHUB_WORKSPACE
 
     & choco.exe install pandoc --no-progress

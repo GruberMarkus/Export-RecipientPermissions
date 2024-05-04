@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Prioritized support
+    url: https://explicitconsulting.at/open-source/export-recipientpermissions/
+    about: If you want to prioritize your request, please use ExplicIT Consulting's fee-based support instead of this form.
+  - name: Previously solved issues
+    url: https://github.com/GruberMarkus/Export-RecipientPermissions/issues?q=
+    about: Before creating a new issue, look through previous issues.
+  - name: Documentation
+    url: https://github.com/GruberMarkus/Export-RecipientPermissions
+    about: Before creating a new issue, look through documentation (README file and associated documents).
+  - name: Discussions board
+    url: https://github.com/GruberMarkus/Export-RecipientPermissions
+    about: You are welcome to share your experiences with Export-RecipientPermissions, exchange ideas with other users or suggest new features in our discussions board.
+  - name: Report security vulnerabilities
+    url: https://github.com/GruberMarkus/Export-RecipientPermissions?tab=security-ov-file
+    about: Please report security vulnerabilities here.

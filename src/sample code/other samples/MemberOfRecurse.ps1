@@ -172,6 +172,10 @@ function ConvertSidToGuidAndFillResult {
 
 
 # Setup
+$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+
+Set-Location $PSScriptRoot
+
 $script:jobs = New-Object System.Collections.ArrayList
 Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 $Search = New-Object DirectoryServices.DirectorySearcher

@@ -1,21 +1,21 @@
 <!-- omit in toc -->
-## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/get%20fee--based%20support%20from-ExplicIT%20Consulting-lawngreen?labelColor=deepskyblue" alt="get fee-based support from ExplicIT Consulting"></a>
 
 # Features <!-- omit in toc -->
 Document, filter and compare Exchange permissions:
-- mailbox access rights
-- mailbox folder permissions
-- public folder permissions
-- send as
-- send on behalf
-- managed by
-- moderated by
-- linked master accounts
-- forwarders
-- sender restrictions
-- resource delegates
-- group members
-- management role group members
+- Mailbox access rights
+- Mailbox folder permissions
+- Public Folder permissions
+- Send As
+- Send On Behalf
+- Managed By
+- Moderated By
+- Linked Master Accounts
+- Forwarders
+- Sender restrictions
+- Resource delegates
+- Group members
+- Management Role group members
 
 Easens the move to the cloud, as permission dependencies beyond the supported cross-premises permissions (https://docs.microsoft.com/en-us/Exchange/permissions) can easily be identified and even be represented graphically (sample code included).
 
@@ -175,12 +175,11 @@ Default values:
 ### 1.2.6. RecipientProperties
 Recipient properties to import.
 
-Be aware that these properties are not queried with a simple '`Get-Recipient`', but with '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties)`'.  
-This way, some properties have sub-values. For example, the property .PrimarySmtpAddress has .Local, .Domain and .Address as sub-values.
+Be aware that these properties are not queried with '`Invoke-Command -Session $ExchangeSession -ScriptBlock { Get-Recipient -ResultSize Unlimited | Select-Object -Property $args[0] } -ArgumentList @(, $RecipientProperties)`', but with a simple '`Get-Recipient`'.
 
-These properties are available for GrantorFilter and TrusteeFilter. 
+These properties are available for GrantorFilter and TrusteeFilter.
 
-Properties that are always included: 'Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount'
+Properties that are always included: 'Identity', 'DistinguishedName', 'RecipientType', 'RecipientTypeDetails', 'DisplayName', 'Name', 'PrimarySmtpAddress', 'EmailAddresses', 'ManagedBy', 'UserFriendlyName', 'LinkedMasterAccount'
 
 ### 1.2.7. GrantorFilter
 Only check grantors where the filter criteria matches $true.
@@ -194,16 +193,35 @@ The variable $Grantor has all attributes defined by '`RecipientProperties`'. For
 - .EmailAddresses  
   This attribute is an array. Code example:
     ```
-    $GrantorFilter = "if ((`$Grantor.EmailAddresses -ilike 'smtp:AddressA@example.com') -or (`$Grantor.EmailAddresses -ilike 'smtp:Test*@example.com')) { `$true } else { `$false }"
+    $GrantorFilter = "
+        if (
+            (`$Grantor.EmailAddresses -ilike 'smtp:AddressA@example.com') -or
+            (`$Grantor.EmailAddresses -ilike 'smtp:Test*@example.com')
+        ) {
+            `$true
+        } else {
+            `$false
+        }
+    "
     ```
 - .UserFriendlyName: User account holding the mailbox in the '`<NetBIOS domain name>\<sAMAccountName>`' format
 - .ManagedBy
     This attribute is an array. Code example:
     ```
-    $GrantorFilter = "foreach (`$XXXSingleManagedByXXX in `$Grantor.ManagedBy) { if (`$XXXSingleManagedByXXX -iin @(
-                        'example.com/OU1/OU2/ObjectA',
-                        'example.com/OU3/OU4/ObjectB',
-    )) { `$true; break } }"
+    $GrantorFilter = "
+        foreach (
+            `$XXXSingleManagedByXXX in `$Grantor.ManagedBy
+        ) {
+            if (
+                `$XXXSingleManagedByXXX -iin @(
+                    'example.com/OU1/OU2/ObjectA',
+                    'example.com/OU3/OU4/ObjectB',
+                )
+            ) {
+                `$true; break
+            }
+        }
+    "
     ```
   On-prem only:
     .LinkedMasterAccount: Linked Master Account in the '`<NetBIOS domain name>\<sAMAccountName>`' format
@@ -707,13 +725,13 @@ If we are only interested in permissions granted directly to a certain user or g
 - If The user or group is not an Exchange recipient, enable '`ExportGUIDs`' and use '`ExportFileFilter`' to filter for '`Trustee AD ObjectGuid`'
 
 If we are interested in permissions granted directly or indirectly to a certain user or group, it get's more complicated.  
-Export-RecipientPermissions can resolve permissions granted to groups in three ways: Do not resolve groups, resolve groups to their direct members, or resolve groups to their resulting members.
+Export-RecipientPermissions can resolve permissions granted to groups in three ways: Do not resolve groups, resolve groups to their direct members, or resolve groups to their recurse members.
 - Not resolving groups does not take into consideration nested groups (permissions granted indirectly)
 - Resolving groups also does not consider nested groups (permissions granted indirectly) below the first membership level
-- Resolving groups to their resulting members requires relatively high CPU and RAM ressources and results in large result files.
+- Resolving groups to their recurse members requires relatively high CPU and RAM ressources and results in large result files.
   - '`ExportDistributionGroupMembers`' only helps when the group in question might be a security group
   - '`ExpandGroups`' results in large result files
-  - Neither '`ExportDistributionGroupMembers`' nor '`ExpandGroups`' can handle the following case: User A grants group X a certain permission. group Y is a member of group X, group Z is a member of group Y. Group Z does not have any members, but we need to know that future members of group Z will have access to the permission granted by user A.
+  - Neither '`ExportDistributionGroupMembers`' nor '`ExpandGroups`' can handle the following case: User A grants group X a certain permission. Group Y is a member of group X, group Z is a member of group Y. Group Z does not have any members, but we need to know that future members of group Z will have access to the permission granted by user A.
 
 The most economic solution to all these problems is the following:
 - Export all the permissions you are interested in
@@ -752,7 +770,8 @@ $params = @{
     ExportTrustees                              = 'All'
 
     GrantorFilter                               = "
-        if (`$Grantor.RecipientTypeDetails -ilike ""*Group*"")
+        if (
+            `$Grantor.RecipientTypeDetails -ilike ""*Group*""
         ) {
             `$true
         } else {
@@ -815,28 +834,36 @@ $params = @{
     ExportTrustees                              = 'All'
 
     RecipientProperties                         = @()
-    GrantorFilter                               = "if ( (`$Grantor.RecipientTypeDetails -ieq 'PublicFolderMailbox') ) { `$true } else { `$false }"
+    GrantorFilter                               = "
+        if (
+            (`$Grantor.RecipientTypeDetails -ieq 'PublicFolderMailbox')
+        ) {
+            `$true
+        } else {
+            `$false
+        }
+    "
     TrusteeFilter                               = $null
     ExportFileFilter                            = "
-                                                    if (
-                                                        (
-                                                            (`$ExportFileLine.'Grantor Recipient Type' -ieq 'UserMailbox/PublicFolderMailbox') -and
-                                                            (
-                                                                (`$ExportFileLine.'Folder' -ieq '/X') -or
-                                                                (`$ExportFileLine.'Folder' -ilike '/X/*') -or
-                                                                (`$ExportFileLine.'Folder' -ieq '/Y') -or
-                                                                (`$ExportFileLine.'Folder' -ilike '/Y/*')
-                                                            )
-                                                        ) -or
-                                                        (
-                                                            `$ExportFileLine.'Grantor Recipient Type' -ine 'UserMailbox/PublicFolderMailbox'
-                                                        )
-                                                    ) {
-                                                        `$true
-                                                    } else {
-                                                        `$false 
-                                                    }
-                                                 "
+        if (
+            (
+                (`$ExportFileLine.'Grantor Recipient Type' -ieq 'UserMailbox/PublicFolderMailbox') -and
+                (
+                    (`$ExportFileLine.'Folder' -ieq '/X') -or
+                    (`$ExportFileLine.'Folder' -ilike '/X/*') -or
+                    (`$ExportFileLine.'Folder' -ieq '/Y') -or
+                    (`$ExportFileLine.'Folder' -ilike '/Y/*')
+                )
+            ) -or
+            (
+                `$ExportFileLine.'Grantor Recipient Type' -ine 'UserMailbox/PublicFolderMailbox'
+            )
+        ) {
+            `$true
+        } else {
+            `$false 
+        }
+    "
 
     ExportFile                                  = '..\export\Export-RecipientPermissions_Result.csv'
     ErrorFile                                   = '..\export\Export-RecipientPermissions_Error.csv'
@@ -865,10 +892,12 @@ The root cause seems to be an AppLocker configuration. I do not yet know which e
 ## 3.1. Get-DependentRecipients.ps1
 The script can be found in '`.\sample code\Get-DependentRecipients`'.
 
-Currently only some recipient permissions work cross-premises according to Microsoft. All other permissions, including the one to manage the members of distribution lists, only work when both the grantor and the trustee are hosted on the same environment.
-There are environments where permissions work cross-premises, but there is no offical support from Microsoft.
+Currently, only some recipient permissions work cross-premises according to Microsoft (see https://learn.microsoft.com/en-us/exchange/permissions for details).
 
-This script takes a list of recipients and the output of Export-RecipientPermissions.ps1 to create a list of all recipients groups that have a grantor-trustee dependency beyond "full access" to each other.
+All other permissions, including the one to manage the members of distribution lists, only work when both the grantor and the trustee are hosted on the same environment.
+There are environments where additional permissions work cross-premises, but there is no offical support from Microsoft.
+
+This sample script takes a list of recipients and the output of Export-RecipientPermissions.ps1 to create a list of all recipients and groups that have a grantor-trustee dependency beyond "full access" to each other.
 
 The script not only considers situations where recipient A grants rights to recipient B, but the whole permission chain ("X-Z-A-B-C-D" etc.).
 
@@ -915,9 +944,9 @@ This sample code shows how to list the GUIDs of all groups a certain AD object i
 
 These GUIDs can then be used to answer the question 'Which resources does a particular user or group have access to?', which is described in detail in the FAQ section of this document. 
 # 4. Recommendations
-Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, .Net framework).
+Make sure you have the latest updates installed to avoid memory leaks and CPU spikes (PowerShell, .Net).
 
-If possible, allow Export-RecipientPermissions.ps1 to use your on premises infrastructure. This will dramatically increase the initial enumeration of recipients.
+If possible, allow Export-RecipientPermissions.ps1 to use your on premises infrastructure for best performance.
 
 Start the script from PowerShell, not from within the PowerShell ISE. This makes especially Get-DependentMailboxes.ps1 run faster due to a different default thread apartment mode.
 

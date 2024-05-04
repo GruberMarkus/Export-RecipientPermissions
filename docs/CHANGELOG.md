@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a>  
+## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/get%20fee--based%20support%20from-ExplicIT%20Consulting-lawngreen?labelColor=deepskyblue" alt="fee-based support by ExplicIT Consulting"></a>
 
 # Changelog
 <!--
@@ -14,6 +14,24 @@ _**Breaking:** Notice about breaking change_
 ### Removed
 ### Fixed
 -->
+
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.2.0" target="_blank">v3.2.0</a> - 2024-05-04
+### Changed
+- Error handling improvements
+  - Complete rewrite of Exchange connection code
+  - More resilient Active Directory queries
+  - Exchange on-prem occasionally returns security principals without a GUID
+- Complete rewrite of code getting UserFriendlyName
+- Use GUID instead of PrimarySmtpAddress where possible
+- The default export and error files now have the execution timestamp in their filename
+- Sample code `Compare-RecipientPermissions.ps1` now uses a faster compare mechanism when possible, and warns when comparison probably needs to much ressources
+### Added
+- Debug and error files now contain the Exchange GUID and the Directory GUID in addition to the primary SMTP address
+### Removed
+- Export-RecipientPermissions no longer includes the ExchangeOnlineManagement module. This reduces the size of the package and gives Exchange Online admins control over which version of the module is used.
+### Fixed
+- Exchange Online: Switched back from EXO cmdlets to regular cmdlets, because of changes in returned properties, which do not allow to uniquely identify a trustee (example: Get-EXORecipientPermission sometimes only returns the trustee's display name, which is not guaranteed to be unique)
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.1.1" target="_blank">v3.1.1</a> - 2023-10-12
