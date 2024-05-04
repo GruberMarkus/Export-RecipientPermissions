@@ -10,7 +10,7 @@ contact_links:
     url: https://github.com/GruberMarkus/Export-RecipientPermissions
     about: Before creating a new issue, look through documentation (README file and associated documents).
   - name: Discussions board
-    url: https://github.com/GruberMarkus/Export-RecipientPermissions
+    url: https://github.com/GruberMarkus/Export-RecipientPermissions/discussions
     about: You are welcome to share your experiences with Export-RecipientPermissions, exchange ideas with other users or suggest new features in our discussions board.
   - name: Report security vulnerabilities
     url: https://github.com/GruberMarkus/Export-RecipientPermissions?tab=security-ov-file
