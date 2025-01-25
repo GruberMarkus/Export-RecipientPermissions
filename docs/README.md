@@ -62,6 +62,7 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.35. ExportDistributionGroupMembers](#1235-exportdistributiongroupmembers)
     - [1.2.36. ExportGroupMembersRecurse](#1236-exportgroupmembersrecurse)
     - [1.2.37. ExportGuids](#1237-exportguids)
+    - [1.2.37. ExportSids](#1237-exportsids)
     - [1.2.38. ExpandGroups](#1238-expandgroups)
     - [1.2.39. ExportGrantorsWithNoPermissions](#1239-exportgrantorswithnopermissions)
     - [1.2.40. ExportTrustees](#1240-exporttrustees)
@@ -73,6 +74,7 @@ Compare exports from different times to detect permission changes (sample code i
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
   - [2.1. Which permissions are required?](#21-which-permissions-are-required)
+  - [Which account should I use to connect to Exchange Online?](#which-account-should-i-use-to-connect-to-exchange-online)
   - [2.2. Can the script resolve permissions granted to a group to it's individual members?](#22-can-the-script-resolve-permissions-granted-to-a-group-to-its-individual-members)
   - [2.3. Where can I find the changelog?](#23-where-can-i-find-the-changelog)
   - [2.4. How can I contribute, propose a new feature or file a bug?](#24-how-can-i-contribute-propose-a-new-feature-or-file-a-bug)
@@ -156,7 +158,7 @@ Default:
 ### 1.2.3. ExchangeOnlineConnectionParameters
 This hashtable will be passed as parameter to Connect-ExchangeOnline
 
-All values are allowed, but CommandName and ConnectionUri are set by the script. By default, ShowBanner and ShowProgress are set to $false; SkipLoadingFormatData to $true.
+All values are allowed, but CommandName is set by the script. By default, ShowBanner and ShowProgress are set to $false; SkipLoadingFormatData to $true.
 ### 1.2.4. ExchangeCredentialUsernameFile, ExchangeCredentialPasswordFile, UseDefaultCredential
 Credentials for Exchange connection
 
@@ -457,6 +459,10 @@ Default: $false
 When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 
 Default: $false
+### 1.2.37. ExportSids
+When enabled, the export contains the SID (Security Identifier) for each grantor and trustee
+
+Default: $false
 ### 1.2.38. ExpandGroups
 Expand groups to their recursive members, including nested groups and dynamic groups
 
@@ -584,7 +590,7 @@ In Exchange Online, the Exchange management role group 'View-Only Organization M
 - '`Get-RecipientPermission`' is included in the role groups '`Organization Management`' and '`Recipient Management`'
 - '`Get-SecurityPrincipal`' is included in the role group '`Organization Management`'.  
 
-You can use the following script to find out which cmdlet is assisgned to which management role:
+You can use the following script to find out which cmdlet is assigned to which management role:
 ```
 $ExportFile = '.\Required Cmdlets and their management role assignment.csv'
 
@@ -675,6 +681,12 @@ Write-Host 'Done'
 ```
 
 In both environments, a tailored custom management role group with the required permissions and recipient restrictions can be created.
+## Which account should I use to connect to Exchange Online?
+It is strongly recommended to use app-only authentication for attended as well as unattended scripts:
+1. Follow the instructions on https://learn.microsoft.com/en-us/powershell/exchange/app-only-auth-powershell-v2?view=exchange-ps to create an Entra ID app.
+2. Look up the parameters required for Connect-ExchangeOnline at https://learn.microsoft.com/en-us/powershell/module/exchange/connect-exchangeonline?view=exchange-ps.
+3. Pass the parameters required for Connect-ExchangeOnline to the '`ExchangeOnlineConnectionParameters`' parameter of Export-RecipientPermissions.
+4. Make sure you have the latest version of the ExchangeOnlineManagement PowerShell module installed.
 ## 2.2. Can the script resolve permissions granted to a group to it's individual members?
 Yes, Export-RecipientPermissions can resolve trustee groups to their individual members. Use the parameter `'ExpandGroups'` to enable this feature.
 ## 2.3. Where can I find the changelog?

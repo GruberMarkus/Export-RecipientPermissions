@@ -15,6 +15,12 @@ _**Breaking:** Notice about breaking change_
 ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
+### Added
+- Add the new parameter '`ExportSids`' which will include the SID (Security Identifier) of grantor and trustee in the export.
+### Fixed
+- Fixed not showing grantor details when forwarders are configured for an SMTp address starting with 'smtp:'.
+
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.2.0" target="_blank">v3.2.0</a> - 2024-05-04
 ### Changed
