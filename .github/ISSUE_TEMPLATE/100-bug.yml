@@ -9,7 +9,7 @@ body:
 
         Support in this GitHub repository is free, voluntary and without guaranteed response times.
 
-        If you want to prioritize your request, please use [ExplicIT Consulting's **fee-based support**](https://explicitconsulting.at/open-source/Export-RecipientPermissions) instead of this form.
+        If you want to prioritize your request, please use [ExplicIT Consulting's **commercial support**](https://explicitconsulting.at/open-source/export-recipientpermissions/) instead of this form.
   - type: checkboxes
     id: usinglatestrelease
     attributes:
@@ -22,9 +22,9 @@ body:
     id: previousissuesanddocumentation
     attributes:
       label: Previously solved issues and documentation
-      description: Before creating a new issue, look through [previously solved issues](https://github.com/GruberMarkus/Export-RecipientPermissions/issues?q=) and the documentation ([README](https://github.com/GruberMarkus/Export-RecipientPermissions) and associated documents).
+      description: Before creating a new issue, check the documentation ([README](https://github.com/GruberMarkus/Export-RecipientPermissions) and associated documents), previous [issues](https://github.com/GruberMarkus/Export-RecipientPermissions/issues?q=) and [discussions](https://github.com/GruberMarkus/Export-RecipientPermissions/discussions?discussions_q=).
       options:
-        - label: I have searched through previous issues and documentation, but have not found an answer to my issue
+        - label: I have searched through issues, discussions and documentation, but have not found an answer to my issue
           required: true
   - type: checkboxes
     id: codeofconduct
@@ -38,18 +38,9 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: Also tell us what you expected and how the problem can be reproduced.
-      placeholder: Tell us what what happened!
-    validations:
-      required: true
-  - type: textarea
-    id: verboselog
-    attributes:
-      label: Verbose log
       description: |
-        Run Export-RecipientPermissions with the '-verbose' parameter and post the full text output here.
-        Do not refer to a log file attached in 'What happened?', but paste the text output here.
-      placeholder: Tell us what Export-RecipientPermissions says!
-      render: Text
+        Tell us what you expected to happen, what really happened and how the problem can be reproduced.
+        Additionally, upload screenshots and other files that may help analyze the problem.
+      placeholder:
     validations:
       required: true

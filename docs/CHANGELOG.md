@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/get%20fee--based%20support%20from-ExplicIT%20Consulting-lawngreen?labelColor=deepskyblue" alt="fee-based support by ExplicIT Consulting"></a>
+## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions?labelColor=black&color=informational" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational?labelColor=black&color=informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational&labelColor=black" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions?labelColor=black" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/commercial%20support-ExplicIT%20Consulting-lawngreen?labelColor=black" alt="get commercial support from ExplicIT Consulting"></a>
 
 # Changelog
 <!--
@@ -14,6 +14,13 @@ _**Breaking:** Notice about breaking change_
 ### Removed
 ### Fixed
 -->
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
+### Added
+- Add the new parameter '`ExportSids`' which will include the SID (Security Identifier) of grantor and trustee in the export.
+- Add new FAQ '`Which account should I use to connect to Exchange Online?`'. See '`.\docs\README`' for details.
+### Fixed
+- Fixed not showing grantor details when forwarders are configured for an SMTp address starting with 'smtp:'.
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.2.0" target="_blank">v3.2.0</a> - 2024-05-04

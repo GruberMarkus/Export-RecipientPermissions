@@ -47,7 +47,7 @@ Username and password are stored as encrypted secure strings, if UseDefaultCrede
 
 .PARAMETER ExchangeOnlineConnectionParameters
 This hashtable will be passed as parameter to Connect-ExchangeOnline
-All values are allowed, but CommandName and ConnectionUri are set by the script. By default, ShowBanner and ShowProgress are set to $false; SkipLoadingFormatData to $true.
+All values are allowed, but CommandName is set by the script. By default, ShowBanner and ShowProgress are set to $false; SkipLoadingFormatData to $true.
 
 
 .PARAMETER ParallelJobsExchange, ParallelJobsAD, ParallelJobsLocal
@@ -272,6 +272,9 @@ Default: $false
 When enabled, the export contains the Exchange GUID and the AD ObjectGUID for each grantor and trustee
 Default: $false
 
+.PARAMETER ExportSids
+When enabled, the export contains the SID (Security Identifier) for each grantor and trustee
+Default: $false
 
 .PARAMETER ExpandGroups
 Expand trustee groups to their members, including nested groups and dynamic groups
@@ -307,7 +310,7 @@ Default: '.\export\Export-RecipientPermissions_Result.csv'
 .PARAMETER ErrorFile
 Name (and path) of the error log file
 Set to $null or '' to disable debugging
-Default: '.\export\Export-RecipientPermissions_Error.csv',
+Default: '.\export\Export-RecipientPermissions_Error.csv'
 
 
 .PARAMETER DebugFile
@@ -366,14 +369,14 @@ Param(
                 @()
             }
         } else {
-            @('https://outlook.office365.com/powershell-liveid')
+            'https://outlook.office365.com/powershell-liveid/'
         }
     ),
     [boolean]$UseDefaultCredential = $false,
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
     [hashtable]$ExchangeOnlineConnectionParameters = @{ Credential = $null },
-    [int]$ParallelJobsExchange = $ExchangeConnectionUriList.count,
+    [int]$ParallelJobsExchange = $(if ($ExportFromOnPrem) { $ExchangeConnectionUriList.count } else { 10 }),
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 50,
     [string[]]$RecipientProperties = @(),
@@ -408,6 +411,7 @@ Param(
     [boolean]$ExportGroupMembersRecurse = $false,
     [boolean]$ExpandGroups = $false,
     [boolean]$ExportGuids = $false,
+    [boolean]$ExportSids = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
     [parameter(dontshow = $true)][string]$ExportTimestamp = $((Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') -ireplace ':', '' -ireplace '-', ''),
@@ -818,46 +822,40 @@ try {
             Remove-Item -LiteralPath $JobExportFile -Force
         }
 
-        if ($ExportGuids) {
-            $ExportFileHeader = @(
-                'Grantor Primary SMTP',
-                'Grantor Display Name',
-                'Grantor Exchange GUID',
-                'Grantor AD ObjectGUID',
-                'Grantor Recipient Type',
-                'Grantor Environment',
-                'Folder',
-                'Permission',
-                'Allow/Deny',
-                'Inherited',
-                'InheritanceType',
-                'Trustee Original Identity',
-                'Trustee Primary SMTP',
-                'Trustee Display Name',
-                'Trustee Exchange GUID',
-                'Trustee AD ObjectGUID',
-                'Trustee Recipient Type',
-                'Trustee Environment'
-            )
+        $ExportFileHeader = @(
+            'Grantor Primary SMTP',
+            'Grantor Display Name',
+            $(if ($ExportGuids) { 'Grantor Exchange GUID' } else { '' }),
+            $(if ($ExportGuids) { 'Grantor AD ObjectGUID' } else { '' }),
+            $(if ($ExportSids) { 'Grantor SID' } else { '' }),
+            'Grantor Recipient Type',
+            'Grantor Environment',
+            'Folder',
+            'Permission',
+            'Allow/Deny',
+            'Inherited',
+            'InheritanceType',
+            'Trustee Original Identity',
+            'Trustee Primary SMTP',
+            'Trustee Display Name',
+            $(if ($ExportGuids) { 'Trustee Exchange GUID' } else { '' }),
+            $(if ($ExportGuids) { 'Trustee AD ObjectGUID' } else { '' }),
+            $(if ($ExportSids) { 'Trustee SID' } else { '' }),
+            'Trustee Recipient Type',
+            'Trustee Environment'
+        )
 
-        } else {
-            $ExportFileHeader = @(
-                'Grantor Primary SMTP',
-                'Grantor Display Name',
-                'Grantor Recipient Type',
-                'Grantor Environment',
-                'Folder',
-                'Permission',
-                'Allow/Deny',
-                'Inherited',
-                'InheritanceType',
-                'Trustee Original Identity',
-                'Trustee Primary SMTP',
-                'Trustee Display Name',
-                'Trustee Recipient Type',
-                'Trustee Environment'
+        $ExportFileHeaderIndexes = @(
+            $(
+                for ($i = 0; $i -lt $ExportFileHeader.Count; $i++) {
+                    if ($ExportFileHeader[$i]) {
+                        $i
+                    }
+                }
             )
-        }
+        )
+
+        $ExportFileHeader = $ExportFileHeader[$ExportFileHeaderIndexes]
 
         ('"' + ($ExportFileHeader -join '";"') + '"') | Out-File $ExportFile -Encoding $UTF8Encoding -Force
     }
@@ -1825,7 +1823,8 @@ try {
             ($ExportDistributionGroupMembers -ieq 'All') -or
             ($ExportDistributionGroupMembers -ieq 'OnlyTrustees') -or
             ($ExpandGroups) -or
-            ($ExportGuids)
+            ($ExportGuids) -or
+            ($ExportSids)
     ) {
         $AllSecurityPrincipals = [system.collections.arraylist]::Synchronized([system.collections.arraylist]::new($AllRecipients.count))
 
@@ -3625,14 +3624,18 @@ try {
                             $AllRecipients,
                             $AllRecipientsIdentityToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -3719,49 +3722,74 @@ try {
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.add(
+                                            $ExportFileLines.add(
                                                                ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $Grantor.ExchangeGuid.Guid,
-                                                                $Grantor.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                'ManagedBy',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                $Trustee.PrimarySmtpAddress,
-                                                                $Trustee.DisplayName,
-                                                                $Trustee.ExchangeGuid.Guid,
-                                                                $Trustee.Guid.Guid,
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.add(
-                                                               ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                'ManagedBy',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                $Trustee.PrimarySmtpAddress,
-                                                                $Trustee.DisplayName,
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                            $GrantorEnvironment,
+                                                            '',
+                                                            'ManagedBy',
+                                                            'Allow',
+                                                            'False',
+                                                            'None',
+                                                            $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
+                                                            $Trustee.PrimarySmtpAddress,
+                                                            $Trustee.DisplayName,
+                                                            $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                            $TrusteeEnvironment
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
                                         }
                                     }
                                 } catch {
@@ -3830,23 +3858,27 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference              = $DebugPreference
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                   = $ExportFile
-                        ExportFileFilter             = $ExportFileFilter
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        ExportGuids                  = $ExportGuids
-                        ExportTrustees               = $ExportTrustees
-                        ScriptPath                   = $PSScriptRoot
-                        tempQueue                    = $tempQueue
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        VerbosePreference            = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -3967,8 +3999,10 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportMailboxAccessRightsInherited,
                             $ExportMailboxAccessRightsSelf,
                             $ExportTrustees,
@@ -4113,96 +4147,120 @@ try {
 
                                                 foreach ($Accessright in ($TrusteeRight.Accessrights -split ', ')) {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                        if ($ExportGuids) {
-                                                            $ExportFileLines.add(
+                                                        $ExportFileLines.add(
                                                                 ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $Grantor.ExchangeGuid.Guid,
-                                                                            $Grantor.Guid.Guid,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            $Accessright,
-                                                                            $(if ($Trusteeright.deny) {
-                                                                                    'Deny'
-                                                                                } else {
-                                                                                    'Allow'
-                                                                                }),
-                                                                            $Trusteeright.IsInherited,
-                                                                            $Trusteeright.InheritanceType,
-                                                                            $TrusteeRight.trustee,
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $Trustee.ExchangeGuid.Guid,
-                                                                            $(
-                                                                                if ($trustee.Guid.Guid) {
-                                                                                    $trustee.Guid.Guid
-                                                                                } else {
-                                                                                    $AllSecurityPrincipalsLookupSearchString = "$($TrusteeRight.User)"
-
-                                                                                    $AllSecurityPrincipalsLookupResult = (
-                                                                                        $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                        $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
-                                                                                    ) | Where-Object { $_ } | Select-Object -First 1
-
-                                                                                    if ($AllSecurityPrincipalsLookupResult) {
-                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
-                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                         } else {
                                                                                             ''
                                                                                         }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        $Accessright,
+                                                                        $(if ($Trusteeright.deny) {
+                                                                                'Deny'
+                                                                            } else {
+                                                                                'Allow'
+                                                                            }),
+                                                                        $Trusteeright.IsInherited,
+                                                                        $Trusteeright.InheritanceType,
+                                                                        $TrusteeRight.trustee,
+                                                                        $Trustee.PrimarySmtpAddress,
+                                                                        $Trustee.DisplayName,
+                                                                        $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) {
+                                                                                $SecurityPrincipalsLookupSearchString = $(
+                                                                                    if ($trustee.Guid.Guid) {
+                                                                                        $trustee.Guid.Guid
                                                                                     } else {
-                                                                                        try {
-                                                                                            if ($ExportFromOnPrem) {
-                                                                                                # could be an object from a trust
-                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
-                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                                $objNT = $objTrans.GetType()
-                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
-                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        $AllSecurityPrincipalsLookupSearchString = "$($TrusteeRight.User)"
+
+                                                                                        $AllSecurityPrincipalsLookupResult = (
+                                                                                            $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                            $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                            $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                            $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                            $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                        ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                        if ($AllSecurityPrincipalsLookupResult) {
+                                                                                            if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                             } else {
                                                                                                 ''
                                                                                             }
-                                                                                        } catch {
+                                                                                        } else {
+                                                                                            try {
+                                                                                                if ($ExportFromOnPrem) {
+                                                                                                    # could be an object from a trust
+                                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                    $objNT = $objTrans.GetType()
+                                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                                } else {
+                                                                                                    ''
+                                                                                                }
+                                                                                            } catch {
+                                                                                                ''
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                ); $SecurityPrincipalsLookupSearchString
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
                                                                                             ''
                                                                                         }
                                                                                     }
+                                                                                } catch {
+                                                                                    ''
                                                                                 }
-                                                                            ),
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                        $TrusteeEnvironment
 
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        } else {
-                                                            $ExportFileLines.add(
-                                                                ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            $Accessright,
-                                                                            $(if ($Trusteeright.deny) {
-                                                                                    'Deny'
-                                                                                } else {
-                                                                                    'Allow'
-                                                                                }),
-                                                                            $Trusteeright.IsInherited,
-                                                                            $Trusteeright.InheritanceType,
-                                                                            $TrusteeRight.trustee,
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        }
+                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                        )
+
                                                     }
                                                 }
                                             }
@@ -4296,8 +4354,10 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $exportSids
                         ExportMailboxAccessRightsInherited      = $ExportMailboxAccessRightsInherited
                         ExportMailboxAccessRightsSelf           = $ExportMailboxAccessRightsSelf
                         ExportTrustees                          = $ExportTrustees
@@ -4411,6 +4471,8 @@ try {
                         param(
                             $AllRecipients,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $ConnectExchange,
                             $DebugFile,
                             $DebugPreference,
@@ -4420,6 +4482,7 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
                             $ExportMailboxFolderPermissions,
@@ -4428,6 +4491,7 @@ try {
                             $ExportMailboxFolderPermissionsExcludeFoldertype,
                             $ExportMailboxFolderPermissionsMemberAtLocal,
                             $ExportMailboxFolderPermissionsOwnerAtLocal,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempConnectionUriQueue,
@@ -4571,49 +4635,75 @@ try {
                                                                 $TrusteeEnvironment = 'On-Prem'
                                                             }
 
-                                                            if ($ExportGuids) {
-                                                                $ExportFileLines.Add(
+                                                            $ExportFileLines.Add(
                                                                     ('"' + (@((
-                                                                                $GrantorPrimarySMTP,
-                                                                                $GrantorDisplayName,
-                                                                                $Grantor.ExchangeGuid.Guid,
-                                                                                $Grantor.Guid.Guid,
-                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                                $GrantorEnvironment,
-                                                                                $($Folder.Folderpath),
-                                                                                $($Accessright),
-                                                                                'Allow',
-                                                                                'False',
-                                                                                'None',
-                                                                                $($FolderPermission.user.displayname),
-                                                                                $($Trustee.PrimarySmtpAddress),
-                                                                                $($Trustee.displayname),
-                                                                                $Trustee.ExchangeGuid.Guid,
-                                                                                $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1),
-                                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                                $TrusteeEnvironment
-                                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                                )
-                                                            } else {
-                                                                $ExportFileLines.Add(
-                                                                    ('"' + (@((
-                                                                                $GrantorPrimarySMTP,
-                                                                                $GrantorDisplayName,
-                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                                $GrantorEnvironment,
-                                                                                $($Folder.Folderpath),
-                                                                                $($Accessright),
-                                                                                'Allow',
-                                                                                'False',
-                                                                                'None',
-                                                                                $($FolderPermission.user.displayname),
-                                                                                $($Trustee.PrimarySmtpAddress),
-                                                                                $($Trustee.displayname),
-                                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                                $TrusteeEnvironment
-                                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                                )
-                                                            }
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                            $(if ($ExportSids) {
+                                                                                    try {
+                                                                                        try {
+                                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                        } catch {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                } else { '' }
+                                                                            ),
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            $($Folder.Folderpath),
+                                                                            $($Accessright),
+                                                                            'Allow',
+                                                                            'False',
+                                                                            'None',
+                                                                            $($FolderPermission.user.displayname),
+                                                                            $($Trustee.PrimarySmtpAddress),
+                                                                            $($Trustee.displayname),
+                                                                            $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                            $(if ($ExportGuids) { $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1) } else { '' }),
+                                                                            $(if ($ExportSids) {
+                                                                                    try {
+                                                                                        try {
+                                                                                            $SecurityPrincipalsLookupSearchString = $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1)
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                        } catch {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                } else { '' }
+                                                                            ),
+                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                            )
+
                                                         }
                                                     } else {
                                                         if ($ExportMailboxFolderPermissionsOwnerAtLocal -eq $false) {
@@ -4655,49 +4745,74 @@ try {
                                                                 $TrusteeEnvironment = 'Cloud'
                                                             }
 
-                                                            if ($ExportGuids) {
-                                                                $ExportFileLines.Add(
+                                                            $ExportFileLines.Add(
                                                                     ('"' + (@((
-                                                                                $GrantorPrimarySMTP,
-                                                                                $GrantorDisplayName,
-                                                                                $Grantor.ExchangeGuid.Guid,
-                                                                                $Grantor.Guid.Guid,
-                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                                $GrantorEnvironment,
-                                                                                $($Folder.Folderpath),
-                                                                                $($Accessright),
-                                                                                'Allow',
-                                                                                'False',
-                                                                                'None',
-                                                                                $($FolderPermission.user.displayname),
-                                                                                $($Trustee.PrimarySmtpAddress),
-                                                                                $($Trustee.displayname),
-                                                                                $Trustee.ExchangeGuid.Guid,
-                                                                                $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1),
-                                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                                $TrusteeEnvironment
-                                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                                )
-                                                            } else {
-                                                                $ExportFileLines.Add(
-                                                                    ('"' + (@((
-                                                                                $GrantorPrimarySMTP,
-                                                                                $GrantorDisplayName,
-                                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                                $GrantorEnvironment,
-                                                                                $($Folder.Folderpath),
-                                                                                $($Accessright),
-                                                                                'Allow',
-                                                                                'False',
-                                                                                'None',
-                                                                                $($FolderPermission.user.displayname),
-                                                                                $($Trustee.PrimarySmtpAddress),
-                                                                                $($Trustee.displayname),
-                                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                                $TrusteeEnvironment
-                                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                                )
-                                                            }
+                                                                            $GrantorPrimarySMTP,
+                                                                            $GrantorDisplayName,
+                                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                            $(if ($ExportSids) {
+                                                                                    try {
+                                                                                        try {
+                                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                        } catch {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                } else { '' }
+                                                                            ),
+                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                            $GrantorEnvironment,
+                                                                            $($Folder.Folderpath),
+                                                                            $($Accessright),
+                                                                            'Allow',
+                                                                            'False',
+                                                                            'None',
+                                                                            $($FolderPermission.user.displayname),
+                                                                            $($Trustee.PrimarySmtpAddress),
+                                                                            $($Trustee.displayname),
+                                                                            $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                            $(if ($ExportGuids) { $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1) } else { '' }),
+                                                                            $(if ($ExportSids) {
+                                                                                    try {
+                                                                                        try {
+                                                                                            $SecurityPrincipalsLookupSearchString = $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipcal.Guid.Guid, '') | Select-Object -First 1)
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                        } catch {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                } else { '' }
+                                                                            ), $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                            $TrusteeEnvironment
+                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                            )
+
                                                         }
                                                     }
                                                 }
@@ -4774,6 +4889,8 @@ try {
                     @{
                         AllRecipients                                   = $AllRecipients
                         AllRecipientsSmtpToIndex                        = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                           = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex          = $AllSecurityPrincipalsObjectguidToIndex
                         ConnectExchange                                 = $ConnectExchange
                         DebugFile                                       = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugPreference                                 = $DebugPreference
@@ -4783,6 +4900,7 @@ try {
                         ExportFile                                      = $ExportFile
                         ExportFileFilter                                = $ExportFileFilter
                         ExportFileHeader                                = $ExportFileHeader
+                        ExportFileHeaderIndexes                         = $ExportFileHeaderIndexes
                         ExportFromOnPrem                                = $ExportFromOnPrem
                         ExportGuids                                     = $ExportGuids
                         ExportMailboxFolderPermissions                  = $ExportMailboxFolderPermissions
@@ -4791,6 +4909,7 @@ try {
                         ExportMailboxFolderPermissionsExcludeFoldertype = $ExportMailboxFolderPermissionsExcludeFoldertype
                         ExportMailboxFolderPermissionsMemberAtLocal     = $ExportMailboxFolderPermissionsMemberAtLocal
                         ExportMailboxFolderPermissionsOwnerAtLocal      = $ExportMailboxFolderPermissionsOwnerAtLocal
+                        ExportSids                                      = $ExportSids
                         ExportTrustees                                  = $ExportTrustees
                         ScriptPath                                      = $PSScriptRoot
                         tempConnectionUriQueue                          = $tempConnectionUriQueue
@@ -4919,8 +5038,10 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportSendAsSelf,
                             $ExportTrustees,
                             $ScriptPath,
@@ -5028,88 +5149,116 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                    if ($ExportGuids) {
-                                                        $ExportFileLines.add(
+                                                    $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $Grantor.ExchangeGuid.Guid,
-                                                                        $Grantor.Guid.Guid,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        'SendAs',
-                                                                        $entry.AccessControlType,
-                                                                        $entry.IsInherited,
-                                                                        $entry.InheritanceType,
-                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $Trustee.ExchangeGuid.Guid,
-                                                                        $(
-                                                                            if ($trustee.Guid.Guid) {
-                                                                                $trustee.Guid.Guid
-                                                                            } else {
-                                                                                $AllSecurityPrincipalsLookupSearchString = "$($entry.identityreference.value)"
-
-                                                                                $AllSecurityPrincipalsLookupResult = (
-                                                                                    $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                    $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
-                                                                                ) | Where-Object { $_ } | Select-Object -First 1
-
-                                                                                if ($AllSecurityPrincipalsLookupResult) {
-                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
-                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                     } else {
                                                                                         ''
                                                                                     }
+                                                                                }
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'SendAs',
+                                                                    $entry.AccessControlType,
+                                                                    $entry.IsInherited,
+                                                                    $entry.InheritanceType,
+                                                                    $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $Trustee.DisplayName,
+                                                                    $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) {
+                                                                            $SecurityPrincipalsLookupSearchString = $(
+                                                                                if ($trustee.Guid.Guid) {
+                                                                                    $trustee.Guid.Guid
                                                                                 } else {
-                                                                                    try {
-                                                                                        if ($ExportFromOnPrem) {
-                                                                                            # could be an object from a trust
-                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
-                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                            $objNT = $objTrans.GetType()
-                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
-                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    $AllSecurityPrincipalsLookupSearchString = "$($entry.identityreference.value)"
+
+                                                                                    $AllSecurityPrincipalsLookupResult = (
+                                                                                        $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                        $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                    ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                    if ($AllSecurityPrincipalsLookupResult) {
+                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                         } else {
                                                                                             ''
                                                                                         }
-                                                                                    } catch {
+                                                                                    } else {
+                                                                                        try {
+                                                                                            if ($ExportFromOnPrem) {
+                                                                                                # could be an object from a trust
+                                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                                $objNT = $objTrans.GetType()
+                                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                            } else {
+                                                                                                ''
+                                                                                            }
+                                                                                        } catch {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            ); $SecurityPrincipalsLookupSearchString
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
                                                                                         ''
                                                                                     }
                                                                                 }
+                                                                            } catch {
+                                                                                ''
                                                                             }
-                                                                        ),
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                    )
 
-                                                    } else {
-                                                        $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        'SendAs',
-                                                                        $entry.AccessControlType,
-                                                                        $entry.IsInherited,
-                                                                        $entry.InheritanceType,
-                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    }
+
                                                 }
                                             }
                                         }
@@ -5134,7 +5283,17 @@ try {
                                                 if ($index -ge 0) {
                                                     $trustee = $AllRecipients[$index]
                                                 } else {
-                                                    $trustee = $entry.trustee
+                                                    try {
+                                                        $index = $AllRecipientsSmtpToIndex[$entry.trustee]
+
+                                                        if ($index -ge 0) {
+                                                            $trustee = $AllRecipients[$index]
+                                                        } else {
+                                                            $trustee = $entry.trustee
+                                                        }
+                                                    } catch {
+                                                        $trustee = $entry.trustee
+                                                    }
                                                 }
 
                                                 if ($TrusteeFilter) {
@@ -5159,49 +5318,75 @@ try {
 
                                                 foreach ($AccessRight in $entry.AccessRights) {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                        if ($ExportGuids) {
-                                                            $ExportFileLines.add(
+                                                        $ExportFileLines.add(
                                                                 ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $Grantor.ExchangeGuid.Guid,
-                                                                            $Grantor.Guid.Guid,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            $AccessRight,
-                                                                            $entry.AccessControlType,
-                                                                            $entry.IsInherited,
-                                                                            $entry.InheritanceType,
-                                                                            $(($Trustee.displayname, $entry.trustee, '') | Select-Object -First 1),
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Guid.Guid,
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        } else {
-                                                            $ExportFileLines.add(
-                                                                ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            $AccessRight,
-                                                                            $entry.AccessControlType,
-                                                                            $entry.IsInherited,
-                                                                            $entry.InheritanceType,
-                                                                            $(($Trustee.displayname, $entry.trustee, '') | Select-Object -First 1),
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        }
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        $AccessRight,
+                                                                        $entry.AccessControlType,
+                                                                        $entry.IsInherited,
+                                                                        $entry.InheritanceType,
+                                                                        $(($Trustee.displayname, $entry.trustee, '') | Select-Object -First 1),
+                                                                        $Trustee.PrimarySmtpAddress,
+                                                                        $Trustee.DisplayName,
+                                                                        $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                        )
+
                                                     }
                                                 }
                                             }
@@ -5291,8 +5476,10 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $ExportSids
                         ExportSendAsSelf                        = $ExportSendAsSelf
                         ExportTrustees                          = $ExportTrustees
                         ScriptPath                              = $PSScriptRoot
@@ -5407,14 +5594,18 @@ try {
                             $AllRecipientsDnToIndex,
                             $AllRecipientsSendonbehalf,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -5529,59 +5720,87 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                    if ($ExportGuids) {
-                                                        $ExportFileLines.add(
+                                                    $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $Grantor.ExchangeGuid.Guid,
-                                                                        $Grantor.Guid.Guid,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        'SendOnBehalf',
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $Trustee.ExchangeGuid.Guid,
-                                                                        $(
-                                                                            if ($Trustee.Guid.Guid) {
-                                                                                $Trustee.Guid.Guid
-                                                                            } else {
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
                                                                                 try {
-                                                                                    [guid]::new($directorySearcherResult.properties.objectguid[0]).Guid
+                                                                                    $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
                                                                                 } catch {
-                                                                                    ''
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
                                                                                 }
+                                                                            } catch {
+                                                                                ''
                                                                             }
-                                                                        ),
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    } else {
-                                                        $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        'SendOnBehalf',
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    'SendOnBehalf',
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $Trustee.DisplayName,
+                                                                    $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) {
+                                                                            $SecurityPrincipalsLookupSearchString = $(
+                                                                                if ($Trustee.Guid.Guid) {
+                                                                                    $Trustee.Guid.Guid
+                                                                                } else {
+                                                                                    try {
+                                                                                        [guid]::new($directorySearcherResult.properties.objectguid[0]).Guid
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            ); $SecurityPrincipalsLookupSearchString
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                    )
+
                                                 }
                                             }
                                         }
@@ -5620,49 +5839,75 @@ try {
                                                     }
 
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                        if ($ExportGuids) {
-                                                            $ExportFileLines.add(
+                                                        $ExportFileLines.add(
                                                                 ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $Grantor.ExchangeGuid.Guid,
-                                                                            $Grantor.Guid.Guid,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            'SendOnBehalf',
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $(($Trustee.displayname, $Truste, '') | Select-Object -First 1),
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $Trustee.ExchangeGuid.Guid,
-                                                                            $Trustee.Guid.Guid,
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        } else {
-                                                            $ExportFileLines.add(
-                                                                ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            '',
-                                                                            'SendOnBehalf',
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $(($Trustee.displayname, $Trustee, '') | Select-Object -First 1),
-                                                                            $Trustee.PrimarySmtpAddress,
-                                                                            $Trustee.DisplayName,
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        }
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        '',
+                                                                        'SendOnBehalf',
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $(($Trustee.displayname, $Truste, '') | Select-Object -First 1),
+                                                                        $Trustee.PrimarySmtpAddress,
+                                                                        $Trustee.DisplayName,
+                                                                        $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                        )
+
                                                     }
                                                 }
                                             }
@@ -5734,25 +5979,29 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsDnToIndex       = $AllRecipientsDnToIndex
-                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
-                        AllRecipientsSendonbehalf    = $AllRecipientsSendonbehalf
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference              = $DebugPreference
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                   = $ExportFile
-                        ExportFileFilter             = $ExportFileFilter
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        ExportGuids                  = $ExportGuids
-                        ExportTrustees               = $ExportTrustees
-                        ScriptPath                   = $PSScriptRoot
-                        tempQueue                    = $tempQueue
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        VerbosePreference            = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsDnToIndex                 = $AllRecipientsDnToIndex
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsSendonbehalf              = $AllRecipientsSendonbehalf
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -5869,8 +6118,10 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportLinkedMasterAccount,
                             $ExportTrustees,
                             $ScriptPath,
@@ -5959,87 +6210,115 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                if ($ExportGuids) {
-                                                    $ExportFileLines.add(
+                                                $ExportFileLines.add(
                                                         ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $Grantor.ExchangeGuid.Guid,
-                                                                    $Grantor.Guid.Guid,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    'LinkedMasterAccount',
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $Grantor.LinkedMasterAccount,
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $Trustee.ExchangeGuid.Guid,
-                                                                    $(
-                                                                        if ($Trustee.Guid.Guid) {
-                                                                            $Trustee.Guid.Guid
-                                                                        } else {
-                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
-
-                                                                            $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
-                                                                            ) | Where-Object { $_ } | Select-Object -First 1
-
-                                                                            if ($AllSecurityPrincipalsLookupResult) {
-                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
-                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                 } else {
                                                                                     ''
                                                                                 }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                'LinkedMasterAccount',
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $Grantor.LinkedMasterAccount,
+                                                                $Trustee.PrimarySmtpAddress,
+                                                                $Trustee.DisplayName,
+                                                                $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) {
+                                                                        $SecurityPrincipalsLookupSearchString = $(
+                                                                            if ($Trustee.Guid.Guid) {
+                                                                                $Trustee.Guid.Guid
                                                                             } else {
-                                                                                try {
-                                                                                    if ($ExportFromOnPrem) {
-                                                                                        # could be an object from a trust
-                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
-                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                        $objNT = $objTrans.GetType()
-                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
-                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                                $AllSecurityPrincipalsLookupResult = (
+                                                                                    $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                if ($AllSecurityPrincipalsLookupResult) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
                                                                                     }
-                                                                                } catch {
+                                                                                } else {
+                                                                                    try {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        ); $SecurityPrincipalsLookupSearchString
+                                                                    } else { '' }
+                                                                ),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
                                                                                     ''
                                                                                 }
                                                                             }
+                                                                        } catch {
+                                                                            ''
                                                                         }
-                                                                    ),
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                } else {
-                                                    $ExportFileLines.add(
-                                                        ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    'LinkedMasterAccount',
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $Grantor.LinkedMasterAccount,
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                )
+
                                             }
                                         }
                                     }
@@ -6124,8 +6403,10 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $ExportSids
                         ExportLinkedMasterAccount               = $ExportLinkedMasterAccount
                         ExportTrustees                          = $ExportTrustees
                         ScriptPath                              = $PSScriptRoot
@@ -6254,6 +6535,8 @@ try {
                             $AllRecipientsExchangeGuidToIndex,
                             $AllRecipientsIdentityGuidToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $ConnectExchange,
                             $DebugFile,
                             $DebugPreference,
@@ -6263,12 +6546,14 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
                             $ExportPublicFolderPermissions,
                             $ExportPublicFolderPermissionsAnonymous,
                             $ExportPublicFolderPermissionsDefault,
                             $ExportPublicFolderPermissionsExcludeFoldertype,
+                            $ExportSids,
                             $ExportTrustees,
                             $GrantorFilter,
                             $ScriptPath,
@@ -6392,49 +6677,75 @@ try {
                                                 }
                                             }
 
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.Add(
+                                            $ExportFileLines.Add(
                                                     ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $Grantor.ExchangeGuid.Guid,
-                                                                $Grantor.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                $($Folder.Folderpath),
-                                                                'MailEnabled',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                $($Trustee.PrimarySmtpAddress),
-                                                                $($Trustee.displayname),
-                                                                $Trustee.ExchangeGuid.Guid,
-                                                                $Trustee.Guid.Guid,
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.Add(
-                                                    ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                $($Folder.Folderpath),
-                                                                'MailEnabled',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                $($Trustee.PrimarySmtpAddress),
-                                                                $($Trustee.displayname),
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                            $GrantorEnvironment,
+                                                            $($Folder.Folderpath),
+                                                            'MailEnabled',
+                                                            'Allow',
+                                                            'False',
+                                                            'None',
+                                                            $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
+                                                            $($Trustee.PrimarySmtpAddress),
+                                                            $($Trustee.displayname),
+                                                            $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                            $TrusteeEnvironment
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
+
                                         }
                                     }
 
@@ -6491,49 +6802,75 @@ try {
                                                             $TrusteeEnvironment = 'On-Prem'
                                                         }
 
-                                                        if ($ExportGuids) {
-                                                            $ExportFileLines.Add(
+                                                        $ExportFileLines.Add(
                                                                 ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $Grantor.ExchangeGuid.Guid,
-                                                                            $Grantor.Guid.Guid,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            $($Folder.Folderpath),
-                                                                            $($Accessright),
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $($FolderPermission.user.displayname),
-                                                                            $($Trustee.PrimarySmtpAddress),
-                                                                            $($Trustee.displayname),
-                                                                            $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1),
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        } else {
-                                                            $ExportFileLines.Add(
-                                                                ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            $($Folder.Folderpath),
-                                                                            $($Accessright),
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $($FolderPermission.user.displayname),
-                                                                            $($Trustee.PrimarySmtpAddress),
-                                                                            $($Trustee.displayname),
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        }
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        $($Folder.Folderpath),
+                                                                        $($Accessright),
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $($FolderPermission.user.displayname),
+                                                                        $($Trustee.PrimarySmtpAddress),
+                                                                        $($Trustee.displayname),
+                                                                        $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1) } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $(($Trustee.Guid.Guid, $FolderPermission.User.AdRecipient.Guid.Guid, '') | Select-Object -First 1)
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                        )
+
                                                     }
                                                 } else {
                                                     if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $FolderPermission.user.recipientprincipal.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($FolderPermission.user.recipientprincipal.PrimarySmtpAddress))) {
@@ -6563,49 +6900,75 @@ try {
                                                             $TrusteeEnvironment = 'Cloud'
                                                         }
 
-                                                        if ($ExportGuids) {
-                                                            $ExportFileLines.Add(
+                                                        $ExportFileLines.Add(
                                                                 ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $Grantor.ExchangeGuid.Guid,
-                                                                            $Grantor.Guid.Guid,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            $($Folder.Folderpath),
-                                                                            $($Accessright),
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $($FolderPermission.user.displayname),
-                                                                            $($Trustee.PrimarySmtpAddress),
-                                                                            $($Trustee.displayname),
-                                                                            $Trustee.ExchangeGuid.Guid,
-                                                                            $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipal.Guid.Guid, '') | Select-Object -First 1),
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        } else {
-                                                            $ExportFileLines.Add(
-                                                                ('"' + (@((
-                                                                            $GrantorPrimarySMTP,
-                                                                            $GrantorDisplayName,
-                                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                            $GrantorEnvironment,
-                                                                            $($Folder.Folderpath),
-                                                                            $($Accessright),
-                                                                            'Allow',
-                                                                            'False',
-                                                                            'None',
-                                                                            $($FolderPermission.user.displayname),
-                                                                            $($Trustee.PrimarySmtpAddress),
-                                                                            $($Trustee.displayname),
-                                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                            $TrusteeEnvironment
-                                                                        ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                            )
-                                                        }
+                                                                        $GrantorPrimarySMTP,
+                                                                        $GrantorDisplayName,
+                                                                        $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                        $GrantorEnvironment,
+                                                                        $($Folder.Folderpath),
+                                                                        $($Accessright),
+                                                                        'Allow',
+                                                                        'False',
+                                                                        'None',
+                                                                        $($FolderPermission.user.displayname),
+                                                                        $($Trustee.PrimarySmtpAddress),
+                                                                        $($Trustee.displayname),
+                                                                        $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                        $(if ($ExportGuids) { $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipal.Guid.Guid, '') | Select-Object -First 1) } else { '' }),
+                                                                        $(if ($ExportSids) {
+                                                                                try {
+                                                                                    try {
+                                                                                        $SecurityPrincipalsLookupSearchString = $(($Trustee.Guid.Guid, $FolderPermission.User.RecipientPrincipal.Guid.Guid, '') | Select-Object -First 1)
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                    } catch {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    }
+                                                                                } catch {
+                                                                                    ''
+                                                                                }
+                                                                            } else { '' }
+                                                                        ),
+                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                        $TrusteeEnvironment
+                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                        )
+
                                                     }
                                                 }
                                             }
@@ -6684,6 +7047,8 @@ try {
                         AllRecipientsExchangeGuidToIndex               = $AllRecipientsExchangeGuidToIndex
                         AllRecipientsIdentityGuidToIndex               = $AllRecipientsIdentityGuidToIndex
                         AllRecipientsSmtpToIndex                       = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                          = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex         = $AllSecurityPrincipalsObjectguidToIndex
                         ConnectExchange                                = $ConnectExchange
                         DebugFile                                      = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
                         DebugPreference                                = $DebugPreference
@@ -6693,12 +7058,14 @@ try {
                         ExportFile                                     = $ExportFile
                         ExportFileFilter                               = $ExportFileFilter
                         ExportFileHeader                               = $ExportFileHeader
+                        ExportFileHeaderIndexes                        = $ExportFileHeaderIndexes
                         ExportFromOnPrem                               = $ExportFromOnPrem
                         ExportGuids                                    = $ExportGuids
                         ExportPublicFolderPermissions                  = $ExportPublicFolderPermissions
                         ExportPublicFolderPermissionsAnonymous         = $ExportPublicFolderPermissionsAnonymous
                         ExportPublicFolderPermissionsDefault           = $ExportPublicFolderPermissionsDefault
                         ExportPublicFolderPermissionsExcludeFoldertype = $ExportPublicFolderPermissionsExcludeFoldertype
+                        ExportSids                                     = $ExportSids
                         ExportTrustees                                 = $ExportTrustees
                         GrantorFilter                                  = $GrantorFilter
                         ScriptPath                                     = $PSScriptRoot
@@ -6819,14 +7186,18 @@ try {
                         param(
                             $AllRecipients,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -6883,7 +7254,7 @@ try {
                                         if ($Grantor.$ForwarderType) {
                                             try {
                                                 $index = $null
-                                                $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType)]
+                                                $index = $AllRecipientsSmtpToIndex[$($Grantor.$ForwarderType -ireplace '^smtp:', '')]
                                             } catch {
                                             }
 
@@ -6914,57 +7285,79 @@ try {
                                                     }
                                                 }
 
-                                                if ($ExportGuids) {
-                                                    $ExportFileLines.add(
+                                                $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $Grantor.ExchangeGuid.Guid,
-                                                                    $Grantor.Guid.Guid,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) {
-                                                                                '_ForwardOnly'
-                                                                            } else {
-                                                                                '_DeliverAndForward'
-                                                                            } )),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $($Grantor.$ForwarderType),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $Trustee.ExchangeGuid.Guid,
-                                                                    $Trustee.Guid.Guid,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                } else {
-                                                    $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) {
-                                                                                '_ForwardOnly'
-                                                                            } else {
-                                                                                '_DeliverAndForward'
-                                                                            } )),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $($Grantor.$ForwarderType),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                }
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
+                                                                                    ''
+                                                                                }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                $('Forward_' + $ForwarderType + $(if ((-not $Grantor.DeliverToMailboxAndForward) -or ($ForwarderType -ieq 'ExternalEmailAddress')) {
+                                                                            '_ForwardOnly'
+                                                                        } else {
+                                                                            '_DeliverAndForward'
+                                                                        } )),
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $($Grantor.$ForwarderType),
+                                                                $Trustee.PrimarySmtpAddress,
+                                                                $Trustee.DisplayName,
+                                                                $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
+                                                                                    ''
+                                                                                }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                )
+
                                             }
                                         }
                                     } catch {
@@ -7034,22 +7427,26 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients            = $AllRecipients
-                        AllRecipientsSmtpToIndex = $AllRecipientsSmtpToIndex
-                        DebugFile                = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference          = $DebugPreference
-                        ErrorFile                = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile               = $ExportFile
-                        ExportFileFilter         = $ExportFileFilter
-                        ExportFileHeader         = $ExportFileHeader
-                        ExportFromOnPrem         = $ExportFromOnPrem
-                        ExportGuids              = $ExportGuids
-                        ExportTrustees           = $ExportTrustees
-                        ScriptPath               = $PSScriptRoot
-                        tempQueue                = $tempQueue
-                        TrusteeFilter            = $TrusteeFilter
-                        UTF8Encoding             = $UTF8Encoding
-                        VerbosePreference        = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -7153,14 +7550,18 @@ try {
                             $AllRecipients,
                             $AllRecipientsIdentityToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -7249,49 +7650,75 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                    if ($ExportGuids) {
-                                                        $ExportFileLines.add(
+                                                    $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $Grantor.ExchangeGuid.Guid,
-                                                                        $Grantor.Guid.Guid,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $ModeratorSetting,
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $Moderator,
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $Trustee.ExchangeGuid.Guid,
-                                                                        $Trustee.Guid.Guid,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    } else {
-                                                        $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $ModeratorSetting,
-                                                                        'Allow',
-                                                                        'False',
-                                                                        'None',
-                                                                        $Moderator,
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    }
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    $ModeratorSetting,
+                                                                    'Allow',
+                                                                    'False',
+                                                                    'None',
+                                                                    $Moderator,
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $Trustee.DisplayName,
+                                                                    $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                    )
+
                                                 }
                                             }
                                         } catch {
@@ -7362,23 +7789,27 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference              = $DebugPreference
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                   = $ExportFile
-                        ExportFileFilter             = $ExportFileFilter
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        ExportGuids                  = $ExportGuids
-                        ExportTrustees               = $ExportTrustees
-                        ScriptPath                   = $PSScriptRoot
-                        tempQueue                    = $tempQueue
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        VerbosePreference            = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -7482,14 +7913,18 @@ try {
                             $AllRecipients,
                             $AllRecipientsIdentityToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -7577,49 +8012,75 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                if ($ExportGuids) {
-                                                    $ExportFileLines.add(
+                                                $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $Grantor.ExchangeGuid.Guid,
-                                                                    $Grantor.Guid.Guid,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    'AcceptMessagesOnlyFrom',
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $AcceptedRecipient,
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $Trustee.ExchangeGuid.Guid,
-                                                                    $Trustee.Guid.Guid,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                } else {
-                                                    $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    'AcceptMessagesOnlyFrom',
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $AcceptedRecipient,
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                }
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
+                                                                                    ''
+                                                                                }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                'AcceptMessagesOnlyFrom',
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $AcceptedRecipient,
+                                                                $Trustee.PrimarySmtpAddress,
+                                                                $Trustee.DisplayName,
+                                                                $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
+                                                                                    ''
+                                                                                }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                )
+
                                             }
                                         }
                                     } catch {
@@ -7689,23 +8150,27 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference              = $DebugPreference
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                   = $ExportFile
-                        ExportFileFilter             = $ExportFileFilter
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        ExportGuids                  = $ExportGuids
-                        ExportTrustees               = $ExportTrustees
-                        ScriptPath                   = $PSScriptRoot
-                        tempQueue                    = $tempQueue
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        VerbosePreference            = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -7810,14 +8275,18 @@ try {
                             $AllRecipientsIdentityToIndex,
                             $AllRecipientsLegacyExchangeDnToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -7920,81 +8389,91 @@ try {
                                                 }
 
                                                 if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                    if ($ExportGuids) {
-                                                        $ExportFileLines.add(
+                                                    $ExportFileLines.add(
                                                                 ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $Grantor.ExchangeGuid.Guid,
-                                                                        $Grantor.Guid.Guid,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') {
-                                                                                'ResourceDelegate'
-                                                                            } else {
-                                                                                $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)")
-                                                                            }),
-                                                                        $(if ($AcceptedRecipient -is [boolean]) {
-                                                                                if ($AcceptedRecipient) {
-                                                                                    'Allow'
-                                                                                } else {
-                                                                                    'Deny'
+                                                                    $GrantorPrimarySMTP,
+                                                                    $GrantorDisplayName,
+                                                                    $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
                                                                                 }
-                                                                            } else {
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                    $GrantorEnvironment,
+                                                                    '',
+                                                                    $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') {
+                                                                            'ResourceDelegate'
+                                                                        } else {
+                                                                            $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)")
+                                                                        }),
+                                                                    $(if ($AcceptedRecipient -is [boolean]) {
+                                                                            if ($AcceptedRecipient) {
                                                                                 'Allow'
-                                                                            }),
-                                                                        'False',
-                                                                        'None',
-                                                                        $(if ($AcceptedRecipient -is [boolean]) {
-                                                                                $Trustee
                                                                             } else {
-                                                                                $AcceptedRecipient
-                                                                            }),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $(@($Trustee.DisplayName, $Trustee, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
-                                                                        $Trustee.ExchangeGuid.Guid,
-                                                                        $Trustee.Guid.Guid,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    } else {
-                                                        $ExportFileLines.add(
-                                                                ('"' + (@((
-                                                                        $GrantorPrimarySMTP,
-                                                                        $GrantorDisplayName,
-                                                                        $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                        $GrantorEnvironment,
-                                                                        '',
-                                                                        $(if ($ResourceDelegatesSetting -ieq 'ResourceDelegates') {
-                                                                                'ResourceDelegate'
-                                                                            } else {
-                                                                                $("ResourcePolicyDelegate_$($ResourceDelegatesSetting)")
-                                                                            }),
-                                                                        $(if ($AcceptedRecipient -is [boolean]) {
-                                                                                if ($AcceptedRecipient) {
-                                                                                    'Allow'
-                                                                                } else {
-                                                                                    'Deny'
+                                                                                'Deny'
+                                                                            }
+                                                                        } else {
+                                                                            'Allow'
+                                                                        }),
+                                                                    'False',
+                                                                    'None',
+                                                                    $(if ($AcceptedRecipient -is [boolean]) {
+                                                                            $Trustee
+                                                                        } else {
+                                                                            $AcceptedRecipient
+                                                                        }),
+                                                                    $Trustee.PrimarySmtpAddress,
+                                                                    $(@($Trustee.DisplayName, $Trustee, 'Warning: No valid info found') | Where-Object { $_ } | Select-Object -First 1),
+                                                                    $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                    $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                                    $(if ($ExportSids) {
+                                                                            try {
+                                                                                try {
+                                                                                    $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                                } catch {
+                                                                                    if ($ExportFromOnPrem) {
+                                                                                        # could be an object from a trust
+                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                        $objNT = $objTrans.GetType()
+                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                    } else {
+                                                                                        ''
+                                                                                    }
                                                                                 }
-                                                                            } else {
-                                                                                'Allow'
-                                                                            }),
-                                                                        'False',
-                                                                        'None',
-                                                                        $(if ($AcceptedRecipient -is [boolean]) {
-                                                                                $Trustee
-                                                                            } else {
-                                                                                $AcceptedRecipient
-                                                                            }),
-                                                                        $Trustee.PrimarySmtpAddress,
-                                                                        $Trustee.DisplayName,
-                                                                        $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                        $TrusteeEnvironment
-                                                                    ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                        )
-                                                    }
+                                                                            } catch {
+                                                                                ''
+                                                                            }
+                                                                        } else { '' }
+                                                                    ),
+                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                    $TrusteeEnvironment
+                                                                ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                    )
+
                                                 }
                                             }
                                         } catch {
@@ -8065,24 +8544,28 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                        = $AllRecipients
-                        AllRecipientsIdentityToIndex         = $AllRecipientsIdentityToIndex
-                        AllRecipientsLegacyExchangeDnToIndex = $AllRecipientsLegacyExchangeDnToIndex
-                        AllRecipientsSmtpToIndex             = $AllRecipientsSmtpToIndex
-                        DebugFile                            = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference                      = $DebugPreference
-                        ErrorFile                            = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                           = $ExportFile
-                        ExportFileFilter                     = $ExportFileFilter
-                        ExportFileHeader                     = $ExportFileHeader
-                        ExportFromOnPrem                     = $ExportFromOnPrem
-                        ExportGuids                          = $ExportGuids
-                        ExportTrustees                       = $ExportTrustees
-                        ScriptPath                           = $PSScriptRoot
-                        tempQueue                            = $tempQueue
-                        TrusteeFilter                        = $TrusteeFilter
-                        UTF8Encoding                         = $UTF8Encoding
-                        VerbosePreference                    = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsLegacyExchangeDnToIndex   = $AllRecipientsLegacyExchangeDnToIndex
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -8186,14 +8669,18 @@ try {
                             $AllRecipients,
                             $AllRecipientsIdentityToIndex,
                             $AllRecipientsSmtpToIndex,
+                            $AllSecurityPrincipals,
+                            $AllSecurityPrincipalsObjectguidToIndex,
                             $DebugFile,
                             $DebugPreference,
                             $ErrorFile,
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -8270,49 +8757,75 @@ try {
                                         }
 
                                         if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.add(
+                                            $ExportFileLines.add(
                                                             ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $Grantor.ExchangeGuid.Guid,
-                                                                $Grantor.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                'RequireAllSendersAreAuthenticated',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $Trustee,
-                                                                $Trustee.PrimarySmtpAddress,
-                                                                $Trustee.DisplayName,
-                                                                $Trustee.ExchangeGuid.Guid,
-                                                                $Trustee.Guid.Guid,
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.add(
-                                                            ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                'RequireAllSendersAreAuthenticated',
-                                                                'Allow',
-                                                                'False',
-                                                                'None',
-                                                                $Trustee,
-                                                                $Trustee.PrimarySmtpAddress,
-                                                                $Trustee.DisplayName,
-                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                $TrusteeEnvironment
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                            $GrantorEnvironment,
+                                                            '',
+                                                            'RequireAllSendersAreAuthenticated',
+                                                            'Allow',
+                                                            'False',
+                                                            'None',
+                                                            $Trustee,
+                                                            $Trustee.PrimarySmtpAddress,
+                                                            $Trustee.DisplayName,
+                                                            $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Trustee.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Trustee.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                            $TrusteeEnvironment
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
+
                                         }
                                     }
                                 } catch {
@@ -8382,23 +8895,27 @@ try {
                     }
                 ).AddParameters(
                     @{
-                        AllRecipients                = $AllRecipients
-                        AllRecipientsIdentityToIndex = $AllRecipientsIdentityToIndex
-                        AllRecipientsSmtpToIndex     = $AllRecipientsSmtpToIndex
-                        DebugFile                    = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        DebugPreference              = $DebugPreference
-                        ErrorFile                    = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                        ExportFile                   = $ExportFile
-                        ExportFileFilter             = $ExportFileFilter
-                        ExportFileHeader             = $ExportFileHeader
-                        ExportFromOnPrem             = $ExportFromOnPrem
-                        ExportGuids                  = $ExportGuids
-                        ExportTrustees               = $ExportTrustees
-                        ScriptPath                   = $PSScriptRoot
-                        tempQueue                    = $tempQueue
-                        TrusteeFilter                = $TrusteeFilter
-                        UTF8Encoding                 = $UTF8Encoding
-                        VerbosePreference            = $VerbosePreference
+                        AllRecipients                          = $AllRecipients
+                        AllRecipientsIdentityToIndex           = $AllRecipientsIdentityToIndex
+                        AllRecipientsSmtpToIndex               = $AllRecipientsSmtpToIndex
+                        AllSecurityPrincipals                  = $AllSecurityPrincipals
+                        AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                        DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        DebugPreference                        = $DebugPreference
+                        ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                        ExportFile                             = $ExportFile
+                        ExportFileFilter                       = $ExportFileFilter
+                        ExportFileHeader                       = $ExportFileHeader
+                        ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                        ExportFromOnPrem                       = $ExportFromOnPrem
+                        ExportGuids                            = $ExportGuids
+                        ExportSids                             = $ExportSids
+                        ExportTrustees                         = $ExportTrustees
+                        ScriptPath                             = $PSScriptRoot
+                        tempQueue                              = $tempQueue
+                        TrusteeFilter                          = $TrusteeFilter
+                        UTF8Encoding                           = $UTF8Encoding
+                        VerbosePreference                      = $VerbosePreference
                     }
                 )
 
@@ -8778,9 +9295,11 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGroupMembersRecurse,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -8861,95 +9380,120 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                if ($ExportGuids) {
-                                                    $ExportFileLines.add(
+                                                $ExportFileLines.add(
                                                         ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    '',
-                                                                    $RoleGroup.Guid.Guid,
-                                                                    $GrantorRecipientType,
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $(if ($ExportGroupMembersRecurse) {
-                                                                            'MemberRecurse'
-                                                                        } else {
-                                                                            'MemberDirect'
-                                                                        }),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $Trustee.ExchangeGuid.Guid,
-                                                                    $(
-                                                                        if ($Trustee.Guid.Guid) {
-                                                                            $Trustee.Guid.Guid
-                                                                        } else {
-                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
-
-                                                                            $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
-                                                                            ) | Where-Object { $_ } | Select-Object -First 1
-
-                                                                            if ($AllSecurityPrincipalsLookupResult) {
-                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
-                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $(if ($ExportGuids) { '' } else { '' }),
+                                                                $(if ($ExportGuids) { $RoleGroup.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                 } else {
                                                                                     ''
                                                                                 }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $GrantorRecipientType,
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                $(if ($ExportGroupMembersRecurse) {
+                                                                        'MemberRecurse'
+                                                                    } else {
+                                                                        'MemberDirect'
+                                                                    }
+                                                                ),
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
+                                                                $Trustee.PrimarySmtpAddress,
+                                                                $Trustee.DisplayName,
+                                                                $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) {
+                                                                        $SecurityPrincipalsLookupSearchString = $(
+                                                                            if ($Trustee.Guid.Guid) {
+                                                                                $Trustee.Guid.Guid
                                                                             } else {
-                                                                                try {
-                                                                                    if ($ExportFromOnPrem) {
-                                                                                        # could be an object from a trust
-                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
-                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                        $objNT = $objTrans.GetType()
-                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
-                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                                $AllSecurityPrincipalsLookupResult = (
+                                                                                    $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                if ($AllSecurityPrincipalsLookupResult) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
                                                                                     }
-                                                                                } catch {
+                                                                                } else {
+                                                                                    try {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        ); $SecurityPrincipalsLookupSearchString
+                                                                    } else { '' }
+                                                                ),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
                                                                                     ''
                                                                                 }
                                                                             }
+                                                                        } catch {
+                                                                            ''
                                                                         }
-                                                                    ),
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                } else {
-                                                    $ExportFileLines.add(
-                                                        ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $GrantorRecipientType,
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $(if ($ExportGroupMembersRecurse) {
-                                                                            'MemberRecurse'
-                                                                        } else {
-                                                                            'MemberDirect'
-                                                                        }),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                )
+
                                             }
                                         }
                                     }
@@ -9035,9 +9579,11 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $ExportSids
                         ExportTrustees                          = $ExportTrustees
                         ScriptPath                              = $PSScriptRoot
                         tempQueue                               = $tempQueue
@@ -9170,9 +9716,11 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGroupMembersRecurse,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -9260,95 +9808,119 @@ try {
                                             }
 
                                             if (($ExportTrustees -ieq 'All') -or (($ExportTrustees -ieq 'OnlyInvalid') -and (-not $Trustee.PrimarySmtpAddress)) -or (($ExportTrustees -ieq 'OnlyValid') -and ($Trustee.PrimarySmtpAddress))) {
-                                                if ($ExportGuids) {
-                                                    $ExportFileLines.add(
+                                                $ExportFileLines.add(
                                                         ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $Grantor.ExchangeGuid.Guid,
-                                                                    $Grantor.Guid.Guid,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $(if ($ExportGroupMembersRecurse) {
-                                                                            'MemberRecurse'
-                                                                        } else {
-                                                                            'MemberDirect'
-                                                                        }),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $Trustee.ExchangeGuid.Guid,
-                                                                    $(
-                                                                        if ($Trustee.Guid.Guid) {
-                                                                            $Trustee.Guid.Guid
-                                                                        } else {
-                                                                            $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
-
-                                                                            $AllSecurityPrincipalsLookupResult = (
-                                                                                $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
-                                                                                $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
-                                                                            ) | Where-Object { $_ } | Select-Object -First 1
-
-                                                                            if ($AllSecurityPrincipalsLookupResult) {
-                                                                                if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
-                                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
+                                                                $GrantorPrimarySMTP,
+                                                                $GrantorDisplayName,
+                                                                $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
                                                                                 } else {
                                                                                     ''
                                                                                 }
+                                                                            }
+                                                                        } catch {
+                                                                            ''
+                                                                        }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                                $GrantorEnvironment,
+                                                                '',
+                                                                $(if ($ExportGroupMembersRecurse) {
+                                                                        'MemberRecurse'
+                                                                    } else {
+                                                                        'MemberDirect'
+                                                                    }),
+                                                                'Allow',
+                                                                'False',
+                                                                'None',
+                                                                $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
+                                                                $Trustee.PrimarySmtpAddress,
+                                                                $Trustee.DisplayName,
+                                                                $(if ($ExportGuids) { $Trustee.ExchangeGuid.Guid } else { '' }),
+                                                                $(if ($ExportGuids) {
+                                                                        $SecurityPrincipalsLookupSearchString = $(
+                                                                            if ($Trustee.Guid.Guid) {
+                                                                                $Trustee.Guid.Guid
                                                                             } else {
-                                                                                try {
-                                                                                    if ($ExportFromOnPrem) {
-                                                                                        # could be an object from a trust
-                                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
-                                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
-                                                                                        $objNT = $objTrans.GetType()
-                                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
-                                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
-                                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                $AllSecurityPrincipalsLookupSearchString = "$($Trustee)"
+
+                                                                                $AllSecurityPrincipalsLookupResult = (
+                                                                                    $AllSecurityPrincipalsDnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsObjectguidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsSidToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsUfnToIndex[$AllSecurityPrincipalsLookupSearchString],
+                                                                                    $AllSecurityPrincipalsDisplaynameToIndex[$AllSecurityPrincipalsLookupSearchString]
+                                                                                ) | Where-Object { $_ } | Select-Object -First 1
+
+                                                                                if ($AllSecurityPrincipalsLookupResult) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', 'CurrentCultureIgnoreCase')) {
+                                                                                        $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
                                                                                     }
-                                                                                } catch {
+                                                                                } else {
+                                                                                    try {
+                                                                                        if ($ExportFromOnPrem) {
+                                                                                            # could be an object from a trust
+                                                                                            # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                            $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                            $objNT = $objTrans.GetType()
+                                                                                            $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                            $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (8, "$($AllSecurityPrincipalsLookupSearchString)"))
+                                                                                            $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                        } else {
+                                                                                            ''
+                                                                                        }
+                                                                                    } catch {
+                                                                                        ''
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        ); $SecurityPrincipalsLookupSearchString
+                                                                    } else { '' }
+                                                                ),
+                                                                $(if ($ExportSids) {
+                                                                        try {
+                                                                            try {
+                                                                                $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                            } catch {
+                                                                                if ($ExportFromOnPrem) {
+                                                                                    # could be an object from a trust
+                                                                                    # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                    $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                    $objNT = $objTrans.GetType()
+                                                                                    $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                    $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                    $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                                } else {
                                                                                     ''
                                                                                 }
                                                                             }
+                                                                        } catch {
+                                                                            ''
                                                                         }
-                                                                    ),
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                } else {
-                                                    $ExportFileLines.add(
-                                                    ('"' + (@((
-                                                                    $GrantorPrimarySMTP,
-                                                                    $GrantorDisplayName,
-                                                                    $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                    $GrantorEnvironment,
-                                                                    '',
-                                                                    $(if ($ExportGroupMembersRecurse) {
-                                                                            'MemberRecurse'
-                                                                        } else {
-                                                                            'MemberDirect'
-                                                                        }),
-                                                                    'Allow',
-                                                                    'False',
-                                                                    'None',
-                                                                    $(($Trustee.PrimarySmtpAddress, $Trustee, '') | Select-Object -First 1),
-                                                                    $Trustee.PrimarySmtpAddress,
-                                                                    $Trustee.DisplayName,
-                                                                    $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
-                                                                    $TrusteeEnvironment
-                                                                ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                    )
-                                                }
+                                                                    } else { '' }
+                                                                ),
+                                                                $("$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''),
+                                                                $TrusteeEnvironment
+                                                            ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                                )
+
                                             }
                                         }
                                     } catch {
@@ -9423,9 +9995,11 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $ExportSids
                         ExportTrustees                          = $ExportTrustees
                         ScriptPath                              = $PSScriptRoot
                         tempQueue                               = $tempQueue
@@ -9547,9 +10121,11 @@ try {
                             $ExportFile,
                             $ExportFileFilter,
                             $ExportFileHeader,
+                            $ExportFileHeaderIndexes,
                             $ExportFromOnPrem,
                             $ExportGroupMembersRecurse,
                             $ExportGuids,
+                            $ExportSids,
                             $ExportTrustees,
                             $ScriptPath,
                             $tempQueue,
@@ -9666,6 +10242,26 @@ try {
                                                                 }
                                                             )
                                                         }
+                                                        if ($ExportSids) {
+                                                            $SecurityPrincipalsLookupSearchString = @($ExportFileLineExpanded.'Trustee AD ObjectGUID', $Trustee.Guid.Guid) | Where-Object { $_ } | Select-Object -First 1
+                                                            $ExportFileLineExpanded.'Trustee SID' = $(
+                                                                try {
+                                                                    $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                } catch {
+                                                                    if ($ExportFromOnPrem) {
+                                                                        # could be an object from a trust
+                                                                        # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                        $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                        $objNT = $objTrans.GetType()
+                                                                        $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                        $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                        $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                    } else {
+                                                                        ''
+                                                                    }
+                                                                }
+                                                            )
+                                                        }
                                                         $ExportFileLineExpanded.'Trustee Recipient Type' = "$($Trustee.RecipientType)/$($Trustee.RecipientTypeDetails)" -ireplace '^/$', ''
                                                         $ExportFileLineExpanded.'Trustee Environment' = $TrusteeEnvironment
                                                     }
@@ -9747,9 +10343,11 @@ try {
                         ExportFile                              = $ExportFile
                         ExportFileFilter                        = $ExportFileFilter
                         ExportFileHeader                        = $ExportFileHeader
+                        ExportFileHeaderIndexes                 = $ExportFileHeaderIndexes
                         ExportFromOnPrem                        = $ExportFromOnPrem
                         ExportGroupMembersRecurse               = $ExportGroupMembersRecurse
                         ExportGuids                             = $ExportGuids
+                        ExportSids                              = $ExportSids
                         ExportTrustees                          = $ExportTrustees
                         ScriptPath                              = $PSScriptRoot
                         tempQueue                               = $tempQueue
@@ -9870,14 +10468,18 @@ try {
                         {
                             param(
                                 $AllRecipients,
+                                $AllSecurityPrincipals,
+                                $AllSecurityPrincipalsObjectguidToIndex,
                                 $DebugFile,
                                 $DebugPreference,
                                 $ErrorFile,
                                 $ExportFile,
                                 $ExportFileFilter,
                                 $ExportFileHeader,
+                                $ExportFileHeaderIndexes,
                                 $ExportFromOnPrem,
                                 $ExportGuids,
+                                $ExportSids,
                                 $ScriptPath,
                                 $tempQueue,
                                 $UTF8Encoding,
@@ -9931,47 +10533,51 @@ try {
 
                                             Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.add(
+                                            $ExportFileLines.add(
                                                     ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $Grantor.ExchangeGuid.Guid,
-                                                                $Grantor.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.add(
-                                                    ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                            $GrantorEnvironment,
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            ''
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
+
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -10027,19 +10633,23 @@ try {
                         }
                     ).AddParameters(
                         @{
-                            AllRecipients     = $AllRecipients
-                            DebugFile         = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            DebugPreference   = $DebugPreference
-                            ErrorFile         = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            ExportFile        = $ExportFile
-                            ExportFileFilter  = $ExportFileFilter
-                            ExportFileHeader  = $ExportFileHeader
-                            ExportFromOnPrem  = $ExportFromOnPrem
-                            ExportGuids       = $ExportGuids
-                            ScriptPath        = $PSScriptRoot
-                            tempQueue         = $tempQueue
-                            UTF8Encoding      = $UTF8Encoding
-                            VerbosePreference = $VerbosePreference
+                            AllRecipients                          = $AllRecipients
+                            AllSecurityPrincipals                  = $AllSecurityPrincipals
+                            AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                            DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            DebugPreference                        = $DebugPreference
+                            ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            ExportFile                             = $ExportFile
+                            ExportFileFilter                       = $ExportFileFilter
+                            ExportFileHeader                       = $ExportFileHeader
+                            ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                            ExportFromOnPrem                       = $ExportFromOnPrem
+                            ExportGuids                            = $ExportGuids
+                            ExportSids                             = $ExportSids
+                            ScriptPath                             = $PSScriptRoot
+                            tempQueue                              = $tempQueue
+                            UTF8Encoding                           = $UTF8Encoding
+                            VerbosePreference                      = $VerbosePreference
                         }
                     )
 
@@ -10138,14 +10748,18 @@ try {
                                 $AllPublicFolders,
                                 $AllRecipients,
                                 $AllRecipientsExchangeGuidToIndex,
+                                $AllSecurityPrincipals,
+                                $AllSecurityPrincipalsObjectguidToIndex,
                                 $DebugFile,
                                 $DebugPreference,
                                 $ErrorFile,
                                 $ExportFile,
                                 $ExportFileFilter,
                                 $ExportFileHeader,
+                                $ExportFileHeaderIndexes,
                                 $ExportFromOnPrem,
                                 $ExportGuids,
+                                $ExportSids,
                                 $ScriptPath,
                                 $tempQueue,
                                 $UTF8Encoding,
@@ -10210,47 +10824,51 @@ try {
 
                                             Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.add(
+                                            $ExportFileLines.add(
                                                     ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $Grantor.ExchangeGuid.Guid,
-                                                                $Grantor.Guid.Guid,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                $($folder.folderpath),
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.add(
-                                                    ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
-                                                                $GrantorEnvironment,
-                                                                $($folder.folderpath),
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            $(if ($ExportGuids) { $Grantor.ExchangeGuid.Guid } else { '' }),
+                                                            $(if ($ExportGuids) { $Grantor.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $("$GrantorRecipientType/$GrantorRecipientTypeDetails" -ireplace '^/$', ''),
+                                                            $GrantorEnvironment,
+                                                            $($folder.folderpath),
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            ''
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
+
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -10306,21 +10924,25 @@ try {
                         }
                     ).AddParameters(
                         @{
-                            AllPublicFolders                 = $AllPublicFolders
-                            AllRecipients                    = $AllRecipients
-                            AllRecipientsExchangeGuidToIndex = $AllRecipientsExchangeGuidToIndex
-                            DebugFile                        = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            DebugPreference                  = $DebugPreference
-                            ErrorFile                        = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            ExportFile                       = $ExportFile
-                            ExportFileFilter                 = $ExportFileFilter
-                            ExportFileHeader                 = $ExportFileHeader
-                            ExportFromOnPrem                 = $ExportFromOnPrem
-                            ExportGuids                      = $ExportGuids
-                            ScriptPath                       = $PSScriptRoot
-                            tempQueue                        = $tempQueue
-                            UTF8Encoding                     = $UTF8Encoding
-                            VerbosePreference                = $VerbosePreference
+                            AllPublicFolders                       = $AllPublicFolders
+                            AllRecipients                          = $AllRecipients
+                            AllRecipientsExchangeGuidToIndex       = $AllRecipientsExchangeGuidToIndex
+                            AllSecurityPrincipals                  = $AllSecurityPrincipals
+                            AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                            DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            DebugPreference                        = $DebugPreference
+                            ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            ExportFile                             = $ExportFile
+                            ExportFileFilter                       = $ExportFileFilter
+                            ExportFileHeader                       = $ExportFileHeader
+                            ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                            ExportFromOnPrem                       = $ExportFromOnPrem
+                            ExportGuids                            = $ExportGuids
+                            ExportSids                             = $ExportSids
+                            ScriptPath                             = $PSScriptRoot
+                            tempQueue                              = $tempQueue
+                            UTF8Encoding                           = $UTF8Encoding
+                            VerbosePreference                      = $VerbosePreference
                         }
                     )
 
@@ -10427,14 +11049,18 @@ try {
                         {
                             param(
                                 $AllGroups,
+                                $AllSecurityPrincipals,
+                                $AllSecurityPrincipalsObjectguidToIndex,
                                 $DebugFile,
                                 $DebugPreference,
                                 $ErrorFile,
                                 $ExportFile,
                                 $ExportFileFilter,
                                 $ExportFileHeader,
+                                $ExportFileHeaderIndexes,
                                 $ExportFromOnPrem,
                                 $ExportGuids,
+                                $ExportSids,
                                 $ScriptPath,
                                 $tempQueue,
                                 $UTF8Encoding,
@@ -10479,47 +11105,51 @@ try {
 
                                             Write-Host "Exchange GUID $($Grantor.ExchangeGuid.Guid), Directory GUID $($Grantor.Guid.Guid), Primary SMTP $($GrantorPrimarySMTP), $($GrantorRecipientType)/$($GrantorRecipientTypeDetails) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 
-                                            if ($ExportGuids) {
-                                                $ExportFileLines.add(
+                                            $ExportFileLines.add(
                                                     ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                '',
-                                                                $RoleGroup.Guid.Guid,
-                                                                $GrantorRecipientType,
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            } else {
-                                                $ExportFileLines.add(
-                                                    ('"' + (@((
-                                                                $GrantorPrimarySMTP,
-                                                                $GrantorDisplayName,
-                                                                $GrantorRecipientType,
-                                                                $GrantorEnvironment,
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                '',
-                                                                ''
-                                                            ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"') + '"')
-                                                )
-                                            }
+                                                            $GrantorPrimarySMTP,
+                                                            $GrantorDisplayName,
+                                                            '',
+                                                            $(if ($ExportGuids) { $RoleGroup.Guid.Guid } else { '' }),
+                                                            $(if ($ExportSids) {
+                                                                    try {
+                                                                        try {
+                                                                            $SecurityPrincipalsLookupSearchString = $Grantor.Guid.Guid
+                                                                            $AllSecurityPrincipals[$AllSecurityPrincipalsObjectguidToIndex[$SecurityPrincipalsLookupSearchString]].sid.ToString()
+                                                                        } catch {
+                                                                            if ($ExportFromOnPrem) {
+                                                                                # could be an object from a trust
+                                                                                # No SID check required, as NameTranslate can only resolve Domain SIDs anyhow
+                                                                                $objTrans = New-Object -ComObject 'NameTranslate'
+                                                                                $objNT = $objTrans.GetType()
+                                                                                $null = $objNT.InvokeMember('Init', 'InvokeMethod', $Null, $objTrans, (3, $null))
+                                                                                $null = $objNT.InvokeMember('Set', 'InvokeMethod', $Null, $objTrans, (7, "$($SecurityPrincipalsLookupSearchString)")) # 7 = GUID
+                                                                                $objNT.InvokeMember('Get', 'InvokeMethod', $Null, $objTrans, 7).trimstart('{').trimend('}')
+                                                                            } else {
+                                                                                ''
+                                                                            }
+                                                                        }
+                                                                    } catch {
+                                                                        ''
+                                                                    }
+                                                                } else { '' }
+                                                            ),
+                                                            $GrantorRecipientType,
+                                                            $GrantorEnvironment,
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '',
+                                                            '' ,
+                                                            '' ,
+                                                            '' ,
+                                                            '',
+                                                            ''
+                                                        ) | ForEach-Object { $_ -ireplace '"', '""' })[$ExportFileHeaderIndexes] -join '";"') + '"')
+                                            )
+
 
                                             if ($ExportFileLines) {
                                                 $ExportFileLines = @($ExportFileLines | ConvertFrom-Csv -Delimiter ';' -Header $ExportFileHeader)
@@ -10575,19 +11205,23 @@ try {
                         }
                     ).AddParameters(
                         @{
-                            AllGroups         = $AllGroups
-                            DebugFile         = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            DebugPreference   = $DebugPreference
-                            ErrorFile         = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
-                            ExportFile        = $ExportFile
-                            ExportFileFilter  = $ExportFileFilter
-                            ExportFileHeader  = $ExportFileHeader
-                            ExportFromOnPrem  = $ExportFromOnPrem
-                            ExportGuids       = $ExportGuids
-                            ScriptPath        = $PSScriptRoot
-                            tempQueue         = $tempQueue
-                            UTF8Encoding      = $UTF8Encoding
-                            VerbosePreference = $VerbosePreference
+                            AllGroups                              = $AllGroups
+                            AllSecurityPrincipals                  = $AllSecurityPrincipals
+                            AllSecurityPrincipalsObjectguidToIndex = $AllSecurityPrincipalsObjectguidToIndex
+                            DebugFile                              = ([io.path]::ChangeExtension(($DebugFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            DebugPreference                        = $DebugPreference
+                            ErrorFile                              = ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.{0:0000000}.txt' -f $_)))
+                            ExportFile                             = $ExportFile
+                            ExportFileFilter                       = $ExportFileFilter
+                            ExportFileHeader                       = $ExportFileHeader
+                            ExportFileHeaderIndexes                = $ExportFileHeaderIndexes
+                            ExportFromOnPrem                       = $ExportFromOnPrem
+                            ExportGuids                            = $ExportGuids
+                            ExportSids                             = $ExportSids
+                            ScriptPath                             = $PSScriptRoot
+                            tempQueue                              = $tempQueue
+                            UTF8Encoding                           = $UTF8Encoding
+                            VerbosePreference                      = $VerbosePreference
                         }
                     )
 
