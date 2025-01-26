@@ -18,6 +18,7 @@ _**Breaking:** Notice about breaking change_
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
 ### Added
 - Add the new parameter '`ExportSids`' which will include the SID (Security Identifier) of grantor and trustee in the export.
+- Add new FAQ '`Which account should I use to connect to Exchange Online?`'. See '`.\docs\README`' for details.
 ### Fixed
 - Fixed not showing grantor details when forwarders are configured for an SMTp address starting with 'smtp:'.
 
