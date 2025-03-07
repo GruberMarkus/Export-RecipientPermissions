@@ -15,6 +15,14 @@ _**Breaking:** Notice about breaking change_
 ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Changed
+- Changed the default value of the '`ParallelJobsExchange`' parameter from 10 to 3 for Exchange Online. This is because many tenants still not seem to have been updated to 10 parallel sessions.
+### Added
+### Removed
+### Fixed
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
 ### Added
 - Add the new parameter '`ExportSids`' which will include the SID (Security Identifier) of grantor and trustee in the export.
