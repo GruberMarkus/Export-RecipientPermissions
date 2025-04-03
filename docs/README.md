@@ -100,7 +100,20 @@ Finds all recipients with a primary SMTP address in an on on-prem or online Exch
 - mailbox folder permissions,
 - "send as" permissions,
 - "send on behalf" permissions, and
-- "managed by" permissions
+- "managed by" permissions,
+- and many more.
+
+The idea is to export and document these different permissions in a common format, something that is not possible with the standard Exchange cmdlets.
+
+This common format is not only useful for documentation, but also to compare permissions over time, between different recipients, or event between different tenants - all of this can be automated.
+
+The ability to resolve groups to its transitive members not only allows you to detect that a permission has changed, but also to detect that a permission granted to a group has not changed, but the members of the group have.
+
+You can use this information for interesting use cases:
+- Regular auditing of sensitive mailboxes or sensitive permissions.
+- Regularly inform your VIPs about the permissions they have set in their mailboxes and what has changed since the last report.
+- Find out which recipient has access to which ressources.
+- Use the output of Export-RecipientPermissions in [Set-OutlookSignatures](https://github.com/Set-OutlookSignatures), which allows for dynamic assignment of email signatures based on up-to-date permissions set in your Exchange environment.
 ## 1.1. Output
 The report is saved to the file 'Export-RecipientPermissions_Result.csv', which consists of the following columns:
 - Grantor Primary SMTP: The primary SMTP address of the object granting a permission
@@ -109,6 +122,12 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
 - Grantor Display Name: The display name of the grantor.
   - When management role group members are exported, this column contains the name of the Management Role Group
   - When public folder permissions are exported, this column represents the folder's content mailbox
+- Grantor Exchange GUID: The Exchange GUID of the grantor.
+  - Only available when ExportGuids is enabled.
+- Grantor AD ObjectGUID: The Active Directory ObjectGUID of the grantor.
+  - Only available when ExportGuids is enabled.
+- Grantor SID: The SID (wecurity identifier) of the grantor.
+  - Only available when ExportSids is enabled.
 - Grantor Recipient Type: The recipient type and recipient type detail of the grantor.
   - When management role group members are exported, this column contains 'ManagementRoleGoup'
   - When public folder permissions are exported, this column represents the folder's content mailbox ('UserMailbox/PublicFolderMailbox')
@@ -135,6 +154,12 @@ The report is saved to the file 'Export-RecipientPermissions_Result.csv', which 
   - When 'ExpandGroups' is enabled, the primary SMTP address comes from the resolved group member
 - Trustee Display Name: The display name of the trustee.
   - When 'ExpandGroups' is enabled, the display name comes from the resolved group member
+- Trustee Exchange GUID: The Exchange GUID of the trustee.
+  - Only available when ExportGuids is enabled.
+- Trustee AD ObjectGUID: The Active Directory ObjectGUID of the trustee.
+  - Only available when ExportGuids is enabled.
+- Trustee SID: The SID (wecurity identifier) of the trustee.
+  - Only available when ExportSids is enabled.
 - Trustee Recipient Type: The recipient type of the trustee.
 -   - When 'ExpandGroups' is enabled, the recipient type comes from the resolved group member
 - Trustee Environment: Shows if the trustee is held on-prem or in the cloud.
@@ -460,7 +485,7 @@ When enabled, the export contains the Exchange GUID and the AD ObjectGUID for ea
 
 Default: $false
 ### 1.2.37. ExportSids
-When enabled, the export contains the SID (Security Identifier) for each grantor and trustee
+When enabled, the export contains the SID (security identifier) for each grantor and trustee
 
 Default: $false
 ### 1.2.38. ExpandGroups
