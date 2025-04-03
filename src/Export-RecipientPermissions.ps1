@@ -376,7 +376,7 @@ Param(
     [string]$ExchangeCredentialUsernameFile = '.\Export-RecipientPermissions_CredentialUsername.txt',
     [string]$ExchangeCredentialPasswordFile = '.\Export-RecipientPermissions_CredentialPassword.txt',
     [hashtable]$ExchangeOnlineConnectionParameters = @{ Credential = $null },
-    [int]$ParallelJobsExchange = $(if ($ExportFromOnPrem) { $ExchangeConnectionUriList.count } else { 10 }),
+    [int]$ParallelJobsExchange = $(if ($ExportFromOnPrem) { $ExchangeConnectionUriList.count } else { 3 }),
     [int]$ParallelJobsAD = 50,
     [int]$ParallelJobsLocal = 50,
     [string[]]$RecipientProperties = @(),

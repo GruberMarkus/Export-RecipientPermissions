@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Commercial support from ExplicIT Consulting
+  - name: Fee-based support from ExplicIT Consulting
     url: https://explicitconsulting.at/open-source/Export-RecipientPermissions
-    about: If you want to prioritize your request, please use ExplicIT Consulting's commercial support instead of this form.
+    about: If you want to prioritize your request, please use ExplicIT Consulting's fee-based support instead of this form.
   - name: Documentation
     url: https://github.com/GruberMarkus/Export-RecipientPermissions
     about: Before creating a new issue, check the documentation (README file and associated documents).

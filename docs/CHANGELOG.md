@@ -1,5 +1,5 @@
 <!-- omit in toc -->
-## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions?labelColor=black&color=informational" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational?labelColor=black&color=informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational&labelColor=black" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions?labelColor=black" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/commercial%20support-ExplicIT%20Consulting-lawngreen?labelColor=black" alt="get commercial support from ExplicIT Consulting"></a>
+## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions?labelColor=black&color=informational" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational?labelColor=black&color=informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational&labelColor=black" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions?labelColor=black" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/fee--based%20support-ExplicIT%20Consulting-lawngreen?labelColor=black" alt="get fee-based support from ExplicIT Consulting"></a>
 
 # Changelog
 <!--
@@ -14,6 +14,14 @@ _**Breaking:** Notice about breaking change_
 ### Removed
 ### Fixed
 -->
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.1" target="_blank">v3.3.1</a> - 2025-04-03
+### Changed
+- Changed the default value of the '`ParallelJobsExchange`' parameter from 10 to 3 for Exchange Online. This is because many tenants still not seem to have been updated to 10 parallel sessions.
+### Added
+### Removed
+### Fixed
+
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
 ### Added

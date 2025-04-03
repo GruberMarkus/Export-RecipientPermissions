@@ -9,7 +9,7 @@ body:
 
         Support in this GitHub repository is free, voluntary and without guaranteed response times.
 
-        If you want to prioritize your request, please use [ExplicIT Consulting's **commercial support**](https://explicitconsulting.at/open-source/export-recipientpermissions/) instead of this form.
+        If you want to prioritize your request, please use [ExplicIT Consulting's **fee-based support**](https://explicitconsulting.at/open-source/export-recipientpermissions/) instead of this form.
   - type: checkboxes
     id: usinglatestrelease
     attributes:
