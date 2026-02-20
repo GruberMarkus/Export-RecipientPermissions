@@ -69,7 +69,7 @@ Compare exports from different times to detect permission changes (sample code i
     - [1.2.41. ExportFile](#1241-exportfile)
     - [1.2.42. ErrorFile](#1242-errorfile)
     - [1.2.43. DebugFile](#1243-debugfile)
-    - [1.2.44. UpdateInverval](#1244-updateinverval)
+    - [1.2.44. UpdateInterval](#1244-updateinterval)
   - [1.3. Runtime](#13-runtime)
   - [1.4. Requirements](#14-requirements)
 - [2. FAQ](#2-faq)
@@ -543,7 +543,7 @@ Name (and path) of the debug log file
 Set to $null or '' to disable debugging
 
 Default: ''
-### 1.2.44. UpdateInverval
+### 1.2.44. UpdateInterval
 Interval to update the job progress
 
 Updates are based von recipients done, not on duration

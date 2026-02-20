@@ -319,7 +319,7 @@ Set to $null or '' to disable debugging
 Default: ''
 
 
-.PARAMETER UpdateInverval
+.PARAMETER UpdateInterval
 Interval to update the job progress
 Updates are based von recipients done, not on duration
 Number must be 1 or higher, lower numbers mean bigger debug files
@@ -414,7 +414,7 @@ param(
     [boolean]$ExportSids = $false,
     [boolean]$ExportGrantorsWithNoPermissions = $false,
     [ValidateSet('All', 'OnlyValid', 'OnlyInvalid')]$ExportTrustees = 'All',
-    [parameter(dontshow = $true)][string]$ExportTimestamp = $((Get-Date -Format 'yyyy-MM-ddTHH:mm:sszzz') -ireplace ':', '' -ireplace '-', ''),
+    [string]$ExportTimestamp = $((Get-Date -Date (Get-Date).ToUniversalTime() -Format 'yyyy-MM-ddTHH:mm:ssK') -ireplace ':|-', '').ToString(),
     [string]$ExportFile = ".\export\Export-RecipientPermissions_$($ExportTimestamp)_Result.csv",
     [string]$ErrorFile = ".\export\Export-RecipientPermissions_$($ExportTimestamp)_Error.csv",
     [string]$DebugFile = '',
@@ -1222,6 +1222,9 @@ try {
     Write-Host
     Write-Host "Import recipients @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
     Write-Host '  Enumerate possible RecipientTypeDetails values'
+
+    $RecipientTypeDetailsList = @()
+
     try {
         # Get-EXORecipient does not (yet) return allowed RecipientTypeDetails,
         #   so Get-Recipient is used for Exchange on-prem and Exchange Online
@@ -1235,8 +1238,7 @@ try {
         $RecipientTypeDetailsListUnchecked = $matches[1].trim() -split ', ' | Where-Object { $_ } | Sort-Object -Unique
     }
 
-    $RecipientTypeDetailsList = @()
-
+    Write-Host '  Pre-check RecipientTypeDetails values'
     foreach ($RecipientTypeDetail in $RecipientTypeDetailsListUnchecked) {
         # Get-EXORecipient is extremly slow when querying for non-existing RecipienttypeDetails
         #   so Get-Recipient is used for Exchange on-prem and Exchange Online
@@ -1345,7 +1347,7 @@ try {
                                                 $($_ | Out-String)
                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                     ) + '"'
-                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                             }
                         }
                     } catch {
@@ -1359,7 +1361,7 @@ try {
                                         $($_ | Out-String)
                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                             ) + '"'
-                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     } finally {
                         . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -1423,7 +1425,7 @@ try {
             $null = Stop-Transcript
             Start-Sleep -Seconds 1
             foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                 Remove-Item -LiteralPath $JobDebugFile -Force
             }
 
@@ -1432,7 +1434,7 @@ try {
 
         if ($ErrorFile) {
             foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                 Remove-Item -LiteralPath $JobErrorFile -Force
             }
         }
@@ -1583,7 +1585,7 @@ try {
     $AllRecipientsSmtpToIndex = [system.collections.hashtable]::Synchronized([system.collections.hashtable]::new($AllRecipients.EmailAddresses.count, [StringComparer]::OrdinalIgnoreCase))
     for ($x = 0; $x -lt $AllRecipients.count; $x++) {
         if ($AllRecipients[$x].EmailAddresses) {
-            foreach ($EmailAddress in (@(@($AllRecipients[$x].EmailAddresses | Where-Object { $_.StartsWith('smtp:', [Globalization.CultureInfo]::InvariantCulture) }) | ForEach-Object { $_ -ireplace '^smtp:', '' }))) {
+            foreach ($EmailAddress in (@(@($AllRecipients[$x].EmailAddresses | Where-Object { $_.StartsWith('smtp:', $true, [Globalization.CultureInfo]::InvariantCulture) }) | ForEach-Object { $_ -ireplace '^smtp:', '' }))) {
                 if ($AllRecipientsSmtpToIndex.ContainsKey($EmailAddress)) {
                     Write-Host "      '$($EmailAddress)' is not unique" -ForegroundColor Yellow
                     $AllRecipientsSmtpToIndex[$EmailAddress] = $null
@@ -1895,7 +1897,7 @@ try {
                                                                 $($_ | Out-String)
                                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                                     ) + '"'
-                                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                             }
                                         }
                                     }
@@ -1910,7 +1912,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -1924,7 +1926,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -1988,7 +1990,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -1997,7 +1999,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -2123,7 +2125,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -2137,7 +2139,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -2201,7 +2203,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -2210,7 +2212,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -2464,7 +2466,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -2478,7 +2480,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -2542,7 +2544,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -2551,7 +2553,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -2679,7 +2681,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -2693,7 +2695,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -2757,7 +2759,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -2766,7 +2768,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -2893,7 +2895,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -2907,7 +2909,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -2971,7 +2973,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -2980,7 +2982,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -3082,7 +3084,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -3096,7 +3098,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -3160,7 +3162,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -3169,7 +3171,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -3302,7 +3304,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -3316,7 +3318,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -3380,7 +3382,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -3389,7 +3391,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -3541,7 +3543,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -3555,7 +3557,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -3619,7 +3621,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -3628,7 +3630,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -3812,7 +3814,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -3864,7 +3866,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -3925,7 +3927,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -3934,7 +3936,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -4150,7 +4152,7 @@ try {
                                                                                         ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                         if ($AllSecurityPrincipalsLookupResult) {
-                                                                                            if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                                            if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                                                 $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                             } else {
                                                                                                 ''
@@ -4220,7 +4222,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -4272,7 +4274,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -4336,7 +4338,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -4345,7 +4347,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -4700,7 +4702,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
@@ -4753,7 +4755,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -4817,7 +4819,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -4826,7 +4828,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -5006,7 +5008,7 @@ try {
                                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                     if ($AllSecurityPrincipalsLookupResult) {
-                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                                             $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                         } else {
                                                                                             ''
@@ -5192,7 +5194,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -5244,7 +5246,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -5305,7 +5307,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -5314,7 +5316,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -5638,7 +5640,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -5690,7 +5692,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -5751,7 +5753,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -5760,7 +5762,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -5919,7 +5921,7 @@ try {
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
-                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                                         $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
@@ -5986,7 +5988,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -6038,7 +6040,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -6099,7 +6101,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -6108,7 +6110,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -6562,7 +6564,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -6614,7 +6616,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -6678,7 +6680,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -6687,7 +6689,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Sort-Object -Unique | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Sort-Object -Unique | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
 
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
@@ -6695,7 +6697,7 @@ try {
 
             if ($ResultFile) {
                 foreach ($JobResultFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ResultFile), ('TEMP.*.PF*.txt'))))) {
-                    Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding | Select-Object * -Skip 1 | Out-File -LiteralPath ($JobResultFile.fullname -ireplace '\.PF\d{7}.txt$', '.txt') -Append -Encoding $UTF8Encoding -Force
+                    Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding | Select-Object * -Skip 1 | Add-Content -LiteralPath ($JobResultFile.fullname -ireplace '\.PF\d{7}.txt$', '.txt') -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobResultFile -Force
                 }
             }
@@ -6883,7 +6885,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
@@ -6936,7 +6938,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -6997,7 +6999,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -7006,7 +7008,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -7191,7 +7193,7 @@ try {
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                                 ) + '"'
-                                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                         }
                                     }
                                 }
@@ -7245,7 +7247,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -7306,7 +7308,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -7315,7 +7317,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -7499,7 +7501,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
@@ -7552,7 +7554,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -7613,7 +7615,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -7622,7 +7624,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -7837,7 +7839,7 @@ try {
                                                             $($_ | Out-String)
                                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                                 ) + '"'
-                                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                         }
                                     }
                                 }
@@ -7891,7 +7893,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -7952,7 +7954,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -7961,7 +7963,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -8134,7 +8136,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
 
@@ -8187,7 +8189,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -8248,7 +8250,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -8257,7 +8259,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -8399,7 +8401,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -8413,7 +8415,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             . ([ScriptBlock]::Create($ConnectExchange)) -Disconnect
 
@@ -8477,7 +8479,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -8486,7 +8488,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -8574,7 +8576,7 @@ try {
 
                                 try {
                                     foreach ($RoleGroupMember in $RoleGroupMembers) {
-                                        if ($RoleGroupMember.tostring().startswith('NotARecipient:', [Globalization.CultureInfo]::InvariantCulture)) {
+                                        if ($RoleGroupMember.tostring().startswith('NotARecipient:', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                             $Trustee = $RoleGroupMember -ireplace '^NotARecipient:', ''
                                         } else {
                                             try {
@@ -8655,7 +8657,7 @@ try {
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
-                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                                         $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
@@ -8722,7 +8724,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
 
                                 if ($ExportFileLines) {
@@ -8774,7 +8776,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -8835,7 +8837,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -8844,7 +8846,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -8938,7 +8940,7 @@ try {
                                 }
 
                                 foreach ($index in $GrantorMembers) {
-                                    if ($index.tostring().startswith('NotARecipient:', [Globalization.CultureInfo]::InvariantCulture)) {
+                                    if ($index.tostring().startswith('NotARecipient:', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                         $Trustee = $index -ireplace '^NotARecipient:', ''
                                     } else {
                                         $Trustee = $AllRecipients[$index]
@@ -9015,7 +9017,7 @@ try {
                                                                                 ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                                 if ($AllSecurityPrincipalsLookupResult) {
-                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                                    if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                                         $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                                     } else {
                                                                                         ''
@@ -9081,7 +9083,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
 
@@ -9122,7 +9124,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -9183,7 +9185,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -9192,7 +9194,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -9276,7 +9278,7 @@ try {
                                                 foreach ($Member in $Members) {
                                                     $ExportFileLineExpanded = $ExportFileLineOriginal.PSObject.Copy()
 
-                                                    if ($Member.ToString().startswith('NotARecipient:', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                    if ($Member.ToString().startswith('NotARecipient:', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                         $Trustee = $Member -ireplace '^NotARecipient:', ''
                                                     } else {
                                                         $Trustee = $AllRecipients[$Member]
@@ -9309,7 +9311,7 @@ try {
                                                                     ) | Where-Object { $_ } | Select-Object -First 1
 
                                                                     if ($AllSecurityPrincipalsLookupResult) {
-                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', [Globalization.CultureInfo]::InvariantCulture)) {
+                                                                        if ($AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Sid.tostring().StartsWith('S-1-5-21-', $true, [Globalization.CultureInfo]::InvariantCulture)) {
                                                                             $AllSecurityPrincipals[$AllSecurityPrincipalsLookupResult].Guid.Guid
                                                                         } else {
                                                                             ''
@@ -9402,7 +9404,7 @@ try {
                                                     $($_ | Out-String)
                                                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                         ) + '"'
-                                    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                 }
                             }
                         } catch {
@@ -9416,7 +9418,7 @@ try {
                                             $($_ | Out-String)
                                         ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                 ) + '"'
-                            ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                            ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         } finally {
                             if ($DebugFile) {
                                 $null = Stop-Transcript
@@ -9477,7 +9479,7 @@ try {
                 $null = Stop-Transcript
                 Start-Sleep -Seconds 1
                 foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobDebugFile -Force
                 }
 
@@ -9486,7 +9488,7 @@ try {
 
             if ($ErrorFile) {
                 foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                     Remove-Item -LiteralPath $JobErrorFile -Force
                 }
             }
@@ -9664,7 +9666,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
                             } catch {
@@ -9678,7 +9680,7 @@ try {
                                                 $($_ | Out-String)
                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                     ) + '"'
-                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                             } finally {
                                 if ($DebugFile) {
                                     $null = Stop-Transcript
@@ -9739,7 +9741,7 @@ try {
                     $null = Stop-Transcript
                     Start-Sleep -Seconds 1
                     foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobDebugFile -Force
                     }
 
@@ -9748,7 +9750,7 @@ try {
 
                 if ($ErrorFile) {
                     foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobErrorFile -Force
                     }
                 }
@@ -9919,7 +9921,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
                             } catch {
@@ -9933,7 +9935,7 @@ try {
                                                 $($_ | Out-String)
                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                     ) + '"'
-                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                             } finally {
                                 if ($DebugFile) {
                                     $null = Stop-Transcript
@@ -9994,7 +9996,7 @@ try {
                     $null = Stop-Transcript
                     Start-Sleep -Seconds 1
                     foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobDebugFile -Force
                     }
 
@@ -10003,14 +10005,14 @@ try {
 
                 if ($ErrorFile) {
                     foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobErrorFile -Force
                     }
                 }
 
                 if ($ResultFile) {
                     foreach ($JobResultFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ResultFile), ('TEMP.*.PF*.txt'))))) {
-                        Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding | Select-Object * -Skip 1 | Out-File -LiteralPath ($JobResultFile.fullname -ireplace '\.PF\d{7}.txt$', '.txt') -Append -Encoding $UTF8Encoding -Force
+                        Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding | Select-Object * -Skip 1 | Add-Content -LiteralPath ($JobResultFile.fullname -ireplace '\.PF\d{7}.txt$', '.txt') -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobResultFile -Force
                     }
                 }
@@ -10177,7 +10179,7 @@ try {
                                                         $($_ | Out-String)
                                                     ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                             ) + '"'
-                                        ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                        ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                     }
                                 }
                             } catch {
@@ -10191,7 +10193,7 @@ try {
                                                 $($_ | Out-String)
                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                     ) + '"'
-                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                             } finally {
                                 if ($DebugFile) {
                                     $null = Stop-Transcript
@@ -10252,7 +10254,7 @@ try {
                     $null = Stop-Transcript
                     Start-Sleep -Seconds 1
                     foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobDebugFile -Force
                     }
 
@@ -10261,7 +10263,7 @@ try {
 
                 if ($ErrorFile) {
                     foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobErrorFile -Force
                     }
                 }
@@ -10286,7 +10288,7 @@ try {
                     $($_ | Out-String)
                 ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
         ) + '"'
-    ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+    ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
 } finally {
     Write-Host
     Write-Host "Clean-up @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
@@ -10370,7 +10372,7 @@ try {
                                         foreach ($ExportFileTemp in ($ExportFileArray[1..($ExportFileArray.count - 1)])) {
                                             try {
                                                 if ((Get-Item -LiteralPath $ExportFileTemp).length -gt 0) {
-                                                    Get-Content -LiteralPath $ExportFileTemp -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Out-File -LiteralPath $ExportFileArray[0] -Append -Encoding $UTF8Encoding -Force
+                                                    Get-Content -LiteralPath $ExportFileTemp -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Add-Content -LiteralPath $ExportFileArray[0] -Encoding $UTF8Encoding -Force
                                                 }
                                                 Remove-Item -LiteralPath $ExportFileTemp -Force
                                             } catch {
@@ -10384,7 +10386,7 @@ try {
                                                                 $($_ | Out-String)
                                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                                     ) + '"'
-                                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                                             }
                                         }
                                     }
@@ -10401,7 +10403,7 @@ try {
                                                 $($_ | Out-String)
                                             ) | ForEach-Object { $_ -ireplace '"', '""' }) -join '";"'
                                     ) + '"'
-                                ) | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                                ) | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                             } finally {
                                 if ($DebugFile) {
                                     $null = Stop-Transcript
@@ -10462,7 +10464,7 @@ try {
                     $null = Stop-Transcript
                     Start-Sleep -Seconds 1
                     foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobDebugFile -Force
                     }
 
@@ -10471,7 +10473,7 @@ try {
 
                 if ($ErrorFile) {
                     foreach ($JobErrorFile in @(Get-ChildItem ([io.path]::ChangeExtension(($ErrorFile), ('TEMP.*.txt'))))) {
-                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Out-File -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Append -Force
+                        Get-Content -LiteralPath $JobErrorFile -Encoding $UTF8Encoding | Add-Content -LiteralPath $ErrorFile -Encoding $UTF8Encoding -Force
                         Remove-Item -LiteralPath $JobErrorFile -Force
                     }
                 }
@@ -10489,7 +10491,7 @@ try {
 
             foreach ($JobResultFile in $JobResultFiles) {
                 if ($JobResultFile.length -gt 0) {
-                    Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Out-File -LiteralPath $ExportFile -Encoding $UTF8Encoding -Append -Force
+                    Get-Content -LiteralPath $JobResultFile -Encoding $UTF8Encoding -Force | Select-Object -Skip 1 | Add-Content -LiteralPath $ExportFile -Encoding $UTF8Encoding -Force
                 }
 
                 Remove-Item -LiteralPath $JobResultFile -Force
@@ -10570,7 +10572,7 @@ try {
         Start-Sleep -Seconds 1
         foreach ($JobDebugFile in @(Get-ChildItem ([io.path]::ChangeExtension(($DebugFile), ('TEMP.*.txt'))))) {
             if ($JobDebugFile.length -gt 0) {
-                Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Out-File -LiteralPath $DebugFile -Encoding $UTF8Encoding -Append -Force
+                Get-Content -LiteralPath $JobDebugFile -Encoding $UTF8Encoding -Raw | Add-Content -LiteralPath $DebugFile -Encoding $UTF8Encoding -Force
             }
 
             Remove-Item -LiteralPath $JobDebugFile -Force
