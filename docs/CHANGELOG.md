@@ -15,6 +15,18 @@ _**Breaking:** Notice about breaking change_
 ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+### Changed
+- Change how runspaces get assigned shared variables. This reduces memory footprint.
+- Update multiple datatypes to allow looping through them and adding elements faster. This brings speed and reduces memory usage.
+### Added
+- Consider the Retry-After header when Exchange Online connections throw an error. In all other cases, use the same exponential retry wait time algorithm [Set-OutlookSignatures](https://set-outlooksignatures.com
+- ) uses.
+### Removed
+### Fixed
+- Correct indent of connection messages to fit general output format.
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.1" target="_blank">v3.3.1</a> - 2025-04-03
 ### Changed
 - Changed the default value of the '`ParallelJobsExchange`' parameter from 10 to 3 for Exchange Online. This is because many tenants still not seem to have been updated to 10 parallel sessions.

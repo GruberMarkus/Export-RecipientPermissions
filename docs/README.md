@@ -194,7 +194,7 @@ Maximum Exchange, AD and local sessions/jobs running in parallel.
 Watch CPU and RAM usage, and your Exchange throttling policy. Frequent connection errors indicate that the values are set too high.
 
 Default values:
-- ParallelJobsExchange: $ExchangeConnectionUriList.count
+- ParallelJobsExchange: $ExchangeConnectionUriList.Count for Exchange on-prem, 3 for Exchange Online
 - ParallelJobsAD: 50
 - ParallelJobsLocal: 50
 
