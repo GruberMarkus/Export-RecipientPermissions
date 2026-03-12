@@ -160,12 +160,9 @@ function main {
   - Compare these hashes with the output of '``Get-ChildItem -Recurse | Get-FileHash -LiteralPath `$_.FullName -Algorithm SHA256``'.
 "@
 
-
-}
-
-Write-Output 'ReleaseMarkdown:'
-Write-Output $ReleaseMarkdown
-$ReleaseMarkdown | Out-File -FilePath .\build\CHANGELOG.md -Encoding utf8 -Force
+    Write-Output 'ReleaseMarkdown:'
+    Write-Output $ReleaseMarkdown
+    $ReleaseMarkdown | Out-File -FilePath .\build\CHANGELOG.md -Encoding utf8 -Force
 }
 
 if ($env:GITHUB_WORKSPACE) {
