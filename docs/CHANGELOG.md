@@ -15,13 +15,29 @@ _**Breaking:** Notice about breaking change_
 ### Fixed
 -->
 
-## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v4.0.0" target="_blank">v4.0.0</a> - YYYY-MM-DD
+
+_**Breaking:** This is a new major release, supporting combined export from cloud and on-prem data in one run. This requires breaking changes with regards to connection parameters. Export features and output format are not changed._
+
 ### Changed
-- Change how runspaces get assigned shared variables. This reduces memory footprint.
-- Update multiple datatypes to allow looping through them and adding elements faster. This brings speed and reduces memory usage.
+- Reduce runtime and memory footprint:
+  - Change how runspaces get assigned shared variables. This reduces memory footprint.
+  - Update datatypes of multiple internal variables to allow looping through them and adding elements faster. This brings speed and reduces memory usage.
 ### Added
-- Consider the Retry-After header when Exchange Online connections throw an error. In all other cases, use the same exponential retry wait time algorithm [Set-OutlookSignatures](https://set-outlooksignatures.com
-- ) uses.
+- Add support for combined export from cloud and on-prem. In hybrid environments, just one script run is now required to get the following permissions which are only available on one side or differ between on-prem and the cloud:
+  - Mailbox access rights
+  - Mailbox folder permissions
+  - Public folder permissions
+  
+  This requires a **breaking change** in parameters:
+  - `ConnectionParametersCloud` now bundles all configuration options for Exchange Online, including the maximum number of parallel jobs. See `.\docs\README` for details.
+  - `ConnectionParametersOnprem` now bundles all configuration options for Exchange on-prem, including the maximum number of parallel jobs. See `.\docs\README` for details.
+
+  Make sure to read the '``' chapter in the README file.
+
+  _This change, together with the performance improvements, makes Export-RecipientPermissions a great companion to [Set-OutlookSignatures](https://set-outlooksignatures.com/parameters#virtualmailboxconfigfile), allowing you to deploy email signatures based on actual recipient permissions and not just when a user added a mailbox to Outlook._
+- Consider the Retry-After header when Exchange Online connections throw an error. In all other cases, use the same exponential retry wait time algorithm [Set-OutlookSignatures](https://set-outlooksignatures.com) uses.
+- Change behavior of `$UpdateInterval` parameter. This parameter now defines how often the job progress is updated in the debug file only. The console output is updated every second.
 ### Removed
 ### Fixed
 - Correct indent of connection messages to fit general output format.
