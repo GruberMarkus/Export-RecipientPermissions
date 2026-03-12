@@ -39,7 +39,6 @@ _**Breaking:** This is a new major release, supporting combined export from clou
   _This change, together with the performance improvements, makes Export-RecipientPermissions a great companion to [Set-OutlookSignatures](https://set-outlooksignatures.com/parameters#virtualmailboxconfigfile), allowing you to deploy email signatures based on actual recipient permissions and not just when a user added a mailbox to Outlook._
 - Consider the Retry-After header when Exchange Online connections throw an error. In all other cases, use the same exponential retry wait time algorithm [Set-OutlookSignatures](https://set-outlooksignatures.com) uses.
 - Change behavior of `$UpdateInterval` parameter. This parameter now defines how often the job progress is updated in the debug file only. The console output is updated every second.
-### Removed
 ### Fixed
 - Correct indent of connection messages to fit general output format.
 
@@ -47,9 +46,6 @@ _**Breaking:** This is a new major release, supporting combined export from clou
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.1" target="_blank">v3.3.1</a> - 2025-04-03
 ### Changed
 - Changed the default value of the '`ParallelJobsExchange`' parameter from 10 to 3 for Exchange Online. This is because many tenants still not seem to have been updated to 10 parallel sessions.
-### Added
-### Removed
-### Fixed
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
