@@ -40,7 +40,6 @@ function main {
     Set-Location $env:GITHUB_WORKSPACE
 
     Write-Output 'Delete .placeholder and .gitignore files'
-    Set-Location -LiteralPath $RootPath
     Get-ChildItem '.placeholder', '.gitignore' -Recurse -File | Remove-Item -Force
 
     Write-Output 'Copy basic files'
