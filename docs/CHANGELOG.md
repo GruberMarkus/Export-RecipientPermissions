@@ -16,6 +16,20 @@ _**Breaking:** <Present tense verb> XXX_
 ### Fixed
 -->
 
+
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+
+_Put Notice here_
+
+_**Breaking:** <Present tense verb> XXX_
+
+### Changed
+- **Breaking:** XXX
+### Added
+### Removed
+### Fixed
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v4.0.0" target="_blank">v4.0.0</a> - 2026-03-12
 
 _**Breaking:** This is a new major release, supporting combined export from cloud and on-prem data in one run. This requires breaking changes with regards to connection parameters. Export features and output format are not changed._
