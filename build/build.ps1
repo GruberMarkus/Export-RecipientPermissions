@@ -37,9 +37,12 @@ function main {
     Write-Output "ReleaseTag: $ReleaseTag"
 
 
-    Write-Output 'Copy basic files'
     Set-Location $env:GITHUB_WORKSPACE
 
+    Write-Output 'Delete .placeholder and .gitignore files'
+    Get-ChildItem '.placeholder', '.gitignore' -Recurse -File | Remove-Item -Force
+
+    Write-Output 'Copy basic files'
     Copy-Item '.\src\*' $BuildDir -Recurse
     Copy-Item '.\LICENSE.txt' "$BuildDir\LICENSE.txt" -Force
 
@@ -77,13 +80,11 @@ function main {
 
     Set-Location $BuildDir
 
-    Remove-Item 'hashes.txt' -Force
-
-    $Hashes = ForEach ($File in (Get-ChildItem -File -Recurse)) {
+    $Hashes = foreach ($File in (Get-ChildItem -File -Recurse)) {
         Get-FileHash -LiteralPath $File.FullName -Algorithm SHA256 | Select-Object @{N = 'PathRelative'; E = { Resolve-Path -LiteralPath $file.FullName -Relative } }, Algorithm, Hash
     }
 
-    $Hashes | Export-Csv hashes.txt
+    $Hashes | Export-Csv hashes.txt -Force
 
 
     Write-Output 'Create release file'
@@ -96,13 +97,14 @@ function main {
     Set-Location $env:GITHUB_WORKSPACE
 
     $Changelog = '.\docs\changelog.md'
-    $ChangeLogLines = Get-Content $Changelog
+    $ChangeLogLines = Get-Content -LiteralPath $Changelog
     $ChangelogStartline = $null
     $ChangelogEndline = $null
-    $ReleaseTagDate = $(Get-Date ([System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'W. Europe Standard Time')) -Format 'yyyy-MM-dd')
+    $ReleaseTagDate = $(Get-Date -Format 'yyyy-MM-dd')
+
     for ($i = 0; $i -lt $ChangeLogLines.count; $i++) {
         if (-not $ChangelogStartline) {
-            if ($ChangeLogLines[$i] -match ("^##\s*(\[$ReleaseTag\] - $ReleaseTagDate\s*|$ReleaseTag - $ReleaseTagDate\s*|$ReleaseTag - $ReleaseTagDate$)|>$ReleaseTag</a> - $ReleaseTagDate\s*")) {
+            if ($ChangeLogLines[$i] -match "^##\s*(\[$([regex]::Escape($ReleaseTag))\] - $([regex]::Escape($ReleaseTagDate))\s* | $([regex]::Escape($ReleaseTag)) - $([regex]::Escape($ReleaseTagDate))\s* | $([regex]::Escape($ReleaseTag)) - $([regex]::Escape($ReleaseTagDate))$ | <a href=.*>$([regex]::Escape($ReleaseTag))</a> - $([regex]::Escape($ReleaseTagDate))\s*)") {
                 $ChangelogStartline = $i
                 continue
             }
@@ -113,11 +115,12 @@ function main {
             }
         }
     }
+
     if (-not $ChangelogStartline) {
-        $ReleaseMarkdown = "# **Tag '$ReleaseTag - $ReleaseTagDate' not found in '$Changelog', using first entry.**`r`n"
+        $ReleaseMarkdown = "# **Tag '$ReleaseTag - $ReleaseTagDate' not found in '$Changelog', using first entry.**$([System.Environment]::NewLine)$([System.Environment]::NewLine)$([System.Environment]::NewLine)"
         $ChangelogStartline = $null
         $ChangelogEndline = $null
-        for ($i = 0; $i -lt $ChangeLogLines.count; $i++) {
+        for ($i = ($ChangeLogLines | Select-String -Pattern '^##' | Select-Object -Index 1).LineNumber; $i -lt $ChangeLogLines.count; $i++) {
             if (-not $ChangelogStartline) {
                 if (($ChangeLogLines[$i]).startswith('## ')) {
                     $ChangelogStartline = $i
@@ -132,25 +135,29 @@ function main {
     } else {
         if (-not $Changelogendline) { $ChangelogEndline = $ChangelogLines.count - 1 }
     }
+
     for ($i = $ChangelogStartline; $i -le $ChangelogEndline; $i++) {
         $ChangeLogLines[$i] = $ChangeLogLines[$i] -replace '^##', '#'
     }
-    $ReleaseMarkdown = $ReleaseMarkdown + ($($ChangeLogLines[$ChangelogStartline..$ChangelogEndline]) -join "`r`n")
+
+    $ReleaseMarkdown = $ReleaseMarkdown + ($($ChangeLogLines[$ChangelogStartline..$ChangelogEndline]) -join $([System.Environment]::NewLine))
 
     if ($RegExMatches = [regex]::matches($ReleaseMarkdown, '\[(.*?)\]')) {
         for ($i = 0; $i -lt $ChangeLogLines.count; $i++) {
             foreach ($m in $RegExMatches) {
                 if ($ChangeLogLines[$i].StartsWith("$($m.value):")) {
-                    $ReleaseMarkdown = $ReleaseMarkdown + "`r`n$($ChangeLogLines[$i])"
+                    $ReleaseMarkdown = $ReleaseMarkdown + "$([System.Environment]::NewLine)$($ChangeLogLines[$i])"
                 }
             }
         }
     }
-    
+
     $ReleaseMarkdown = $ReleaseMarkdown + @"
-`r`n# File hashes
-- SHA256 hash of '$ReleaseFile': $((Get-FileHash $ReleaseFile -Algorithm SHA256).hash)
-- See 'hashes.txt' in '$ReleaseFile' for hash value of every single file in the release.
+
+# File hashes
+- SHA256 hash of '$(Split-Path $ReleaseFile -Leaf)': $((Get-FileHash -LiteralPath $ReleaseFile -Algorithm SHA256).hash)
+- See 'hashes.txt' in '$(Split-Path -Path $ReleaseFile -Leaf)' for the hash value of every single file in the release.
+  - Compare these hashes with the output of '``Get-ChildItem -Recurse | Get-FileHash -LiteralPath `$_.FullName -Algorithm SHA256``'.
 "@
 
     Write-Output 'ReleaseMarkdown:'

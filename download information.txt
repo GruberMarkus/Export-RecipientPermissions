@@ -1,8 +1,30 @@
-Thanks for your interest in Export-RecipientPermissions!
+Export-RecipientPermissions
+The open-source tool of choice to document, filter and compare Exchange permissions
 
 
-Visit 'https://github.com/GruberMarkus/Export-RecipientPermissions/releases' to download an official release.
+[!] USE OFFICIAL RELEASES
+We strongly recommend using an official release rather than raw source code,
+as official releases are distributed with verifiable file hashes for integrity.
+
+Download here: https://github.com/GruberMarkus/Export-RecipientPermissions/releases
 
 
-Access the full source code online via 'https://github.com/GruberMarkus/Export-RecipientPermissions',
-or with your preferred Git-aware development suite via 'https://github.com/GruberMarkus/Export-RecipientPermissions.git'.
+[#] SOURCE CODE ACCESS
+If you are auditing code or contributing, use one of the following methods:
+- Web: https://github.com/GruberMarkus/Export-RecipientPermissions
+- Git: git clone https://github.com/GruberMarkus/Export-RecipientPermissions.git
+- GitHub CLI: gh repo clone GruberMarkus/Export-RecipientPermissions
+
+Please review CONTRIBUTING.md and CODE_OF_CONDUCT.md before participating.
+
+
+[#] COMMUNITY, ISSUES & SECURITY
+- Discussions: https://github.com/GruberMarkus/Export-RecipientPermissions/discussions
+- Bug reports: https://github.com/GruberMarkus/Export-RecipientPermissions/issues
+- Security: Report vulnerabilities exclusively as instructed in SECURITY.md
+
+
+[#] PROFESSIONAL SUPPORT
+ExplicIT Consulting provides first-class professional support for Export-RecipientPermissions.
+
+Details: https://explicitconsulting.at/open-source/export-recipientpermissions

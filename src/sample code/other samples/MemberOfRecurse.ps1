@@ -1,7 +1,7 @@
 [CmdletBinding(PositionalBinding = $false)]
 
 
-Param(
+param(
     # If the first entry in the list is '*', all outgoing and bidirectional trusts in the current user's forest are considered.
     # If a string starts with a minus or dash ('-domain-a.local'), the domain after the dash or minus is removed from the list (no wildcards allowed).
     # All domains belonging to the Active Directory forest of the currently logged in user are always considered, but specific domains can be removed (`'*', '-childA1.childA.user.forest'`).
@@ -46,7 +46,7 @@ function CheckADConnectivity {
         $PowerShell.RunspacePool = $RunspacePool
 
         [void]$PowerShell.AddScript( {
-                Param (
+                param (
                     [string]$CheckDomain,
                     [string]$CheckProtocolText
                 )
@@ -534,8 +534,7 @@ $script:MemberOfRecurse | Format-Table
 Write-Host
 Write-Host "Configure and start Export-RecipientPermissions (demo) @$(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssK')@"
 $params = @{
-    ExportFromOnPrem                            = $true
-    UseDefaultCredential                        = $true
+    # Do not forget to define ConnectionParametersCloud and/or ConnectionParametersOnprem
 
     ExportMailboxAccessRights                   = $true
     ExportMailboxAccessRightsSelf               = $false
@@ -566,12 +565,6 @@ $params = @{
     GrantorFilter                               = $null
     TrusteeFilter                               = $null
     ExportFileFilter                            = "if (`$ExportFileLine.'Trustee AD ObjectGUID' -iin $('@(''' + (@($script:MemberOfRecurse.'MemberOf recurse group objectGUID') -join ''', ''') + ''')')) { `$true } else { `$false }"
-
-    ExportFile                                  = '.\export\Export-RecipientPermissions_Result_MemberOfRecurse.csv'
-    ErrorFile                                   = '.\export\Export-RecipientPermissions_Error_MemberOfRecurse.csv'
-    DebugFile                                   = $null
-
-    verbose                                     = $false
 }
 
 Write-Host '  Parameters ($params hashtable)'

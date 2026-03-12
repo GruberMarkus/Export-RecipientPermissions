@@ -13,12 +13,7 @@
 #   Also pay attention how the arrays $PrimarySMTPs and $OriginalIdentities
 #   are converted into array defining strings and are therefore passed as
 #   values and not as references to Export-RecipientPermissions.ps1
-#
-# GrantorFilter behaves exactly like TrusteeFilter, only the reference variable
-# is $Grantor instead of $Trustee
-#
-# You may want to adjust the file paths to Export-RecipientPermissions.ps1,
-# ExportFile, ErrorFile and DebugFile in the last lines of this sample script
+
 
 $DNs = (
     'CN=ObjectA,OU=OU3,OU=OU2,OU=OU1,DC=excample,DC=com',
@@ -106,21 +101,17 @@ Write-Host "Export permissions from Exchange @$(Get-Date -Format 'yyyy-MM-ddTHH:
 Write-Host "  Save to '.\export\Export-RecipientPermissions_Result_SIDHistory-Removal.csv'"
 
 $params = @{
-    ExportFromOnPrem          = $true
-    UseDefaultCredential      = $true
-    ExchangeConnectionUriList = 'http://server1.example.com/powershell/', 'http://server2.example.com/powershell/'
-    GrantorFilter             = ''
-    TrusteeFilter             = @"
+    # Do not forget to define ConnectionParametersCloud and/or ConnectionParametersOnprem
+
+    GrantorFilter = ''
+
+    TrusteeFilter = @"
 if (`$Trustee.PrimarySmtpAddress) {
     $`Trustee.PrimarySmtpAddress -iin $('("' + (@($PrimarySMTPs) -join '", "') + '")')
 } else {
     $`Trustee -iin $('("' + (@($OriginalIdentities) -join '", "') + '")')
 }
 "@
-    ExportFile                = '.\export\Export-RecipientPermissions_Result_SIDHistory-Removal.csv'
-    ErrorFile                 = '.\export\Export-RecipientPermissions_Error_SIDHistory-Removal.csv'
-    DebugFile                 = ''
 }
-
 
 & ..\..\Export-RecipientPermissions.ps1 @params

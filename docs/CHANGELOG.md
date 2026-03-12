@@ -1,13 +1,14 @@
 <!-- omit in toc -->
-## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions?labelColor=black&color=informational" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational?labelColor=black&color=informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational&labelColor=black" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions?labelColor=black" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/fee--based%20support-ExplicIT%20Consulting-lawngreen?labelColor=black" alt="get fee-based support from ExplicIT Consulting"></a>
+## **<a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="../src/logo/Export-RecipientPermissions%20Logo.png" width="400" title="Export-RecipientPermissions" alt="Export-RecipientPermissions"></a>**<br>Document, filter and compare Exchange permissions<br><br><a href="https://github.com/GruberMarkus/Export-RecipientPermissions" target="_blank"><img src="https://img.shields.io/github/license/GruberMarkus/Export-RecipientPermissions?labelColor=black&color=informational" alt=""></a> <!--XXXRemoveWhenBuildingXXX<a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/badge/this%20release-XXXVersionStringXXX-informational?labelColor=black&color=informational" alt=""></a> XXXRemoveWhenBuildingXXX--> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases" target="_blank"><img src="https://img.shields.io/github/v/release/GruberMarkus/Export-RecipientPermissions?display_name=tag&include_prereleases&sort=semver&label=latest%20release&color=informational&labelColor=black" alt="" data-external="1"></a> <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/issues" target="_blank"><img src="https://img.shields.io/github/issues/GruberMarkus/Export-RecipientPermissions?labelColor=black" alt="" data-external="1"></a> <a href="https://explicitconsulting.at/open-source/export-recipientpermissions/" target="_blank"><img src="https://img.shields.io/badge/professional%20support-ExplicIT%20Consulting-lawngreen?labelColor=black" alt="professional support from ExplicIT Consulting"></a>
 
 # Changelog
 <!--
-Sample changelog entry
-Remove leading spaces after pasting
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+
 _Put Notice here_
-_**Breaking:** Notice about breaking change_  
+
+_**Breaking:** <Present tense verb> XXX_
+
 ### Changed
 - **Breaking:** XXX
 ### Added
@@ -15,12 +16,36 @@ _**Breaking:** Notice about breaking change_
 ### Fixed
 -->
 
+## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v4.0.0" target="_blank">v4.0.0</a> - 2026-03-12
+
+_**Breaking:** This is a new major release, supporting combined export from cloud and on-prem data in one run. This requires breaking changes with regards to connection parameters. Export features and output format are not changed._
+
+### Changed
+- Reduce runtime and memory footprint:
+  - Change how runspaces get assigned shared variables. This reduces memory footprint.
+  - Update datatypes of multiple internal variables to allow looping through them and adding elements faster. This brings speed and reduces memory usage.
+### Added
+- Add support for combined export from cloud and on-prem. In hybrid environments, just one script run is now required to get the following permissions which are only available on one side or differ between on-prem and the cloud:
+  - Mailbox access rights
+  - Mailbox folder permissions
+  - Public folder permissions
+  
+  This requires a **breaking change** in parameters:
+  - `ConnectionParametersCloud` now bundles all configuration options for Exchange Online, including the maximum number of parallel jobs. See `.\docs\README` for details.
+  - `ConnectionParametersOnprem` now bundles all configuration options for Exchange on-prem, including the maximum number of parallel jobs. See `.\docs\README` for details.
+
+  Make sure to read the '``' chapter in the README file.
+
+  _This change, together with the performance improvements, makes Export-RecipientPermissions a great companion to [Set-OutlookSignatures](https://set-outlooksignatures.com/parameters#virtualmailboxconfigfile), allowing you to deploy email signatures based on actual recipient permissions and not just when a user added a mailbox to Outlook._
+- Consider the Retry-After header when Exchange Online connections throw an error. In all other cases, use the same exponential retry wait time algorithm [Set-OutlookSignatures](https://set-outlooksignatures.com) uses.
+- Change behavior of `$UpdateInterval` parameter. This parameter now defines how often the job progress is updated in the debug file only. The console output is updated every second.
+### Fixed
+- Correct indent of connection messages to fit general output format.
+
+
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.1" target="_blank">v3.3.1</a> - 2025-04-03
 ### Changed
 - Changed the default value of the '`ParallelJobsExchange`' parameter from 10 to 3 for Exchange Online. This is because many tenants still not seem to have been updated to 10 parallel sessions.
-### Added
-### Removed
-### Fixed
 
 
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/v3.3.0" target="_blank">v3.3.0</a> - 2024-01-26
