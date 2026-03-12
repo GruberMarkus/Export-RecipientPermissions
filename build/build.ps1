@@ -120,7 +120,7 @@ function main {
         $ReleaseMarkdown = "# **Tag '$ReleaseTag - $ReleaseTagDate' not found in '$Changelog', using first entry.**$([System.Environment]::NewLine)$([System.Environment]::NewLine)$([System.Environment]::NewLine)"
         $ChangelogStartline = $null
         $ChangelogEndline = $null
-        for ($i = 2; $i -lt $ChangeLogLines.count; $i++) {
+        for ($i = ($ChangeLogLines | Select-String -Pattern '^##' | Select-Object -Index 1).LineNumber; $i -lt $ChangeLogLines.count; $i++) {
             if (-not $ChangelogStartline) {
                 if (($ChangeLogLines[$i]).startswith('## ')) {
                     $ChangelogStartline = $i

@@ -3,11 +3,12 @@
 
 # Changelog
 <!--
-Sample changelog entry
-Remove leading spaces after pasting
 ## <a href="https://github.com/GruberMarkus/Export-RecipientPermissions/releases/tag/vX.X.X" target="_blank">vX.X.X</a> - YYYY-MM-DD
+
 _Put Notice here_
-_**Breaking:** Notice about breaking change_  
+
+_**Breaking:** <Present tense verb> XXX_
+
 ### Changed
 - **Breaking:** XXX
 ### Added
